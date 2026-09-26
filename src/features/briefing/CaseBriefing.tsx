@@ -98,7 +98,7 @@ export default function CaseBriefing({ id }: { id: string }) {
         <ArrowLeft size={16} /> Ward
       </button>
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr]">
         {/* Door note */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
           <div className="relative overflow-hidden rounded-3xl bg-[#fbf8f1] p-6 text-slate-800 shadow-(--shadow-float) ring-1 ring-black/5 sm:p-8 dark:bg-[#f4efe3]">
@@ -164,7 +164,7 @@ export default function CaseBriefing({ id }: { id: string }) {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="flex flex-col gap-5">
           <div>
             <div className="mb-3 text-[11px] font-semibold tracking-[0.14em] text-faint uppercase">Choose a mode</div>
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
               {MODES.map((m) => {
                 const on = m.id === mode
                 const Icon = m.icon

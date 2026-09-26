@@ -40,7 +40,7 @@ function Picker() {
           </Button>
         }
       />
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {ROUTINES.map((r) => {
           const d = drills[`drill:${r.kind}`]
           const Icon = r.icon
@@ -156,7 +156,7 @@ function Game({ kind }: { kind: ExamKind }) {
 
       <ProgressBar value={placed.length / target.length} className="mb-5" />
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* ordered answer */}
         <div className="rounded-3xl bg-surface-1 p-4 ring-1 ring-line">
           <div className="mb-3 text-[11px] font-semibold tracking-[0.14em] text-faint uppercase">Your sequence</div>

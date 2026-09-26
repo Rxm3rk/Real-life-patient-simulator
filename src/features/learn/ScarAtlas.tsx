@@ -65,7 +65,7 @@ export default function ScarAtlas() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="relative overflow-hidden rounded-3xl bg-stage ring-1 ring-line">
           <svg viewBox="-125 105 250 300" className="block aspect-[5/6] w-full" role="img" aria-label="Torso showing a surgical scar">
             <rect x="-400" y="-400" width="800" height="1200" fill="var(--stage)" />

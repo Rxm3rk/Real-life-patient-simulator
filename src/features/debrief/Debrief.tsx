@@ -182,7 +182,7 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
       {/* Domains */}
       <section className="mt-6">
         <h2 className="mb-3 text-[17px] font-semibold text-ink">Mark sheet</h2>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {result.domains.map((d) => (
             <DomainCard key={d.id} d={d} />
           ))}
@@ -210,7 +210,7 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
       {s.components.includes('exam') && <ModelSequence c={c} s={s} />}
 
       {/* Teaching */}
-      <section className="mt-6 grid gap-4 md:grid-cols-2">
+      <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="rounded-3xl bg-surface-1 p-5 ring-1 ring-line">
           <h2 className="flex items-center gap-2 text-[16px] font-semibold text-ink">
             <Sparkles size={17} className="text-accent" /> Key findings in this patient

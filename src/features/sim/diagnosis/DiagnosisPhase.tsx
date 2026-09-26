@@ -80,7 +80,7 @@ My plan is: …`
                   <AnimatePresence initial={false}>
                     {isOpen && (
                       <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                        <div className="grid gap-1.5 px-3 pb-3 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-1.5 px-3 pb-3 sm:grid-cols-2">
                           {items.map((m) => {
                             const on = s.management.includes(m.id)
                             return (

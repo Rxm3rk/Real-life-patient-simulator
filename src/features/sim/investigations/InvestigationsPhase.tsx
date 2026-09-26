@@ -53,7 +53,7 @@ export default function InvestigationsPhase({ c, onNext }: { c: CaseDef; onNext?
         return (
           <div key={cat}>
             <div className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">{cat}</div>
-            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               {items.map((i) => {
                 const on = s.ordered.includes(i.id)
                 return (

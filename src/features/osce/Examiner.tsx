@@ -34,7 +34,7 @@ function Picker() {
         <ArrowLeft size={16} /> OSCE
       </button>
       <PageHeader eyebrow="Peer practice" title="Examiner mode" subtitle="Choose the station your friend will perform. You’ll get the mark sheet, a timer and instant feedback." />
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {EXAMINER_KINDS.map((k) => (
           <Link key={k} to={`/osce/examiner/${k}`} className="flex items-center justify-between rounded-2xl bg-surface-1 p-4 ring-1 ring-line transition hover:ring-violet/40">
             <div>
@@ -110,7 +110,7 @@ function Sheet_({ kind }: { kind: ExamKind }) {
       <PageHeader eyebrow="Examiner mode · peer practice" title={titleOf(kind)} subtitle="Read the instruction to the candidate, start the clock, and tick each step as it is performed. Tap twice for a partial mark." />
 
       {/* Instructions + timer */}
-      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
         <div className="rounded-3xl bg-[#fbf8f1] p-5 text-slate-800 ring-1 ring-black/5 dark:bg-[#f4efe3]">
           <div className="text-[11px] font-bold tracking-[0.2em] text-slate-500 uppercase">Read to the candidate</div>
           <p className="mt-2 text-[17px] font-semibold text-slate-900">“{taskOf(kind)}, and present your findings.”</p>

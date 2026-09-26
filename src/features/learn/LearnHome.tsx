@@ -23,7 +23,7 @@ export default function LearnHome() {
         <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold tracking-[0.14em] text-faint uppercase">
           <BookOpenText size={14} /> Examination routines
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {ROUTINES.map((r, i) => {
             const d = drills[`drill:${r.kind}`]
             const mastery = d ? d.correct / Math.max(1, d.seen) : 0
@@ -62,7 +62,7 @@ export default function LearnHome() {
         <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold tracking-[0.14em] text-faint uppercase">
           <Sparkles size={14} /> Train
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <TrainCard to="/learn/drill" icon={<ListOrdered size={20} />} tone="accent" title="Sequence drills" body="Tap the steps in Macleod’s order against the clock. Mistakes are the lesson." cta="Start a drill" />
           <TrainCard to="/learn/signs" icon={<Microscope size={20} />} tone="info" title="Signs atlas" body={`${SIGNS.length} clinical signs drawn from real anatomy — what they look like, what they mean, how to elicit them.`} cta="Browse signs" />
           <TrainCard to="/learn/scars" icon={<Layers size={20} />} tone="violet" title="Scar atlas" body={`${Object.keys(SCAR_INFO).length} surgical incisions on a real torso — name the scar, name the operation.`} cta="Open the atlas" />

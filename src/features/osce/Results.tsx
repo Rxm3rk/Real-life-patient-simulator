@@ -47,7 +47,7 @@ export default function Results({ id }: { id: string }) {
       </button>
       <PageHeader eyebrow="Circuit results" title={overall ? 'You passed the circuit' : 'Not quite this time'} subtitle={`${circuit.stations.length} stations · ${Math.round(circuit.seconds / 60)} min each`} />
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid gap-4 sm:grid-cols-3">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="flex items-center gap-4 rounded-3xl bg-surface-1 p-5 ring-1 ring-line sm:col-span-1">
           <ProgressRing value={avg} size={84} stroke={8} color={overall ? 'var(--success)' : 'var(--warning)'}>
             <span className="font-mono text-lg font-semibold text-ink tabular">{Math.round(avg * 100)}%</span>

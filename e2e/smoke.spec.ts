@@ -75,3 +75,13 @@ test('theme follows the system until the user picks one', async ({ page }) => {
   await page.getByRole('tab', { name: /Dark/ }).click()
   expect(await bg()).toBe('rgb(7, 11, 20)')
 })
+
+test('no page scrolls sideways', async ({ page }) => {
+  await fresh(page, '/')
+  for (const route of ['/', '/ward', '/osce', '/learn', '/learn/routine/abdominal', '/learn/signs', '/progress', '/settings', '/case/appendicitis']) {
+    await page.goto(`/#${route}`)
+    await page.waitForTimeout(300)
+    const [client, scroll] = await page.evaluate(() => [document.documentElement.clientWidth, document.documentElement.scrollWidth])
+    expect(scroll, `${route} is wider than the screen`).toBeLessThanOrEqual(client)
+  }
+})

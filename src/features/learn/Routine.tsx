@@ -43,7 +43,7 @@ export default function Routine({ kind }: { kind?: string }) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         <div className="space-y-6">
           {sections.map((sec) => (
             <section key={sec}>

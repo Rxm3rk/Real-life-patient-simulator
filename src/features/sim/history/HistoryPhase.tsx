@@ -368,7 +368,7 @@ function QuestionBank({ open, onClose, c, asked, onAsk }: { open: boolean; onClo
         {groups.map((g) => (
           <div key={g.cat}>
             <div className="mb-1.5 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">{g.cat}</div>
-            <div className="grid gap-1 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
               {g.items.map((i) => {
                 const on = set.has(i.id)
                 return (

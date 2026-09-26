@@ -154,7 +154,7 @@ export default function OsceHome() {
         </motion.div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr]">
         {/* Circuit builder */}
         <section className="rounded-3xl bg-surface-1 p-5 ring-1 ring-line shadow-(--shadow-soft) sm:p-6">
           <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ export default function OsceHome() {
       {history.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-[17px] font-semibold text-ink">Past circuits</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {history.map((h) => {
               const done = h.stations.filter((s) => s.pct !== undefined)
               const avg = done.length ? done.reduce((a, s) => a + (s.pct ?? 0), 0) / done.length : 0

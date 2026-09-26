@@ -144,7 +144,7 @@ export default function Runner() {
             </div>
           </motion.div>
         ) : (
-          <motion.div key={`read-${circuit.index}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid gap-6 lg:grid-cols-[1fr_300px]">
+          <motion.div key={`read-${circuit.index}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
             <div className="relative overflow-hidden rounded-3xl bg-[#fbf8f1] p-6 text-slate-800 shadow-(--shadow-float) ring-1 ring-black/5 sm:p-8 dark:bg-[#f4efe3]">
               <div className="absolute top-0 left-1/2 h-5 w-24 -translate-x-1/2 rounded-b-xl bg-slate-300/70" />
               <div className="flex items-center justify-between">

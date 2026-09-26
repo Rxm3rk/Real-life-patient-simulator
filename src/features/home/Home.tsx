@@ -74,7 +74,7 @@ export default function Home() {
       <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] bg-surface-1 p-6 ring-1 ring-line shadow-(--shadow-lift) sm:p-9">
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-accent/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-info/10 blur-3xl" />
-        <div className="relative grid items-center gap-8 lg:grid-cols-[1.25fr_1fr]">
+        <div className="relative grid grid-cols-1 items-center gap-8 lg:grid-cols-[1.25fr_1fr]">
           <div>
             <div className="text-[12px] font-semibold tracking-[0.16em] text-accent uppercase">
               {greeting()}
@@ -131,7 +131,7 @@ export default function Home() {
         <Stat label="Day streak" value={String(stats.streak)} sub={stats.time ? `${formatDuration(stats.time)} practised` : 'Start today'} />
       </section>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Ward preview (mobile shows here) */}
         <section>
           <div className="mb-3 flex items-end justify-between">
@@ -141,7 +141,7 @@ export default function Home() {
               <span className="hidden sm:inline"> patients</span> <ChevronRight size={15} />
             </Link>
           </div>
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {today.map((c) => (
               <button
                 key={c.id}

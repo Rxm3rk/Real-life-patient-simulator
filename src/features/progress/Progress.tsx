@@ -99,7 +99,7 @@ export default function Progress() {
         </div>
       </section>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="rounded-3xl bg-surface-1 p-5 ring-1 ring-line sm:p-6">
           <h2 className="text-[16px] font-semibold text-ink">Average by domain</h2>
           <p className="mt-0.5 mb-4 text-[13px] text-muted">Where you gain and lose marks.</p>
