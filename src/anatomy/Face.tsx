@@ -15,7 +15,7 @@ import type { Appearance, PatientPose } from './types'
  */
 export interface FaceProps {
   a: Appearance
-  pose: Pick<PatientPose, 'pain' | 'wince' | 'eyesClosed' | 'mouthOpen' | 'lookAt' | 'coughing' | 'speaking'>
+  pose: Partial<Pick<PatientPose, 'pain' | 'wince' | 'eyesClosed' | 'mouthOpen' | 'lookAt' | 'coughing' | 'speaking'>>
   id: string
   /** Render neck, shoulders and gown collar (for portraits) */
   bust?: boolean
@@ -247,15 +247,15 @@ export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }
       </g>
 
       {/* Forehead lines: age and pain */}
-      {(age > 42 || e > 0.35 || wr > 0.3) && (
-        <g stroke={pal.deep} strokeLinecap="round" fill="none" opacity={Math.min(0.55, (age > 42 ? 0.2 : 0) + e * 0.35 + wr * 0.3)}>
+      {(age > 42 || e > 0.5 || wr > 0.3) && (
+        <g stroke={pal.deep} strokeLinecap="round" fill="none" opacity={Math.min(0.5, (age > 42 ? 0.2 : 0) + Math.max(0, e - 0.35) * 0.45 + wr * 0.3)}>
           <path d="M-14 25 Q0 22.8 14 25" strokeWidth="0.6" />
           <path d="M-11 29 Q0 27.2 11 29" strokeWidth="0.55" />
         </g>
       )}
       {/* Corrugator lines between brows (pain) */}
-      {e > 0.3 && (
-        <g stroke={pal.deep} strokeLinecap="round" opacity={Math.min(0.6, e * 0.7)} fill="none">
+      {e > 0.38 && (
+        <g stroke={pal.deep} strokeLinecap="round" opacity={Math.min(0.55, (e - 0.3) * 0.8)} fill="none">
           <path d="M-2.4 35 Q-3 38.5 -2.2 41.5" strokeWidth="0.6" />
           <path d="M2.4 35 Q3 38.5 2.2 41.5" strokeWidth="0.6" />
         </g>
@@ -305,8 +305,8 @@ export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }
         <ellipse cx="-3.6" cy="67.6" rx="1.7" ry="0.95" fill={pal.deep} opacity="0.75" transform="rotate(12 -3.6 67.6)" />
         <ellipse cx="3.6" cy="67.6" rx="1.7" ry="0.95" fill={pal.deep} opacity="0.75" transform="rotate(-12 3.6 67.6)" />
         <ellipse cx="0" cy="64.2" rx="2.4" ry="1.6" fill={pal.highlight} opacity="0.35" />
-        {e > 0.5 && (
-          <g stroke={pal.deep} strokeWidth="0.5" opacity={(e - 0.5) * 1.2} fill="none">
+        {e > 0.62 && (
+          <g stroke={pal.deep} strokeWidth="0.5" opacity={(e - 0.62) * 1.2} fill="none">
             <path d="M-3 50 Q0 51.2 3 50" />
             <path d="M-3.4 52.4 Q0 53.4 3.4 52.4" />
           </g>
@@ -314,7 +314,7 @@ export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }
       </g>
 
       {/* Nasolabial folds */}
-      <g fill="none" stroke={pal.shadow} strokeLinecap="round" opacity={Math.min(0.7, 0.2 + (age > 40 ? 0.2 : 0) + e * 0.35)}>
+      <g fill="none" stroke={pal.shadow} strokeLinecap="round" opacity={Math.min(0.65, 0.12 + (age > 40 ? 0.22 : 0) + e * 0.3)}>
         <path d={`M-8.2 64.5 C-11 69 -12.2 74 ${-cornerX - 1.6} ${cornerY + 1.5}`} strokeWidth="0.8" />
         <path d={`M8.2 64.5 C11 69 12.2 74 ${cornerX + 1.6} ${cornerY + 1.5}`} strokeWidth="0.8" />
       </g>

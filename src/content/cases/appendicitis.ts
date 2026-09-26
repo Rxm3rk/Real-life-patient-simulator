@@ -153,6 +153,7 @@ const c: CaseDef = {
     'urine-dip': {
       report: 'Leucocytes +, ketones ++, nitrites −, blood −, protein −.',
       interpretation: 'Sterile pyuria can occur when an inflamed appendix lies against the ureter or bladder; ketones reflect fasting and vomiting. Not a UTI.',
+      abnormal: true,
     },
     vbg: {
       values: [
@@ -165,10 +166,12 @@ const c: CaseDef = {
     'us-abdo': {
       report: 'A non-compressible, blind-ending tubular structure in the right iliac fossa measuring 9 mm in diameter with surrounding echogenic inflamed fat and a trace of free fluid. Appearances consistent with acute appendicitis.',
       interpretation: 'Supports acute appendicitis.',
+      abnormal: true,
     },
     'ct-ap': {
       report: 'Dilated (11 mm) thick-walled appendix with mucosal hyperenhancement, periappendiceal fat stranding and a 6 mm appendicolith. No extraluminal gas or collection.',
       interpretation: 'Acute uncomplicated appendicitis with an appendicolith.',
+      abnormal: true,
     },
     axr: { report: 'Non-specific bowel gas pattern. No obstruction.', interpretation: 'AXR adds nothing in suspected appendicitis.' },
   },

@@ -291,6 +291,8 @@ export interface InvestigationResult {
   interpretation?: string
   /** Simple schematic image key */
   image?: string
+  /** Mark report-type results as abnormal (labs use value flags) */
+  abnormal?: boolean
 }
 
 export interface RubricItem {

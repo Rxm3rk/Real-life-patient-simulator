@@ -18,13 +18,15 @@ export interface BodyProps {
   herniaPhase?: 'rest' | 'cough' | 'standing'
   /** Heart rate for visible pulsation */
   hr?: number
+  /** Respiratory rate — animates the chest and abdomen */
+  rr?: number
 }
 
 const GOWN = '#a8c9da'
 const GOWN_DARK = '#86aec3'
 const BLANKET = '#dfe6ea'
 
-export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 'rest', hr = 80 }: BodyProps) {
+export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 'rest', hr = 80, rr }: BodyProps) {
   const d = useMemo(() => bodyDims(a), [a])
   const lm = useMemo(() => landmarks(a, d), [a, d])
   const pal = skinPalette(a)
@@ -144,6 +146,13 @@ export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 
       ))}
 
       {/* Torso */}
+      <g
+        style={
+          rr
+            ? { transformBox: 'fill-box', transformOrigin: '50% 62%', animation: `bs-breathe ${(60 / rr).toFixed(2)}s ease-in-out infinite` }
+            : undefined
+        }
+      >
       <g transform={`translate(0 ${lm.umbilicus[1]}) scale(1 ${bellyScale}) translate(0 ${-lm.umbilicus[1]})`}>
         <path d={torso} fill={`url(#${g('torso')})`} />
         <g clipPath={`url(#${g('torsoClip')})`}>
@@ -155,6 +164,7 @@ export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 
         {(a.hernias ?? []).map((h, i) => (
           <HerniaView key={i} h={h} lm={lm} pal={pal} phase={herniaPhase} g={g} />
         ))}
+      </g>
       </g>
 
       {/* Female breasts (visible only when the torso is exposed) */}
