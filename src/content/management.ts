@@ -1,0 +1,100 @@
+export interface MgmtDef {
+  id: string
+  label: string
+  group: 'Resuscitation & supportive' | 'Medication' | 'Escalation & referral' | 'Procedures & operations' | 'Conservative & follow-up'
+}
+
+export const MANAGEMENT: MgmtDef[] = [
+  // Resuscitation & supportive
+  { id: 'abcde', label: 'ABCDE assessment and resuscitation', group: 'Resuscitation & supportive' },
+  { id: 'o2', label: 'Oxygen to target saturations (94–98%)', group: 'Resuscitation & supportive' },
+  { id: 'iv-access', label: 'Two large-bore IV cannulae', group: 'Resuscitation & supportive' },
+  { id: 'fluids', label: 'IV crystalloid fluid resuscitation', group: 'Resuscitation & supportive' },
+  { id: 'maintenance-fluids', label: 'IV maintenance fluids with electrolyte replacement', group: 'Resuscitation & supportive' },
+  { id: 'mhp', label: 'Activate the major haemorrhage protocol / O-negative blood', group: 'Resuscitation & supportive' },
+  { id: 'permissive-hypotension', label: 'Permissive hypotension (target SBP ~70–90 mmHg) until the bleeding is controlled', group: 'Resuscitation & supportive' },
+  { id: 'nbm', label: 'Nil by mouth', group: 'Resuscitation & supportive' },
+  { id: 'ng', label: 'Nasogastric tube on free drainage', group: 'Resuscitation & supportive' },
+  { id: 'catheter', label: 'Urinary catheter with hourly urine output monitoring', group: 'Resuscitation & supportive' },
+  { id: 'fluid-balance', label: 'Strict fluid-balance chart', group: 'Resuscitation & supportive' },
+  { id: 'sepsis6', label: 'Sepsis Six within 1 hour (O₂, cultures, antibiotics, fluids, lactate, urine output)', group: 'Resuscitation & supportive' },
+  { id: 'vte', label: 'VTE prophylaxis (LMWH ± compression stockings, if no contraindication)', group: 'Resuscitation & supportive' },
+  { id: 'glucose-monitoring', label: 'Monitor blood glucose', group: 'Resuscitation & supportive' },
+  { id: 'nutrition', label: 'Early nutritional support (enteral if possible)', group: 'Resuscitation & supportive' },
+
+  // Medication
+  { id: 'analgesia', label: 'Analgesia (paracetamol ± opioid, titrated to pain)', group: 'Medication' },
+  { id: 'antiemetic', label: 'Antiemetic', group: 'Medication' },
+  { id: 'abx-iv', label: 'IV broad-spectrum antibiotics per local guidelines', group: 'Medication' },
+  { id: 'abx-oral', label: 'Oral antibiotics', group: 'Medication' },
+  { id: 'ppi-iv', label: 'IV proton pump inhibitor', group: 'Medication' },
+  { id: 'anticoag-heparin', label: 'IV unfractionated heparin', group: 'Medication' },
+  { id: 'nsaid', label: 'NSAID (e.g. diclofenac)', group: 'Medication' },
+  { id: 'laxatives', label: 'Laxatives', group: 'Medication' },
+  { id: 'carbimazole', label: 'Carbimazole (antithyroid drug)', group: 'Medication' },
+  { id: 'propranolol', label: 'Propranolol for symptom control', group: 'Medication' },
+  { id: 'statin-antiplatelet', label: 'Best medical therapy: statin + antiplatelet, BP & diabetes control', group: 'Medication' },
+  { id: 'smoking-cessation', label: 'Smoking cessation support', group: 'Medication' },
+  { id: 'abx-epididymo', label: 'Antibiotics for epididymo-orchitis (e.g. ceftriaxone + doxycycline)', group: 'Medication' },
+  { id: 'topical-gtn', label: 'Topical GTN/diltiazem, stool softeners, fibre', group: 'Medication' },
+
+  // Escalation
+  { id: 'senior', label: 'Inform the surgical registrar / consultant', group: 'Escalation & referral' },
+  { id: 'theatre', label: 'Inform theatres & anaesthetist (book emergency theatre)', group: 'Escalation & referral' },
+  { id: 'vascular', label: 'Immediate vascular surgery referral', group: 'Escalation & referral' },
+  { id: 'icu', label: 'Critical care (HDU/ICU) referral', group: 'Escalation & referral' },
+  { id: 'gynae', label: 'Gynaecology review', group: 'Escalation & referral' },
+  { id: 'urology', label: 'Urology review', group: 'Escalation & referral' },
+  { id: 'gastro-ercp', label: 'Refer to gastroenterology for ERCP', group: 'Escalation & referral' },
+  { id: 'mdt', label: 'Discuss at the multidisciplinary team (MDT) meeting', group: 'Escalation & referral' },
+  { id: '2ww', label: 'Urgent suspected-cancer (2-week-wait) pathway', group: 'Escalation & referral' },
+  { id: 'consent', label: 'Explain, gain written consent and mark for surgery', group: 'Escalation & referral' },
+  { id: 'breaking-news', label: 'Communicate the diagnosis sensitively and involve family', group: 'Escalation & referral' },
+
+  // Procedures
+  { id: 'lap-appendicectomy', label: 'Laparoscopic appendicectomy', group: 'Procedures & operations' },
+  { id: 'lap-chole-early', label: 'Early laparoscopic cholecystectomy (index admission, ideally within 1 week)', group: 'Procedures & operations' },
+  { id: 'lap-chole-interval', label: 'Delayed (interval) cholecystectomy after 6 weeks', group: 'Procedures & operations' },
+  { id: 'ercp', label: 'ERCP with sphincterotomy and stone extraction', group: 'Procedures & operations' },
+  { id: 'biliary-decompression', label: 'Urgent biliary decompression (ERCP or PTC)', group: 'Procedures & operations' },
+  { id: 'biliary-stent', label: 'Endoscopic biliary stent to relieve jaundice (if appropriate)', group: 'Procedures & operations' },
+  { id: 'laparotomy', label: 'Emergency laparotomy', group: 'Procedures & operations' },
+  { id: 'perforation-repair', label: 'Laparoscopic / open repair of perforation with omental patch & washout', group: 'Procedures & operations' },
+  { id: 'hernia-emergency', label: 'Emergency hernia repair ± bowel resection', group: 'Procedures & operations' },
+  { id: 'hernia-elective', label: 'Elective hernia repair (e.g. mesh repair)', group: 'Procedures & operations' },
+  { id: 'aaa-repair-emergency', label: 'Emergency AAA repair (EVAR if anatomy suitable, or open)', group: 'Procedures & operations' },
+  { id: 'aaa-repair-elective', label: 'Elective AAA repair', group: 'Procedures & operations' },
+  { id: 'revascularisation', label: 'Revascularisation (angioplasty / bypass)', group: 'Procedures & operations' },
+  { id: 'embolectomy', label: 'Embolectomy / thrombolysis / revascularisation', group: 'Procedures & operations' },
+  { id: 'hartmanns', label: 'Hartmann’s procedure', group: 'Procedures & operations' },
+  { id: 'drainage-radiological', label: 'Radiologically guided percutaneous drainage', group: 'Procedures & operations' },
+  { id: 'flexi-decompression', label: 'Endoscopic decompression and flatus tube', group: 'Procedures & operations' },
+  { id: 'whipple', label: 'Staging, then consider pancreaticoduodenectomy (Whipple’s) if resectable', group: 'Procedures & operations' },
+  { id: 'triple-assessment', label: 'Triple assessment (clinical, imaging, biopsy)', group: 'Procedures & operations' },
+  { id: 'excision', label: 'Excision (with histology)', group: 'Procedures & operations' },
+  { id: 'incision-drainage', label: 'Incision and drainage', group: 'Procedures & operations' },
+  { id: 'scrotal-exploration', label: 'Urgent scrotal exploration with detorsion and bilateral fixation', group: 'Procedures & operations' },
+  { id: 'orchidectomy-inguinal', label: 'Radical inguinal orchidectomy', group: 'Procedures & operations' },
+  { id: 'scrotal-biopsy', label: 'Trans-scrotal biopsy of the testis', group: 'Procedures & operations' },
+  { id: 'thyroidectomy', label: 'Thyroid surgery (hemi- or total thyroidectomy)', group: 'Procedures & operations' },
+  { id: 'fna-thyroid', label: 'Ultrasound-guided FNA of the nodule', group: 'Procedures & operations' },
+  { id: 'endovenous', label: 'Endovenous (thermal) ablation', group: 'Procedures & operations' },
+  { id: 'compression', label: 'Compression therapy (stockings / multilayer bandaging)', group: 'Procedures & operations' },
+  { id: 'amputation', label: 'Amputation', group: 'Procedures & operations' },
+
+  // Conservative
+  { id: 'drip-suck', label: 'Conservative “drip and suck” with regular review', group: 'Conservative & follow-up' },
+  { id: 'gastrografin', label: 'Water-soluble contrast (Gastrografin) challenge', group: 'Conservative & follow-up' },
+  { id: 'observe', label: 'Admit for observation and serial examination', group: 'Conservative & follow-up' },
+  { id: 'discharge', label: 'Discharge home', group: 'Conservative & follow-up' },
+  { id: 'reassure', label: 'Reassure, explain and safety-net', group: 'Conservative & follow-up' },
+  { id: 'watchful-waiting', label: 'Watchful waiting', group: 'Conservative & follow-up' },
+  { id: 'surveillance', label: 'Ultrasound surveillance', group: 'Conservative & follow-up' },
+  { id: 'exercise', label: 'Supervised exercise programme', group: 'Conservative & follow-up' },
+  { id: 'diet-normal', label: 'Allow normal diet', group: 'Conservative & follow-up' },
+  { id: 'lifestyle', label: 'Lifestyle advice (weight loss, alcohol, diet)', group: 'Conservative & follow-up' },
+  { id: 'alcohol-support', label: 'Alcohol cessation support ± Pabrinex / withdrawal prophylaxis', group: 'Conservative & follow-up' },
+  { id: 'palliative', label: 'Early palliative care involvement', group: 'Conservative & follow-up' },
+]
+
+export const MGMT_BY_ID: Record<string, MgmtDef> = Object.fromEntries(MANAGEMENT.map((m) => [m.id, m]))
