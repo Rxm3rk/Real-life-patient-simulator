@@ -1,20 +1,24 @@
+import { useId } from 'react'
 import { cn } from '../../lib/utils'
 
 export function LogoMark({ size = 32, className }: { size?: number; className?: string }) {
+  const uid = useId().replace(/:/g, '')
+  const g = `bs-logo-g-${uid}`
+  const h = `bs-logo-h-${uid}`
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" className={cn('shrink-0', className)} aria-hidden>
       <defs>
-        <linearGradient id="bs-logo-g" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#4ee3cf" />
           <stop offset="1" stopColor="#0b8277" />
         </linearGradient>
-        <linearGradient id="bs-logo-h" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={h} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#fff" stopOpacity="0.35" />
           <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <rect width="32" height="32" rx="9" fill="url(#bs-logo-g)" />
-      <rect width="32" height="32" rx="9" fill="url(#bs-logo-h)" />
+      <rect width="32" height="32" rx="9" fill={`url(#${g})`} />
+      <rect width="32" height="32" rx="9" fill={`url(#${h})`} />
       {/* bed */}
       <path d="M6.5 22.5v-9M6.5 19.5h19v3" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.95" />
       {/* pulse line over the bed */}
