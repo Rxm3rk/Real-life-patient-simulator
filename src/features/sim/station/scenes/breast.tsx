@@ -3,6 +3,7 @@ import { bodyDims, landmarks } from '../../../../anatomy/bodyModel'
 import { breastCentres, BreastSigns, clockPoint } from '../../../../anatomy/BreastSigns'
 import { ClinicScene } from '../../../../anatomy/Clinic'
 import type { Pt } from '../../../../anatomy/geometry'
+import { isClinic } from '../../../../engine/setting'
 import { lastIndex, type SceneCtx, type SceneSpec, type Zone } from '../types'
 
 export function breastArmPose(x: SceneCtx): ArmPose {
@@ -27,6 +28,7 @@ export function breastScene(x: SceneCtx): SceneSpec {
     id: 'stbody',
     seed: c.id,
     armPose: exposed ? pose : 'sides',
+    clinic: isClinic(c.setting),
   }
   const affected = spec.lump?.side ?? spec.nipple?.side ?? 'left'
   const { right, left } = breastCentres(lm, d, pose)

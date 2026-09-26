@@ -14,7 +14,8 @@ import { cn } from '../../../lib/utils'
 import { useEncounter } from '../../../store/encounter'
 import { useSettings } from '../../../store/settings'
 import { FaceCam } from '../FaceCam'
-import { VitalsMonitor } from '../VitalsMonitor'
+import { isClinic } from '../../../engine/setting'
+import { ClinicObs, monitorLabel, VitalsMonitor } from '../VitalsMonitor'
 
 const SOCRATES: [string, string][] = [
   ['S', 'pain.site'],
@@ -104,7 +105,7 @@ export default function HistoryPhase({ c, onNext }: { c: CaseDef; onNext?: () =>
               <div className="mt-3 rounded-xl bg-surface-2 px-3 py-2 text-center text-[12.5px] text-muted italic">*{lastPatient.cue}*</div>
             )}
           </div>
-          <VitalsMonitor v={c.vitals} compact />
+          {isClinic(c.setting) ? <ClinicObs v={c.vitals} /> : <VitalsMonitor v={c.vitals} compact label={monitorLabel(c.setting)} />}
           {showCoverage && <div className="rounded-3xl bg-surface-1 p-4 ring-1 ring-line">{coverage}</div>}
         </aside>
       )}
@@ -237,7 +238,8 @@ function Intro({ c, onAsk }: { c: CaseDef; onAsk: (q: string) => void }) {
   return (
     <div className="flex flex-col items-center py-6 text-center">
       <div className="max-w-md text-[14px] leading-relaxed text-muted">
-        You pull the curtain round. {c.patient.title} looks up at you. Type or speak naturally — introduce yourself, confirm who they are, then ask an open question.
+        {isClinic(c.setting) ? `You call ${c.patient.title} in from the waiting room and offer a seat.` : `You pull the curtain round. ${c.patient.title} looks up at you.`} Type or speak naturally —
+        introduce yourself, confirm who they are, then ask an open question.
       </div>
       <div className="mt-4 flex flex-wrap justify-center gap-2">
         {['Hello, I’m one of the doctors on the surgical team.', 'Can you confirm your full name and date of birth?', 'What’s brought you in today?'].map((q) => (

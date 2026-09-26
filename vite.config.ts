@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { readFileSync } from 'node:fs'
 import { defineConfig, type PluginOption } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { viteSingleFile } from 'vite-plugin-singlefile'
@@ -14,12 +15,26 @@ export default defineConfig(({ mode }) => {
 
   if (single) {
     plugins.push(viteSingleFile({ removeViteModuleLoader: true }))
+    // no service worker in the single-file build: stub the registration module
+    plugins.push({
+      name: 'bedside-sw-stub',
+      resolveId: (id) => (id === 'virtual:pwa-register' ? '\0sw-stub' : null),
+      load: (id) => (id === '\0sw-stub' ? 'export function registerSW() { return () => Promise.resolve() }' : null),
+    })
+    // inline the icons too, so the one HTML file really is the whole app
+    plugins.push({
+      name: 'bedside-inline-icons',
+      transformIndexHtml: (html) =>
+        html
+          .replace('href="./favicon.svg"', `href="data:image/svg+xml;base64,${readFileSync('public/favicon.svg').toString('base64')}"`)
+          .replace('href="./apple-touch-icon.png"', `href="data:image/png;base64,${readFileSync('public/apple-touch-icon.png').toString('base64')}"`),
+    })
   } else {
     plugins.push(
       VitePWA({
         registerType: 'autoUpdate',
         injectRegister: null,
-        includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192.png', 'pwa-512.png', 'pwa-maskable-512.png'],
         manifest: {
           name: 'Bedside — Surgical Patient Simulator',
           short_name: 'Bedside',
@@ -34,7 +49,7 @@ export default defineConfig(({ mode }) => {
           icons: [
             { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
             { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
-            { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+            { src: 'pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           ],
         },
         workbox: {
@@ -48,6 +63,8 @@ export default defineConfig(({ mode }) => {
   return {
     base: './',
     plugins,
+    // the single-file build inlines what it needs; don't copy public/ next to it
+    publicDir: single ? false : 'public',
     build: {
       outDir: single ? 'dist-single' : 'dist',
       chunkSizeWarningLimit: 1600,

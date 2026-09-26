@@ -177,16 +177,18 @@ export const BedScene = memo(function BedScene({
         <ellipse cx="0" cy="40" rx="70" ry="52" fill="#b9c4cd" opacity="0.35" filter={`url(#${g('soft')})`} />
       </g>
 
-      {/* Observation chart clipped to the foot of the bed */}
-      <g transform="translate(118 842)">
-        <rect x={-26} y={-30} width={52} height={64} rx={4} fill="#355c8c" />
-        <rect x={-22} y={-24} width={44} height={54} rx={2} fill="#fdfdfb" />
-        <rect x={-10} y={-34} width={20} height={9} rx={2} fill="#9aa5b1" />
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <path key={i} d={`M-17 ${-14 + i * 7} L17 ${-14 + i * 7}`} stroke="#c8d0d8" strokeWidth="1" />
-        ))}
-        <path d="M-16 8 L-9 2 L-2 6 L6 -4 L14 0" stroke="#e25d5d" strokeWidth="1.6" fill="none" />
-      </g>
+      {/* Observation chart clipped to the foot of the bed (ward patients only) */}
+      {!body.clinic && (
+        <g transform="translate(118 842)">
+          <rect x={-26} y={-30} width={52} height={64} rx={4} fill="#355c8c" />
+          <rect x={-22} y={-24} width={44} height={54} rx={2} fill="#fdfdfb" />
+          <rect x={-10} y={-34} width={20} height={9} rx={2} fill="#9aa5b1" />
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <path key={i} d={`M-17 ${-14 + i * 7} L17 ${-14 + i * 7}`} stroke="#c8d0d8" strokeWidth="1" />
+          ))}
+          <path d="M-16 8 L-9 2 L-2 6 L6 -4 L14 0" stroke="#e25d5d" strokeWidth="1.6" fill="none" />
+        </g>
+      )}
 
       <Body {...body} />
       {children}

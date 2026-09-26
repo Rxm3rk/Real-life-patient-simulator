@@ -3,6 +3,7 @@ import { bodyDims, landmarks } from '../../../../anatomy/bodyModel'
 import { ClinicScene } from '../../../../anatomy/Clinic'
 import { lerpPt, type Pt } from '../../../../anatomy/geometry'
 import { BedScene } from '../../../../anatomy/Scene'
+import { isClinic } from '../../../../engine/setting'
 import { lastIndex, type SceneCtx, type SceneSpec, type Zone } from '../types'
 
 export function groinScene(x: SceneCtx): SceneSpec {
@@ -32,6 +33,7 @@ export function groinScene(x: SceneCtx): SceneSpec {
     herniaPhase: phase,
     hr: c.vitals.hr,
     rr: standing ? undefined : c.vitals.rr,
+    clinic: isClinic(c.setting),
   }
 
   const lesion: Pt = hernia ? herniaPosition(hernia, lm).at : right ? lerpPt(lm.deepRingR, lm.superficialRingR, 0.55) : lerpPt(lm.deepRingL, lm.superficialRingL, 0.55)

@@ -5,6 +5,7 @@ import { ClinicScene } from '../../../../anatomy/Clinic'
 import type { Pt } from '../../../../anatomy/geometry'
 import { LegsBack, LegSigns } from '../../../../anatomy/LegSigns'
 import { BedScene } from '../../../../anatomy/Scene'
+import { isClinic } from '../../../../engine/setting'
 import type { LegsVisual } from '../../../../engine/types'
 import { lastIndex, type SceneCtx, type SceneSpec, type Zone } from '../types'
 
@@ -41,6 +42,7 @@ export function arterialScene(x: SceneCtx): SceneSpec {
     seed: c.id,
     hr: c.vitals.hr,
     rr: c.vitals.rr,
+    clinic: isClinic(c.setting),
   }
   const arm = armOutline(d)
   const [radR, radL] = both([arm.wrist[0] - 4, arm.wrist[1] - 4])
@@ -110,6 +112,7 @@ export function venousScene(x: SceneCtx): SceneSpec {
     seed: c.id,
     hr: c.vitals.hr,
     rr: standing ? undefined : c.vitals.rr,
+    clinic: isClinic(c.setting),
   }
   const [sfjR, sfjL] = both([20, 428])
   const [calfR, calfL] = both([k + 5, 630])

@@ -10,6 +10,7 @@ import { toast } from '../../../components/ui/Toast'
 import { abdoFindings } from '../../../engine/abdo'
 import { protocolFor } from '../../../engine/protocols'
 import type { ProtocolStep, StepCtx } from '../../../engine/protocols/abdominal'
+import { isClinic } from '../../../engine/setting'
 import { stationActions, stationFor, type StationAction, type StationCue } from '../../../engine/stations'
 import type { CaseDef, LegSide, Observation, PulseGrade } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
@@ -19,7 +20,7 @@ import { ActionButton, FindingsLog, GuidePanel } from '../exam/panels'
 import type { Effect, EffectKind } from '../exam/Stage'
 import { ListenTask, ManoeuvreCaption, PulseTask } from '../exam/tasks'
 import { FaceCam } from '../FaceCam'
-import { VitalsMonitor } from '../VitalsMonitor'
+import { monitorLabel, VitalsMonitor } from '../VitalsMonitor'
 import { sceneFor } from './scenes'
 import { StationCanvas } from './StationCanvas'
 import { BuergerTask, DopplerTask, PulseFeel, TourniquetTask } from './tasks'
@@ -119,7 +120,7 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
   const useHint = useEncounter((st) => st.useHint)
   const desktop = useMediaQuery('(min-width: 1024px)')
   const learn = s.mode === 'learn'
-  const acute = c.setting !== 'Outpatient clinic' && c.setting !== 'GP surgery'
+  const acute = !isClinic(c.setting)
 
   const [view, setView] = useState(def.views[0].id)
   const [cue, setCue] = useState<CueState>({ kind: null, key: 0 })
@@ -444,7 +445,7 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
           {acute &&
             (monitorOpen || desktop ? (
               <div onClick={() => setMonitorOpen((o) => !o)} role="button" tabIndex={0} aria-label="Toggle monitor" className="cursor-pointer">
-                <VitalsMonitor v={c.vitals} compact className={cn('w-[230px]', !desktop && 'w-[200px]')} />
+                <VitalsMonitor v={c.vitals} compact label={monitorLabel(c.setting)} className={cn('w-[230px]', !desktop && 'w-[200px]')} />
               </div>
             ) : (
               <button onClick={() => setMonitorOpen(true)} className="flex items-center gap-2 rounded-xl bg-mon-bg/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold tabular ring-1 ring-white/10 backdrop-blur">

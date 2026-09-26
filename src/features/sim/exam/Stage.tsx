@@ -4,6 +4,7 @@ import type { Pt } from '../../../anatomy/geometry'
 import type { HerniaPhase } from '../../../anatomy/Body'
 import { BedScene } from '../../../anatomy/Scene'
 import type { Exposure, PatientPose } from '../../../anatomy/types'
+import { isClinic } from '../../../engine/setting'
 import type { CaseDef } from '../../../engine/types'
 import { useElementSize } from '../../../lib/hooks'
 import { useCamera, type Shot } from './camera'
@@ -72,12 +73,12 @@ export const Stage = memo(function Stage(props: StageProps) {
           if (pt) onPoint(pt)
         }}
         role="img"
-        aria-label={`${c.patient.name} lying on a hospital bed`}
+        aria-label={`${c.patient.name} lying on ${isClinic(c.setting) ? 'the examination couch' : 'a hospital bed'}`}
       >
         <BedScene
           id="stage"
           items={c.bedside}
-          body={{ a, pose: { ...pose, exposure }, id: 'stagebody', seed: c.id, herniaPhase, hr: c.vitals.hr, rr: c.vitals.rr }}
+          body={{ a, pose: { ...pose, exposure }, id: 'stagebody', seed: c.id, herniaPhase, hr: c.vitals.hr, rr: c.vitals.rr, clinic: isClinic(c.setting) }}
         />
 
         {showRegions && (exposure === 'abdomen' || exposure === 'groin') && (shot === 'abdomen' || shot === 'groin') && (

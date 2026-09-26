@@ -1,7 +1,7 @@
 import { Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { monitorBeep } from '../../audio/engine'
-import type { Vitals } from '../../engine/types'
+import type { CaseDef, Vitals } from '../../engine/types'
 import { cn } from '../../lib/utils'
 
 /**
@@ -14,10 +14,12 @@ export function VitalsMonitor({
   v,
   compact,
   className,
+  label = 'BED 7 · MONITOR',
 }: {
   v: Vitals
   compact?: boolean
   className?: string
+  label?: string
 }) {
   const ecgRef = useRef<HTMLCanvasElement>(null)
   const plethRef = useRef<HTMLCanvasElement>(null)
@@ -141,7 +143,7 @@ export function VitalsMonitor({
       )}
     >
       <div className="flex items-center justify-between border-b border-white/5 px-3 py-1.5">
-        <span className="text-[10px] font-semibold tracking-[0.18em] text-white/45">BED 7 · MONITOR</span>
+        <span className="text-[10px] font-semibold tracking-[0.18em] text-white/45">{label}</span>
         <button
           onClick={() => setMuted((m) => !m)}
           aria-label={muted ? 'Unmute monitor' : 'Mute monitor'}
@@ -183,6 +185,43 @@ export function VitalsMonitor({
           <div className={cn('font-semibold tabular leading-tight', compact ? 'text-sm' : 'text-lg')}>{v.temp.toFixed(1)}°</div>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Where the monitor is: the header strip reads like the real one in that area. */
+export function monitorLabel(setting: CaseDef['setting']): string {
+  if (setting === 'Emergency department') return 'MAJORS 4 · MONITOR'
+  if (setting === 'Surgical assessment unit') return 'SAU BAY 2 · MONITOR'
+  return 'BED 7 · MONITOR'
+}
+
+/**
+ * Outpatients don't sit on a cardiac monitor: the healthcare assistant takes a
+ * set of observations at check-in and they're written on the clinic sheet.
+ */
+export function ClinicObs({ v, className }: { v: Vitals; className?: string }) {
+  const rows: { k: string; v: string; flag?: boolean }[] = [
+    { k: 'Pulse', v: `${v.hr} ${v.rhythm === 'irregular' ? 'irreg.' : 'reg.'}`, flag: v.hr > 100 || v.hr < 50 || v.rhythm === 'irregular' },
+    { k: 'BP', v: `${v.sbp}/${v.dbp}`, flag: v.sbp >= 160 || v.sbp < 100 },
+    { k: 'Resp', v: `${v.rr}`, flag: v.rr > 20 || v.rr < 10 },
+    { k: 'SpO₂', v: `${v.spo2}% ${v.o2 ?? 'air'}`, flag: v.spo2 < 94 },
+    { k: 'Temp', v: `${v.temp.toFixed(1)} °C`, flag: v.temp >= 38 || v.temp < 36 },
+  ]
+  return (
+    <div className={cn('rounded-3xl bg-surface-1 p-4 ring-1 ring-line shadow-(--shadow-soft)', className)}>
+      <div className="flex items-baseline justify-between">
+        <div className="text-[11px] font-semibold tracking-[0.14em] text-faint uppercase">Clinic observations</div>
+        <div className="text-[11px] text-faint">at check-in</div>
+      </div>
+      <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5">
+        {rows.map((r) => (
+          <div key={r.k} className="flex items-baseline justify-between gap-2 border-b border-line/60 pb-1 last:col-span-2 last:border-0 last:pb-0">
+            <dt className="text-[12.5px] text-muted">{r.k}</dt>
+            <dd className={cn('font-mono text-[13px] font-semibold tabular', r.flag ? 'text-warning' : 'text-ink')}>{r.v}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   )
 }

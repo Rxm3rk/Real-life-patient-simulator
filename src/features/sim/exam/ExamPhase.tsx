@@ -35,13 +35,14 @@ import { abdoFindings } from '../../../engine/abdo'
 import { ACTION_BY_ID, type ViewId } from '../../../engine/abdoActions'
 import { protocolFor } from '../../../engine/protocols'
 import type { ProtocolStep, StepCtx } from '../../../engine/protocols/abdominal'
+import { isClinic } from '../../../engine/setting'
 import type { CaseDef, Observation } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
 import { useEncounter } from '../../../store/encounter'
 import { useSettings } from '../../../store/settings'
 import { FaceCam } from '../FaceCam'
-import { VitalsMonitor } from '../VitalsMonitor'
+import { monitorLabel, VitalsMonitor } from '../VitalsMonitor'
 import type { Shot } from './camera'
 import { ActionButton, FINISH_IDS, FindingsLog, GuidePanel, PREP_IDS, RegionPad, VIEW_ACTIONS } from './panels'
 import { nearest, Stage, type Effect, type EffectKind } from './Stage'
@@ -419,17 +420,24 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
 
       {/* overlays: vitals & face */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-2.5 sm:p-3">
-        <div className="pointer-events-auto cursor-pointer" onClick={() => setMonitorOpen((o) => !o)} role="button" tabIndex={0} aria-label="Toggle monitor">
-          {monitorOpen || desktop ? (
-            <VitalsMonitor v={c.vitals} compact className={cn('w-[230px]', !desktop && 'w-[200px]')} />
-          ) : (
-            <div className="flex items-center gap-2 rounded-xl bg-mon-bg/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold tabular ring-1 ring-white/10 backdrop-blur">
-              <span className="text-mon-hr">♥ {c.vitals.hr}</span>
-              <span className="text-mon-bp">{c.vitals.sbp}/{c.vitals.dbp}</span>
-              <span className="text-mon-spo2">{c.vitals.spo2}%</span>
-            </div>
-          )}
-        </div>
+        {isClinic(c.setting) ? (
+          <div className="pointer-events-auto rounded-xl bg-surface-1/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold text-ink tabular ring-1 ring-line backdrop-blur" title="Observations taken at check-in">
+            <span className="mr-1.5 font-sans text-[10px] font-semibold tracking-[0.12em] text-faint uppercase">Obs</span>
+            HR {c.vitals.hr} · BP {c.vitals.sbp}/{c.vitals.dbp} · SpO₂ {c.vitals.spo2}%
+          </div>
+        ) : (
+          <div className="pointer-events-auto cursor-pointer" onClick={() => setMonitorOpen((o) => !o)} role="button" tabIndex={0} aria-label="Toggle monitor">
+            {monitorOpen || desktop ? (
+              <VitalsMonitor v={c.vitals} compact label={monitorLabel(c.setting)} className={cn('w-[230px]', !desktop && 'w-[200px]')} />
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl bg-mon-bg/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold tabular ring-1 ring-white/10 backdrop-blur">
+                <span className="text-mon-hr">♥ {c.vitals.hr}</span>
+                <span className="text-mon-bp">{c.vitals.sbp}/{c.vitals.dbp}</span>
+                <span className="text-mon-spo2">{c.vitals.spo2}%</span>
+              </div>
+            )}
+          </div>
+        )}
         {view !== 'face' && (
           <div className="pointer-events-auto">
             <FaceCam a={a} pain={basePain} wince={reaction.wince} winceKey={reaction.key} says={reaction.says} size={desktop ? 'md' : 'sm'} label={desktop ? 'Watch the face' : undefined} />
