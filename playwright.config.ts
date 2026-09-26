@@ -21,7 +21,8 @@ export default defineConfig({
     { name: 'phone', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {
-    command: 'npx vite --port 5199 --strictPort',
+    // bind IPv4 explicitly: on some runners "localhost" resolves to ::1 and the URL below never answers
+    command: 'npx vite --host 127.0.0.1 --port 5199 --strictPort',
     url: 'http://127.0.0.1:5199',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
