@@ -2,14 +2,23 @@
 @import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';
 
-@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+/* Dark when stamped data-theme="dark", or when the OS is dark and nothing stamped "light" */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Design tokens                                                        */
 /* ------------------------------------------------------------------ */
 
-:root,
-[data-theme='light'] {
+:root {
   color-scheme: light;
   --bg: #f4f6f9;
   --bg-elevated: #eef1f6;
@@ -39,7 +48,41 @@
   --chart-grid: rgb(15 23 42 / 0.08);
 }
 
-[data-theme='dark'] {
+/* The theme follows the OS unless the app (or the page hosting it) stamps
+   data-theme on <html>. Keep these two dark blocks identical. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #070b14;
+    --bg-elevated: #0a101c;
+    --surface-1: #0d1422;
+    --surface-2: #121b2c;
+    --surface-3: #192438;
+    --overlay: rgb(10 16 28 / 0.78);
+    --border: rgb(148 163 184 / 0.12);
+    --border-strong: rgb(148 163 184 / 0.22);
+    --text: #e7eef8;
+    --text-muted: #9aa9bf;
+    --text-faint: #66758c;
+    --accent: #34d3c0;
+    --accent-strong: #2bbfad;
+    --accent-soft: rgb(52 211 192 / 0.12);
+    --accent-fg: #03201c;
+    --info: #6aa9ff;
+    --success: #3ddc97;
+    --warning: #fbbf3c;
+    --danger: #ff6b6b;
+    --violet: #a78bfa;
+    --ring: rgb(52 211 192 / 0.5);
+    --shadow-color: 220 60% 2%;
+    --stage: #0b1220;
+    --stage-2: #111a2b;
+    --chart-1: #22a898;
+    --chart-grid: rgb(148 163 184 / 0.12);
+  }
+}
+
+:root[data-theme='dark'] {
   color-scheme: dark;
   --bg: #070b14;
   --bg-elevated: #0a101c;
@@ -120,6 +163,21 @@
 /* Base                                                                 */
 /* ------------------------------------------------------------------ */
 
+/* Deliberately outside @layer: a page hosting the app may style body without
+   layers (unlayered rules beat layered ones), which would otherwise change the
+   font and paint its own background behind ours. */
+body {
+  margin: 0;
+  font: inherit;
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
@@ -131,16 +189,6 @@
   body,
   #root {
     min-height: 100%;
-  }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-sans);
-    font-feature-settings: 'cv11', 'ss01', 'ss03';
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    overscroll-behavior-y: none;
   }
 
   ::selection {

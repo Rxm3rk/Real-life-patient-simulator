@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -21,18 +21,16 @@
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <title>Bedside — Surgical Patient Simulator</title>
     <script>
-      // Apply the saved theme before first paint to avoid a flash.
+      // With no data-theme the CSS follows the OS. Before first paint, remember any
+      // theme the hosting page stamped, then apply an explicit choice saved in settings.
       ;(function () {
-        var theme = 'system'
+        var root = document.documentElement
+        window.__bedsideHostTheme = root.getAttribute('data-theme')
         try {
           var raw = localStorage.getItem('bedside.settings')
-          if (raw) theme = (JSON.parse(raw).state || {}).theme || 'system'
+          var theme = raw ? (JSON.parse(raw).state || {}).theme : null
+          if (theme === 'dark' || theme === 'light') root.setAttribute('data-theme', theme)
         } catch (e) {}
-        var dark =
-          theme === 'dark' ||
-          (theme === 'system' &&
-            (!window.matchMedia || window.matchMedia('(prefers-color-scheme: dark)').matches))
-        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
       })()
     </script>
   </head>

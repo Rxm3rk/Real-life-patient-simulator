@@ -54,3 +54,24 @@ test('OSCE circuit starts with reading time', async ({ page }) => {
   await expect(page.getByText('Candidate instructions')).toBeVisible()
   await expect(page.getByRole('button', { name: /Enter station/ })).toBeEnabled()
 })
+
+test('share links open the right patient and circuit', async ({ page }) => {
+  await fresh(page, '/')
+  await page.goto('/#case.inguinal-hernia')
+  await expect(page.getByRole('button', { name: /See the patient/ })).toBeVisible()
+  await expect(page.getByText('Lump in the right groin').first()).toBeVisible()
+  await page.goto('/#osce~480~appendicitis.graves.lipoma')
+  await expect(page.getByText('You’ve been challenged to a circuit')).toBeVisible()
+})
+
+test('theme follows the system until the user picks one', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await fresh(page, '/')
+  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor)
+  expect(await bg()).toBe('rgb(7, 11, 20)')
+  await page.emulateMedia({ colorScheme: 'light' })
+  expect(await bg()).toBe('rgb(244, 246, 249)')
+  await page.goto('/#/settings')
+  await page.getByRole('tab', { name: /Dark/ }).click()
+  expect(await bg()).toBe('rgb(7, 11, 20)')
+})

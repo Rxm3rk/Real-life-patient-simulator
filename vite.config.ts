@@ -6,10 +6,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 
 // `vite build --mode single` produces one self-contained HTML file (handy for
-// sharing the simulator as a single file or hosting it anywhere). The default
-// build is a normal multi-file PWA suitable for GitHub Pages / Netlify / Vercel.
+// sharing the simulator as a single file or hosting it anywhere). `--mode embed`
+// is the same file for hosts that run pages in a locked-down frame (see
+// src/lib/env.ts). The default build is a normal multi-file PWA suitable for
+// GitHub Pages / Netlify / Vercel.
 export default defineConfig(({ mode }) => {
-  const single = mode === 'single'
+  const single = mode === 'single' || mode === 'embed'
 
   const plugins: PluginOption[] = [react(), tailwindcss()]
 
@@ -66,7 +68,7 @@ export default defineConfig(({ mode }) => {
     // the single-file build inlines what it needs; don't copy public/ next to it
     publicDir: single ? false : 'public',
     build: {
-      outDir: single ? 'dist-single' : 'dist',
+      outDir: mode === 'embed' ? 'dist-embed' : single ? 'dist-single' : 'dist',
       chunkSizeWarningLimit: 1600,
     },
   }

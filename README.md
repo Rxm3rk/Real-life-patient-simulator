@@ -103,6 +103,7 @@ npm run dev        # http://localhost:5173
 | `npm run dev` | Development server with hot reload |
 | `npm run build` | Type-check and build the installable PWA into `dist/` |
 | `npm run build:single` | Build the single-file version into `dist-single/` |
+| `npm run build:embed` | Build the single file for sites that run pages inside a locked-down frame, into `dist-embed/`. Dictation is hidden and progress moves by copy and paste instead of a file download. Set `VITE_SHARE_URL` to the page's public address so share links point there. |
 | `npm run preview` | Serve the production build locally |
 | `npm run typecheck` | TypeScript project check |
 | `npm run lint` | oxlint |

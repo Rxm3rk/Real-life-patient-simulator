@@ -73,7 +73,7 @@ export function Toaster() {
             className="pointer-events-auto flex w-full max-w-sm cursor-pointer items-start gap-3 rounded-2xl px-4 py-3 shadow-(--shadow-float) ring-1 ring-line glass"
           >
             <span className={cn('mt-0.5 shrink-0', toneColor[t.tone])}>{icons[t.tone]}</span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-ink">{t.title}</div>
               {t.body && <div className="mt-0.5 text-[13px] leading-snug text-muted">{t.body}</div>}
             </div>

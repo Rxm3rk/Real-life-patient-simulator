@@ -4,14 +4,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { uiTick } from '../../audio/engine'
 import { Button } from '../../components/ui/Button'
 import { Badge, ProgressBar, ProgressRing } from '../../components/ui/primitives'
-import { toast } from '../../components/ui/Toast'
 import { CASES, loadCase } from '../../content/cases'
 import { DIAG_BY_ID } from '../../content/diagnoses'
 import { abdoFindings } from '../../engine/abdo'
 import { protocolFor } from '../../engine/protocols'
 import { computeResult, type Domain, type Grade } from '../../engine/scoring'
 import type { CaseDef } from '../../engine/types'
+import { caseLink } from '../../lib/deeplink'
 import { navigate } from '../../lib/router'
+import { shareLink } from '../../lib/share'
 import { cn, formatDuration } from '../../lib/utils'
 import { useEncounter } from '../../store/encounter'
 import { useOsce } from '../../store/osce'
@@ -72,19 +73,15 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
     start(c.id, s.mode, s.components, s.timeLimit)
     navigate('/sim')
   }
-  const share = async () => {
-    const text = `I scored ${Math.round(result.pct * 100)}% (${result.grade}) on “${c.presenting}” in Bedside — the surgical patient simulator.`
-    const url = `${location.origin}${location.pathname}#/case/${c.id}`
-    try {
-      if (navigator.share) await navigator.share({ title: 'Bedside', text, url })
-      else {
-        await navigator.clipboard.writeText(`${text} ${url}`)
-        toast({ tone: 'success', title: 'Copied to clipboard', body: 'Send it to a friend and challenge them.' })
-      }
-    } catch {
-      /* cancelled */
-    }
-  }
+  const share = () =>
+    shareLink({
+      title: 'Bedside',
+      text: `I scored ${Math.round(result.pct * 100)}% (${result.grade}) on “${c.presenting}” in Bedside — the surgical patient simulator.`,
+      url: caseLink(c.id),
+      copyText: true,
+      copied: 'Copied to clipboard',
+      copiedBody: 'Send it to a friend and challenge them.',
+    })
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-10 lg:py-8">

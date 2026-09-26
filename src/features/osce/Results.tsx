@@ -3,12 +3,13 @@ import { motion } from 'motion/react'
 import { Page, PageHeader } from '../../components/layout/AppShell'
 import { Button } from '../../components/ui/Button'
 import { Badge, ProgressBar, ProgressRing } from '../../components/ui/primitives'
-import { toast } from '../../components/ui/Toast'
 import { CASE_META } from '../../content/cases'
+import { challengeLink } from '../../lib/deeplink'
 import { Link, navigate } from '../../lib/router'
+import { shareLink } from '../../lib/share'
 import { useCaseDefs } from '../../lib/useCases'
 import { formatDuration } from '../../lib/utils'
-import { challengeLink, passed, useOsce } from '../../store/osce'
+import { passed, useOsce } from '../../store/osce'
 import { useProgress } from '../../store/progress'
 import { EXAM_LABEL } from '../ward/Ward'
 
@@ -26,22 +27,18 @@ export default function Results({ id }: { id: string }) {
   const need = Math.ceil(circuit.stations.length * 0.6)
   const overall = pass >= need && avg >= 0.6
 
-  const share = async () => {
-    const url = challengeLink(
-      circuit.stations.map((s) => s.caseId),
-      circuit.seconds,
-    )
-    const text = `I passed ${pass}/${circuit.stations.length} stations (${Math.round(avg * 100)}%) on a Bedside surgical OSCE circuit. Your turn:`
-    try {
-      if (navigator.share) await navigator.share({ title: 'Bedside OSCE challenge', text, url })
-      else {
-        await navigator.clipboard.writeText(`${text} ${url}`)
-        toast({ tone: 'success', title: 'Challenge copied', body: 'Send it to your friends — same stations, same marking.' })
-      }
-    } catch {
-      /* dismissed */
-    }
-  }
+  const share = () =>
+    shareLink({
+      title: 'Bedside OSCE challenge',
+      text: `I passed ${pass}/${circuit.stations.length} stations (${Math.round(avg * 100)}%) on a Bedside surgical OSCE circuit. Your turn:`,
+      url: challengeLink(
+        circuit.stations.map((s) => s.caseId),
+        circuit.seconds,
+      ),
+      copyText: true,
+      copied: 'Challenge copied',
+      copiedBody: 'Send it to your friends — same stations, same marking.',
+    })
 
   return (
     <Page>

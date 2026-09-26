@@ -1,4 +1,5 @@
 import { useSyncExternalStore, type AnchorHTMLAttributes, type MouseEvent } from 'react'
+import { resolveToken } from './deeplink'
 
 /**
  * A tiny hash router. Hash routing keeps deep links working on static hosts
@@ -8,7 +9,7 @@ import { useSyncExternalStore, type AnchorHTMLAttributes, type MouseEvent } from
 
 function readHash(): string {
   const raw = typeof window === 'undefined' ? '' : window.location.hash.replace(/^#/, '')
-  return raw || '/'
+  return resolveToken(raw) ?? (raw || '/')
 }
 
 function subscribe(onChange: () => void) {

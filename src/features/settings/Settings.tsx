@@ -1,10 +1,12 @@
-import { Download, Monitor, Moon, Sun, Upload, Volume2 } from 'lucide-react'
-import { useRef, type ReactNode } from 'react'
+import { ClipboardCopy, ClipboardPaste, Download, Monitor, Moon, Sun, Upload, Volume2 } from 'lucide-react'
+import { useRef, useState, type ReactNode } from 'react'
 import { playPercussion, speak, unlockAudio } from '../../audio/engine'
 import { Page, PageHeader } from '../../components/layout/AppShell'
 import { Button } from '../../components/ui/Button'
 import { Segmented, Switch } from '../../components/ui/primitives'
+import { Sheet } from '../../components/ui/Sheet'
 import { toast } from '../../components/ui/Toast'
+import { EMBEDDED } from '../../lib/env'
 import { useProgress } from '../../store/progress'
 import { useSettings, type ThemePref } from '../../store/settings'
 
@@ -13,9 +15,13 @@ export default function Settings() {
   const set = st.set
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const [pasteOpen, setPasteOpen] = useState(false)
+  const [pasted, setPasted] = useState('')
+
+  const payload = () => JSON.stringify({ app: 'bedside', version: 1, exportedAt: new Date().toISOString(), progress: useProgress.getState() })
+
   const exportData = () => {
-    const data = { app: 'bedside', version: 1, exportedAt: new Date().toISOString(), progress: useProgress.getState() }
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+    const blob = new Blob([payload()], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `bedside-progress-${new Date().toISOString().slice(0, 10)}.json`
@@ -23,19 +29,32 @@ export default function Settings() {
     URL.revokeObjectURL(a.href)
   }
 
-  const importData = async (f: File) => {
+  // Embedded copies can't download files, so progress travels through the clipboard instead
+  const copyData = async () => {
     try {
-      const json = JSON.parse(await f.text())
+      await navigator.clipboard.writeText(payload())
+      toast({ tone: 'success', title: 'Progress copied', body: 'On your other device, open Settings → Paste progress.' })
+    } catch {
+      toast({ tone: 'danger', title: 'Could not copy', body: 'This browser blocked the clipboard.' })
+    }
+  }
+
+  const importText = (text: string) => {
+    try {
+      const json = JSON.parse(text)
       if (json.app !== 'bedside' || !Array.isArray(json.progress?.attempts)) throw new Error('bad file')
       const cur = useProgress.getState()
       const ids = new Set(cur.attempts.map((a) => a.attemptId))
       const merged = [...cur.attempts, ...json.progress.attempts.filter((a: { attemptId: string }) => !ids.has(a.attemptId))].sort((a, b) => b.at - a.at)
       useProgress.setState({ attempts: merged.slice(0, 60), drills: { ...json.progress.drills, ...cur.drills } })
       toast({ tone: 'success', title: 'Progress imported', body: `${merged.length} attempts on this device.` })
+      return true
     } catch {
-      toast({ tone: 'danger', title: 'Could not import that file', body: 'Choose a file exported from Bedside.' })
+      toast({ tone: 'danger', title: 'Could not import that', body: 'Use progress exported or copied from Bedside.' })
+      return false
     }
   }
+  const importData = async (f: File) => importText(await f.text())
 
   return (
     <Page>
@@ -127,12 +146,27 @@ export default function Settings() {
         </Group>
 
         <Group title="Your data">
-          <Row label="Export progress" hint="Download your attempts to move them to another device.">
-            <Button size="sm" onClick={exportData} leading={<Download size={15} />}>
-              Export
-            </Button>
-          </Row>
-          <Row label="Import progress">
+          {EMBEDDED ? (
+            <>
+              <Row label="Copy progress" hint="Copies your attempts as text, to paste on another device.">
+                <Button size="sm" onClick={copyData} leading={<ClipboardCopy size={15} />}>
+                  Copy
+                </Button>
+              </Row>
+              <Row label="Paste progress">
+                <Button size="sm" onClick={() => setPasteOpen(true)} leading={<ClipboardPaste size={15} />}>
+                  Paste
+                </Button>
+              </Row>
+            </>
+          ) : (
+            <Row label="Export progress" hint="Download your attempts to move them to another device.">
+              <Button size="sm" onClick={exportData} leading={<Download size={15} />}>
+                Export
+              </Button>
+            </Row>
+          )}
+          <Row label={EMBEDDED ? 'Import a progress file' : 'Import progress'}>
             <>
               <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])} />
               <Button size="sm" onClick={() => fileRef.current?.click()} leading={<Upload size={15} />}>
@@ -153,6 +187,39 @@ export default function Settings() {
           </div>
         </Group>
       </div>
+      <Sheet
+        open={pasteOpen}
+        onClose={() => setPasteOpen(false)}
+        title="Paste progress"
+        description="Paste the text you copied from Bedside on your other device. Attempts are merged with the ones here."
+        size="sm"
+        footer={
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button onClick={() => setPasteOpen(false)}>Cancel</Button>
+            <Button
+              variant="primary"
+              disabled={!pasted.trim()}
+              onClick={() => {
+                if (importText(pasted)) {
+                  setPasted('')
+                  setPasteOpen(false)
+                }
+              }}
+            >
+              Import
+            </Button>
+          </div>
+        }
+      >
+        <textarea
+          id="paste-progress"
+          value={pasted}
+          onChange={(e) => setPasted(e.target.value)}
+          rows={6}
+          placeholder='{"app":"bedside", …}'
+          className="w-full resize-none rounded-xl bg-surface-2 p-3 font-mono text-[12px] text-ink ring-1 ring-line outline-none placeholder:text-faint focus:ring-accent"
+        />
+      </Sheet>
     </Page>
   )
 }

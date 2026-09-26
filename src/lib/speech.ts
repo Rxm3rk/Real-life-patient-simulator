@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { EMBEDDED } from './env'
 
 interface RecognitionLike {
   lang: string
@@ -13,7 +14,8 @@ interface RecognitionLike {
 }
 
 function getRecognition(): (new () => RecognitionLike) | null {
-  if (typeof window === 'undefined') return null
+  // embedded frames refuse the microphone outright, so don't offer it there
+  if (typeof window === 'undefined' || EMBEDDED) return null
   const w = window as unknown as { SpeechRecognition?: new () => RecognitionLike; webkitSpeechRecognition?: new () => RecognitionLike }
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
 }

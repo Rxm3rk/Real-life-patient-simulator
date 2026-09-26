@@ -38,33 +38,38 @@ export const useSettings = create<SettingsState>()(
   ),
 )
 
-function resolveDark(pref: ThemePref) {
-  if (pref === 'dark') return true
-  if (pref === 'light') return false
-  return typeof window === 'undefined' || !window.matchMedia
-    ? true
-    : window.matchMedia('(prefers-color-scheme: dark)').matches
+/** A theme the hosting page stamped on <html> before the app started (see index.html). */
+function hostTheme(): 'dark' | 'light' | null {
+  const t = typeof window === 'undefined' ? null : (window as { __bedsideHostTheme?: string | null }).__bedsideHostTheme
+  return t === 'dark' || t === 'light' ? t : null
 }
 
-/** Keeps <html data-theme> and the browser theme-color in sync with settings. */
+function resolveDark(pref: ThemePref) {
+  if (pref !== 'system') return pref === 'dark'
+  const host = document.documentElement.getAttribute('data-theme') ?? hostTheme()
+  if (host === 'dark' || host === 'light') return host === 'dark'
+  return !window.matchMedia || window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
+/**
+ * Keeps <html data-theme> and the browser theme-color in sync with settings.
+ * "System" leaves the attribute to the OS (via CSS) or to the page hosting the app.
+ */
 export function useApplyTheme() {
   const theme = useSettings((s) => s.theme)
   useEffect(() => {
-    const apply = () => {
-      const dark = resolveDark(theme)
-      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
-      const meta = document.querySelector('meta[name="theme-color"]')
-      meta?.setAttribute('content', dark ? '#070B14' : '#F4F6F9')
+    const root = document.documentElement
+    if (theme !== 'system') root.setAttribute('data-theme', theme)
+    else {
+      const host = hostTheme()
+      if (host) root.setAttribute('data-theme', host)
+      else root.removeAttribute('data-theme')
     }
-    apply()
+    const paint = () => document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolveDark(theme) ? '#070B14' : '#F4F6F9')
+    paint()
     if (theme !== 'system' || !window.matchMedia) return
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    mq.addEventListener('change', apply)
-    return () => mq.removeEventListener('change', apply)
+    mq.addEventListener('change', paint)
+    return () => mq.removeEventListener('change', paint)
   }, [theme])
-}
-
-export function useIsDark() {
-  const theme = useSettings((s) => s.theme)
-  return resolveDark(theme)
 }

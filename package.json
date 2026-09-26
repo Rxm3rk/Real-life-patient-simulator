@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:single": "tsc -b && vite build --mode single",
+    "build:embed": "tsc -b && vite build --mode embed",
     "typecheck": "tsc -b",
     "lint": "oxlint src",
     "test": "vitest run",

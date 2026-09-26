@@ -8,10 +8,12 @@ import { toast } from '../../components/ui/Toast'
 import { CASE_META, CASES } from '../../content/cases'
 import { STATIONS } from '../../engine/stations'
 import type { ExamKind, Specialty } from '../../engine/types'
+import { challengeLink } from '../../lib/deeplink'
 import { Link, navigate, useLocation } from '../../lib/router'
+import { shareLink } from '../../lib/share'
 import { useCaseDefs } from '../../lib/useCases'
 import { cn, shuffle, timeAgo } from '../../lib/utils'
-import { challengeLink, passed, useOsce } from '../../store/osce'
+import { passed, useOsce } from '../../store/osce'
 import { useSettings } from '../../store/settings'
 import { EXAM_LABEL } from '../ward/Ward'
 
@@ -48,7 +50,7 @@ export default function OsceHome() {
   const [type, setType] = useState<StationType>('exam')
   const [spec, setSpec] = useState<'All' | Specialty>('All')
 
-  // A friend's challenge link: #/osce?c=id1,id2&t=480
+  // A friend's challenge link (#osce~480~id1.id2, resolved by the router to /osce?c=id1,id2&t=480)
   const challenge = useMemo(() => {
     const ids = (query.get('c') ?? '').split(',').filter((id) => CASE_META[id])
     const t = Number(query.get('t')) || 480
@@ -306,20 +308,17 @@ export default function OsceHome() {
           </div>
         </div>
         <Button
-          onClick={async () => {
+          onClick={() => {
             const ids = shuffle(pool)
               .slice(0, Number(count))
               .map((m) => m.id)
-            const url = challengeLink(ids, Number(minutes) * 60)
-            try {
-              if (navigator.share) await navigator.share({ title: 'Bedside OSCE challenge', text: `Can you beat me on these ${ids.length} surgical OSCE stations?`, url })
-              else {
-                await navigator.clipboard.writeText(url)
-                toast({ tone: 'success', title: 'Challenge link copied', body: 'Paste it to a friend — then take the same circuit yourself.' })
-              }
-            } catch {
-              /* dismissed */
-            }
+            shareLink({
+              title: 'Bedside OSCE challenge',
+              text: `Can you beat me on these ${ids.length} surgical OSCE stations?`,
+              url: challengeLink(ids, Number(minutes) * 60),
+              copied: 'Challenge link copied',
+              copiedBody: 'Paste it to a friend — then take the same circuit yourself.',
+            })
           }}
           leading={<Link2 size={16} />}
         >

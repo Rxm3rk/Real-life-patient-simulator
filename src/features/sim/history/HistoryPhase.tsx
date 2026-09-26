@@ -5,8 +5,10 @@ import { speak } from '../../../audio/engine'
 import { Button } from '../../../components/ui/Button'
 import { Badge, ProgressBar } from '../../../components/ui/primitives'
 import { Sheet } from '../../../components/ui/Sheet'
+import { toast } from '../../../components/ui/Toast'
 import { CATEGORY_ORDER, INTENT_BY_ID, INTENTS } from '../../../content/intents'
 import { suggest } from '../../../engine/matcher'
+import { isClinic } from '../../../engine/setting'
 import type { CaseDef, ChatTurn } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
 import { useSpeechRecognition } from '../../../lib/speech'
@@ -14,7 +16,6 @@ import { cn } from '../../../lib/utils'
 import { useEncounter } from '../../../store/encounter'
 import { useSettings } from '../../../store/settings'
 import { FaceCam } from '../FaceCam'
-import { isClinic } from '../../../engine/setting'
 import { ClinicObs, monitorLabel, VitalsMonitor } from '../VitalsMonitor'
 
 const SOCRATES: [string, string][] = [
@@ -77,6 +78,11 @@ export default function HistoryPhase({ c, onNext }: { c: CaseDef; onNext?: () =>
   }
 
   const mic = useSpeechRecognition((t) => send(t))
+  useEffect(() => {
+    if (mic.error === 'not-allowed' || mic.error === 'service-not-allowed')
+      toast({ tone: 'warning', title: 'Microphone blocked', body: 'Allow microphone access for this site in your browser settings, or type your question.' })
+    else if (mic.error === 'network') toast({ tone: 'warning', title: 'Speech recognition is offline', body: 'It needs an internet connection. Type your question instead.' })
+  }, [mic.error])
   const live = useMemo(() => (input.trim().length > 2 ? suggest(input, 3) : []), [input])
 
   const visible = s.chat.slice(0, revealed)

@@ -88,7 +88,3 @@ export const useOsce = create<OsceStore>()(
 /** Stations passed = grade of Pass or better. */
 export const passed = (g?: Grade) => g === 'Pass' || g === 'Good pass' || g === 'Excellent'
 
-/** Shareable challenge link for a set of stations. */
-export function challengeLink(caseIds: string[], seconds: number): string {
-  return `${location.origin}${location.pathname}#/osce?c=${caseIds.join(',')}&t=${seconds}`
-}

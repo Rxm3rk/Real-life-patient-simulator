@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { Face } from '../../anatomy/Face'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/primitives'
-import { toast } from '../../components/ui/Toast'
 import { CASE_META, loadCase } from '../../content/cases'
 import { news2 } from '../../engine/news2'
 import type { CaseDef, Component, Mode } from '../../engine/types'
+import { caseLink } from '../../lib/deeplink'
 import { goBack, navigate } from '../../lib/router'
+import { shareLink } from '../../lib/share'
 import { cn } from '../../lib/utils'
 import { useEncounter } from '../../store/encounter'
 import { useSettings } from '../../store/settings'
@@ -67,19 +68,14 @@ export default function CaseBriefing({ id }: { id: string }) {
     }
   }, [id])
 
-  const share = async () => {
-    const url = `${location.origin}${location.pathname}#/case/${id}`
-    const text = `Try this surgical case on Bedside: ${meta?.presenting}`
-    try {
-      if (navigator.share) await navigator.share({ title: 'Bedside — surgical case', text, url })
-      else {
-        await navigator.clipboard.writeText(url)
-        toast({ tone: 'success', title: 'Link copied', body: 'Send it to a friend — it opens this patient directly.' })
-      }
-    } catch {
-      /* share sheet dismissed */
-    }
-  }
+  const share = () =>
+    shareLink({
+      title: 'Bedside — surgical case',
+      text: `Try this surgical case on Bedside: ${meta?.presenting}`,
+      url: caseLink(id),
+      copied: 'Link copied',
+      copiedBody: 'Send it to a friend — it opens this patient directly.',
+    })
 
   if (!meta) return <div className="p-10 text-muted">Case not found.</div>
 
