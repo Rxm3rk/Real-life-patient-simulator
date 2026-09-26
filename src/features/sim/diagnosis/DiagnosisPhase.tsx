@@ -60,6 +60,7 @@ My plan is: …`
           {s.differentials.length < 5 && <DiagnosisPicker onPick={(id) => toggleDiff(id)} exclude={[...s.differentials, s.diagnosis ?? '']} placeholder="Add a differential…" compact />}
         </section>
 
+        {c.management.essential.length > 0 && (
         <section>
           <SectionHead n={3} title="Management plan" subtitle="Select everything you would do. Some options are wrong for this patient." />
           <div className="space-y-2">
@@ -102,9 +103,10 @@ My plan is: …`
             })}
           </div>
         </section>
+        )}
 
         <section>
-          <SectionHead n={4} title="Present your patient" subtitle="As you would to your registrar or the examiner. You’ll compare it with a model presentation." />
+          <SectionHead n={c.management.essential.length > 0 ? 4 : 3} title="Present your patient" subtitle="As you would to your registrar or the examiner. You’ll compare it with a model presentation." />
           <div className="rounded-2xl bg-surface-1 ring-1 ring-line focus-within:ring-2 focus-within:ring-accent/50">
             <textarea
               value={s.presentation}

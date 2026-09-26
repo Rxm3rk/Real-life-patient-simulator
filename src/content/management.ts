@@ -37,6 +37,10 @@ export const MANAGEMENT: MgmtDef[] = [
   { id: 'smoking-cessation', label: 'Smoking cessation support', group: 'Medication' },
   { id: 'abx-epididymo', label: 'Antibiotics for epididymo-orchitis (e.g. ceftriaxone + doxycycline)', group: 'Medication' },
   { id: 'topical-gtn', label: 'Topical GTN/diltiazem, stool softeners, fibre', group: 'Medication' },
+  { id: 'iron', label: 'Iron replacement (oral or IV)', group: 'Medication' },
+  { id: 'vitamin-k', label: 'IV vitamin K (correct coagulopathy)', group: 'Medication' },
+  { id: 'diuretics', label: 'Spironolactone ± furosemide with dietary salt restriction', group: 'Medication' },
+  { id: 'transfusion', label: 'Red cell transfusion', group: 'Resuscitation & supportive' },
 
   // Escalation
   { id: 'senior', label: 'Inform the surgical registrar / consultant', group: 'Escalation & referral' },
@@ -81,6 +85,11 @@ export const MANAGEMENT: MgmtDef[] = [
   { id: 'endovenous', label: 'Endovenous (thermal) ablation', group: 'Procedures & operations' },
   { id: 'compression', label: 'Compression therapy (stockings / multilayer bandaging)', group: 'Procedures & operations' },
   { id: 'amputation', label: 'Amputation', group: 'Procedures & operations' },
+  { id: 'right-hemicolectomy', label: 'Right hemicolectomy (after staging and MDT)', group: 'Procedures & operations' },
+  { id: 'ascitic-tap', label: 'Diagnostic ascitic tap (cell count, albumin/SAAG, culture)', group: 'Procedures & operations' },
+  { id: 'varices-screen', label: 'OGD to screen for oesophageal varices', group: 'Procedures & operations' },
+  { id: 'hcc-surveillance', label: 'HCC surveillance: 6-monthly ultrasound ± AFP', group: 'Conservative & follow-up' },
+  { id: 'stoma-nurse', label: 'Stoma nurse specialist review and patient education', group: 'Conservative & follow-up' },
 
   // Conservative
   { id: 'drip-suck', label: 'Conservative “drip and suck” with regular review', group: 'Conservative & follow-up' },
