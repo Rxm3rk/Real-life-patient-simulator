@@ -90,3 +90,57 @@ describe('abdominal scoring', () => {
     expect(r.violations.map((v) => v.id)).toContain('order.lightDeep')
   })
 })
+
+describe('station scoring', () => {
+  it('scores a model groin examination as excellent with no sequence errors', async () => {
+    const hernia = (await import('../content/cases/inguinal-hernia')).default
+    const s = newEncounter(hernia.id, 'practice', ['exam'])
+    s.log = [
+      'comm.wash',
+      'comm.intro',
+      'comm.identity',
+      'comm.consent',
+      'comm.chaperone',
+      'comm.pain',
+      'comm.position',
+      'comm.expose',
+      'groin.stand',
+      'groin.inspect',
+      'groin.coughLook',
+      'groin.palpate',
+      'groin.tubercle',
+      'groin.coughFeel',
+      'groin.getAbove',
+      'groin.scrotum',
+      'groin.other',
+      'groin.lie',
+      'groin.reduce',
+      'groin.deepRing',
+      'groin.release',
+      'groin.auscultate',
+      'complete.abdomen',
+      'comm.thank',
+      'comm.wash',
+    ].map((action, i) => ({ action, t: i }))
+    const r = computeResult(hernia, s)
+    expect(r.violations).toHaveLength(0)
+    expect(r.criticalMissed).toHaveLength(0)
+    expect(r.grade).toBe('Excellent')
+  })
+
+  it('flags an intimate examination without a chaperone and a deep ring test before reduction', async () => {
+    const hernia = (await import('../content/cases/inguinal-hernia')).default
+    const s = newEncounter(hernia.id, 'practice', ['exam'])
+    s.log = ['comm.wash', 'comm.consent', 'groin.palpate', 'groin.deepRing'].map((action, i) => ({ action, t: i }))
+    const ids = computeResult(hernia, s).violations.map((v) => v.id)
+    expect(ids).toContain('order.chaperone')
+    expect(ids.some((id) => id.startsWith('order.groin.reduce'))).toBe(true)
+  })
+
+  it('requires the normal breast before the affected one', async () => {
+    const ca = (await import('../content/cases/breast-cancer')).default
+    const s = newEncounter(ca.id, 'practice', ['exam'])
+    s.log = ['comm.wash', 'comm.consent', 'comm.chaperone', 'br.palpAffected', 'br.palpNormal'].map((action, i) => ({ action, t: i }))
+    expect(computeResult(ca, s).violations.map((v) => v.id)).toContain('order.br.palpNormal>br.palpAffected')
+  })
+})

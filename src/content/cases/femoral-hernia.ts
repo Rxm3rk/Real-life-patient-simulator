@@ -1,0 +1,140 @@
+import type { CaseDef } from '../../engine/types'
+
+const c: CaseDef = {
+  id: 'femoral-hernia',
+  title: 'Right femoral hernia (irreducible, not obstructed)',
+  presenting: 'OSCE: examine this patient’s groin',
+  specialty: 'Hernia & abdominal wall',
+  exam: 'groin',
+  difficulty: 2,
+  setting: 'Outpatient clinic',
+  stem: 'OSCE station (8 minutes). Margaret Hill, 71, has noticed a small lump in her right groin. Please examine her groin and present your findings to the examiner, then answer some questions.',
+  components: ['exam', 'diagnosis', 'viva'],
+  tags: ['OSCE', 'hernia', 'femoral', 'strangulation risk'],
+  patient: {
+    name: 'Margaret Hill',
+    title: 'Mrs Hill',
+    age: 71,
+    sex: 'female',
+    dob: '19/01/1955',
+    occupation: 'a retired school secretary',
+    appearance: {
+      sex: 'female',
+      age: 71,
+      skinTone: 1,
+      habitus: 'thin',
+      hair: 'bob',
+      hairColor: 'grey',
+      eyeColor: 'blue',
+      glasses: true,
+      hernias: [{ kind: 'femoral', side: 'right', size: 'small', visible: 'always', irreducible: true }],
+    },
+    persona: { mood: 'calm', style: 'chatty' },
+  },
+  vitals: { hr: 76, rhythm: 'regular', sbp: 138, dbp: 82, rr: 14, spo2: 97, temp: 36.6, avpu: 'A', pain: 1 },
+  history: {
+    opening: 'I found a little lump at the top of my right leg a couple of months ago.',
+    answers: {},
+    key: [],
+  },
+  keyed: {
+    'comm.pain': { text: '', says: 'It’s a little tender if I press on it, but it doesn’t really hurt.' },
+    'groin.stand': { text: 'Mrs Hill stands facing you.' },
+    'groin.inspect': {
+      text: 'There is a small, firm-looking, rounded swelling about 2.5 cm across in the upper medial thigh on the right, just below the groin crease. The skin over it is normal. There are no scars. The left groin looks normal.',
+      abnormal: true,
+      meaning: 'A small swelling below the inguinal ligament in an older woman should make you think of a femoral hernia.',
+    },
+    'groin.coughLook': { text: 'Nothing visibly changes on coughing.', meaning: 'Femoral hernias often have no cough impulse — the narrow neck is plugged by the sac contents (usually omentum or pre-peritoneal fat).' },
+    'groin.palpate': {
+      text: 'A 2.5 cm, firm, rounded, slightly tender swelling of normal temperature. It is not fluctuant or pulsatile.',
+      abnormal: true,
+      reaction: 0.25,
+    },
+    'groin.tubercle': {
+      text: 'The swelling lies BELOW and LATERAL to the right pubic tubercle, below the line of the inguinal ligament.',
+      abnormal: true,
+      meaning: 'Below and lateral to the pubic tubercle = femoral canal. This single observation distinguishes a femoral from an inguinal hernia.',
+    },
+    'groin.coughFeel': { text: 'There is no palpable cough impulse.', abnormal: true, meaning: 'Absence of a cough impulse does not exclude a hernia — femoral hernias commonly lack one.' },
+    'groin.getAbove': { text: 'The swelling is in the upper thigh; the inguinal canal above it is empty.' },
+    'groin.other': { text: 'The left groin is normal.' },
+    'groin.lie': { text: 'The swelling does not change on lying down.', abnormal: true },
+    'groin.reduce': {
+      text: 'The swelling cannot be reduced, even gently. It is only mildly tender and not tense.',
+      abnormal: true,
+      reaction: 0.3,
+      meaning: 'Irreducible (incarcerated) but not strangulated: no severe pain, redness, tenseness or obstructive symptoms. Still needs urgent surgery.',
+    },
+    'groin.deepRing': { text: 'Pressure over the deep ring makes no difference — the swelling is below the inguinal ligament.', meaning: 'The deep ring test is irrelevant to a femoral hernia.' },
+    'groin.release': { text: 'No change.' },
+    'groin.auscultate': { text: 'No bowel sounds over the swelling.' },
+    'complete.abdomen': { text: 'Abdomen soft, non-tender and not distended; bowel sounds normal. No signs of obstruction.' },
+    'complete.dre': { text: 'Not indicated.' },
+  },
+  criticalSteps: ['st.tubercle', 'prep.chaperone'],
+  investigations: {},
+  investigationRubric: { essential: [] },
+  diagnosis: {
+    correct: 'femoral-hernia',
+    differentials: ['inguinal-lymph', 'saphena-varix', 'femoral-aneurysm', 'indirect-ih', 'lipoma'],
+  },
+  management: {
+    essential: [
+      { id: 'hernia-elective', why: 'Femoral hernias should be repaired promptly (urgent listing, within weeks) because of their high risk of strangulation — not watchful waiting.' },
+      { id: 'reassure', why: 'Safety-net clearly: a painful, tense lump with vomiting or bloating needs emergency assessment.' },
+    ],
+    avoid: [{ id: 'watchful-waiting', why: '!Watchful waiting is not appropriate for femoral hernias — up to ~40% present as emergencies with strangulation.' }],
+  },
+  viva: [
+    {
+      id: 'canal',
+      q: 'What are the boundaries of the femoral canal (ring)?',
+      options: [
+        'Anterior: inguinal ligament; posterior: pectineal ligament; medial: lacunar ligament; lateral: femoral vein',
+        'Anterior: external oblique; posterior: transversalis fascia; medial: rectus; lateral: inferior epigastric vessels',
+        'Anterior: sartorius; posterior: adductor longus; medial: inguinal ligament; lateral: femoral artery',
+        'Anterior: fascia lata; posterior: iliopsoas; medial: femoral nerve; lateral: femoral artery',
+      ],
+      correct: 0,
+      answer: 'The femoral ring is bounded anteriorly by the inguinal ligament, posteriorly by the pectineal (Cooper’s) ligament, medially by the lacunar ligament and laterally by the femoral vein. It contains lymphatics and Cloquet’s node. Its rigid, narrow boundaries explain the high strangulation risk.',
+      topic: 'Anatomy',
+    },
+    {
+      id: 'why-urgent',
+      q: 'Why is a femoral hernia repaired urgently, while a small inguinal hernia may be watched?',
+      answer: 'The femoral ring is narrow and unyielding, so the risk of incarceration and strangulation is high (about 20% at 3 months and up to 45% at 2 years after diagnosis). Many present as emergencies (e.g. unexplained small-bowel obstruction in an elderly woman — always examine the groins). Richter’s hernia (only part of the bowel wall trapped) can strangulate without obstruction.',
+      topic: 'Management',
+    },
+    {
+      id: 'ddx',
+      q: 'Give four differential diagnoses of a lump below the inguinal ligament.',
+      answer: 'Femoral hernia; enlarged inguinal lymph node (look at the leg, perineum and anus for a source); saphena varix (soft, disappears lying, cough thrill, blue tinge, varicose veins); femoral artery aneurysm (expansile pulsation); also psoas abscess, lipoma, ectopic testis, hydrocele of the canal of Nuck.',
+      topic: 'Differentials',
+    },
+    {
+      id: 'sex',
+      q: 'Which groin hernia is most common in women?',
+      options: ['Femoral', 'Inguinal', 'Obturator', 'Spigelian'],
+      correct: 1,
+      answer: 'Inguinal hernias are still the most common groin hernia in women — but femoral hernias are relatively much more common in women than men (female:male ≈ 4:1). Because of occult femoral hernias, groin hernias in women are often repaired laparoscopically so the femoral canal can be inspected.',
+      topic: 'Epidemiology',
+    },
+  ],
+  teaching: {
+    summary:
+      'An elderly woman with a small, firm, irreducible swelling below and lateral to the pubic tubercle without a cough impulse — a femoral hernia. It carries a high risk of strangulation, so it needs prompt surgical repair.',
+    keyFindings: ['Small firm swelling in the upper medial thigh', 'Below and lateral to the pubic tubercle', 'No cough impulse; irreducible', 'Not tense, red or very tender — no strangulation yet'],
+    pearls: [
+      'Find the pubic tubercle first — it is the landmark that separates inguinal from femoral hernias.',
+      'Absent cough impulse does not exclude a femoral hernia.',
+      'Any elderly woman with small-bowel obstruction needs her groins examined — a small femoral hernia is easily missed.',
+      'Offer a chaperone for every groin examination.',
+    ],
+    presentation:
+      'I examined Mrs Margaret Hill, a 71-year-old woman, with a chaperone present. She looked well. Standing, there was a 2.5 cm firm, rounded, slightly tender swelling in the right upper medial thigh lying below and lateral to the pubic tubercle. There was no cough impulse, it did not change on lying down and it was irreducible; it was not tense, erythematous or hot. The left groin was normal and the abdomen was soft and not distended. These findings are consistent with an irreducible right femoral hernia without signs of strangulation or obstruction. Given the high risk of strangulation, I would refer her for urgent surgical repair and safety-net her for emergency symptoms.',
+    references: ['Macleod’s Clinical Examination, 14th ed. — Ch. 6: examination of the groin', 'HerniaSurge Group. International guidelines for groin hernia management. Hernia 2018'],
+  },
+}
+
+export default c

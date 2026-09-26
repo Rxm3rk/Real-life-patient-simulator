@@ -129,7 +129,7 @@ export function playPercussion(note: PercNote) {
 
 export type Listen = 'bowel:normal' | 'bowel:hyperactive' | 'bowel:tinkling' | 'bowel:reduced' | 'bowel:absent' | 'bruit' | 'quiet'
 
-interface LoopHandle {
+export interface LoopHandle {
   stop: () => void
 }
 
@@ -267,6 +267,135 @@ export function startListening(kind: Listen, hr = 80): LoopHandle {
           /* already stopped */
         }
       }, 300)
+    },
+  }
+}
+
+/* ------------------------------ Handheld Doppler ------------------------------ */
+
+export type DopplerKind = 'triphasic' | 'biphasic' | 'monophasic' | 'absent' | 'venous'
+
+/** Normalised forward (+) / reverse (−) velocity over one cardiac cycle, t in seconds. */
+export function dopplerVelocity(kind: DopplerKind, t: number): number {
+  const bump = (x: number, c: number, w: number) => Math.exp(-((x - c) ** 2) / (2 * w * w))
+  switch (kind) {
+    case 'triphasic':
+      return bump(t, 0.07, 0.028) - 0.38 * bump(t, 0.2, 0.03) + 0.2 * bump(t, 0.32, 0.035)
+    case 'biphasic':
+      return 0.9 * bump(t, 0.08, 0.034) - 0.3 * bump(t, 0.22, 0.035)
+    case 'monophasic':
+      return 0.5 * bump(t, 0.16, 0.09) + 0.08
+    case 'venous':
+      return 0.12 + 0.05 * Math.sin(t * 1.3)
+    case 'absent':
+    default:
+      return 0
+  }
+}
+
+export interface DopplerHandle extends LoopHandle {
+  /** Calf squeeze: augmentation, then reflux on release if the valve is incompetent */
+  squeeze: (reflux: boolean) => void
+}
+
+/** Continuous handheld-Doppler audio: pitched “whoosh” following the velocity curve. */
+export function startDoppler(kind: DopplerKind, hr = 72): DopplerHandle {
+  const c = ac()
+  const none = { stop: () => {}, squeeze: () => {} }
+  if (!c || !master || !enabled()) return none
+  const out = c.createGain()
+  out.gain.value = 0.9
+  out.connect(master)
+
+  // probe hiss
+  const hiss = c.createBufferSource()
+  hiss.buffer = noise(c)
+  hiss.loop = true
+  const hp = c.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = 2400
+  const hg = c.createGain()
+  hg.gain.value = 0.012
+  hiss.connect(hp).connect(hg).connect(out)
+  hiss.start()
+
+  let alive = true
+  const timers: number[] = []
+  const schedule = (fn: () => void, ms: number) => {
+    const id = window.setTimeout(() => alive && fn(), ms)
+    timers.push(id)
+  }
+
+  /** One flow segment: band-passed noise + a faint tone whose pitch follows |v|. */
+  const flow = (start: number, dur: number, vAt: (u: number) => number, loud: number) => {
+    const t0 = c.currentTime + 0.03 + start
+    const src = c.createBufferSource()
+    src.buffer = noise(c)
+    const bp = c.createBiquadFilter()
+    bp.type = 'bandpass'
+    bp.Q.value = 3.5
+    const g = c.createGain()
+    const o = c.createOscillator()
+    o.type = 'sine'
+    const og = c.createGain()
+    const steps = 24
+    g.gain.setValueAtTime(0.0001, t0)
+    og.gain.setValueAtTime(0.0001, t0)
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps
+      const v = Math.abs(vAt(u))
+      const tt = t0 + u * dur
+      const f = 220 + v * 1500
+      bp.frequency.setValueAtTime(f, tt)
+      o.frequency.setValueAtTime(f * 0.98, tt)
+      g.gain.linearRampToValueAtTime(Math.max(0.0001, v * loud), tt)
+      og.gain.linearRampToValueAtTime(Math.max(0.0001, v * loud * 0.08), tt)
+    }
+    g.gain.linearRampToValueAtTime(0.0001, t0 + dur + 0.04)
+    og.gain.linearRampToValueAtTime(0.0001, t0 + dur + 0.04)
+    src.connect(bp).connect(g).connect(out)
+    o.connect(og).connect(out)
+    src.start(t0, Math.random())
+    src.stop(t0 + dur + 0.1)
+    o.start(t0)
+    o.stop(t0 + dur + 0.1)
+  }
+
+  const beatMs = 60000 / Math.max(40, hr)
+  if (kind === 'venous') {
+    const breathe = () => {
+      flow(0, 2.2, (u) => 0.1 + 0.08 * Math.sin(u * Math.PI), 1.3)
+      schedule(breathe, 2300)
+    }
+    breathe()
+  } else if (kind !== 'absent') {
+    const cycle = 0.45
+    const beat = () => {
+      flow(0, cycle, (u) => dopplerVelocity(kind, u * cycle), kind === 'monophasic' ? 0.9 : 1.1)
+      schedule(beat, beatMs)
+    }
+    beat()
+  }
+
+  return {
+    stop: () => {
+      alive = false
+      timers.forEach((id) => window.clearTimeout(id))
+      out.gain.setTargetAtTime(0.0001, c.currentTime, 0.05)
+      window.setTimeout(() => {
+        try {
+          hiss.stop()
+          out.disconnect()
+        } catch {
+          /* already stopped */
+        }
+      }, 300)
+    },
+    squeeze: (reflux: boolean) => {
+      // augmentation on compression…
+      flow(0, 0.5, (u) => Math.sin(u * Math.PI) * 0.9, 1.4)
+      // …and a prolonged backward whoosh on release when the valve is incompetent
+      if (reflux) flow(0.75, 1.4, (u) => Math.sin(Math.min(1, u * 1.3) * Math.PI) * 0.6, 1.2)
     },
   }
 }

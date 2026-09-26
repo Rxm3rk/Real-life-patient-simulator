@@ -4,6 +4,7 @@ import { INTENT_BY_ID } from '../intents'
 import { INV_BY_ID } from '../investigations'
 import { MGMT_BY_ID } from '../management'
 import { protocolFor } from '../../engine/protocols'
+import { stationActions, stationFor } from '../../engine/stations'
 import { CASES } from './index'
 
 describe('case library integrity', () => {
@@ -25,5 +26,12 @@ describe('case library integrity', () => {
     for (const k of c.criticalSteps ?? []) expect(steps.has(k), `critical step ${k}`).toBe(true)
     for (const q of c.viva) if (q.options) expect(q.correct).toBeLessThan(q.options.length)
     expect(c.teaching.presentation.length).toBeGreaterThan(200)
+    // station findings must be keyed to real actions of that station
+    const station = stationFor(c.exam)
+    if (station) {
+      const acts = stationActions(station)
+      for (const k of Object.keys(c.keyed ?? {})) expect(acts[k], `keyed action ${k}`).toBeDefined()
+      for (const [k, f] of Object.entries(c.keyed ?? {})) if (!k.startsWith('comm.')) expect(f.text.length, `finding text ${k}`).toBeGreaterThan(3)
+    }
   })
 })

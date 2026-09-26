@@ -268,6 +268,125 @@ export interface KeyedFinding {
   abnormal?: boolean
   /** Optional sound or visual to present with it */
   media?: string
+  /** Patient reaction 0..1 (wince) */
+  reaction?: number
+  /** What the patient says */
+  says?: string
+}
+
+/* ------------------------------------------------------------------ */
+/* Visual specifications for the non-abdominal stations                 */
+/* ------------------------------------------------------------------ */
+
+export type PulseGrade = 'normal' | 'weak' | 'absent' | 'prominent'
+
+export interface LegPulses {
+  femoral: PulseGrade
+  popliteal: PulseGrade
+  pt: PulseGrade
+  dp: PulseGrade
+}
+
+export interface LegSide {
+  /** 0..1 */
+  pallor?: number
+  /** Dusky dependent rubor 0..1 */
+  rubor?: number
+  hairLoss?: boolean
+  shiny?: boolean
+  wasting?: boolean
+  cold?: boolean
+  ulcer?: { kind: 'arterial' | 'venous' | 'neuropathic'; site: 'lateral-malleolus' | 'medial-malleolus' | 'heel' | 'hallux' | 'toe-tips' | 'dorsum' | 'gaiter'; sizeCm: number }
+  /** Toes with dry gangrene (1 = hallux … 5 = little toe) */
+  gangrene?: number[]
+  varicose?: { system: 'gsv' | 'ssv' | 'both'; severity: 1 | 2 | 3 }
+  haemosiderin?: boolean
+  lipodermatosclerosis?: boolean
+  atrophieBlanche?: boolean
+  eczema?: boolean
+  oedema?: 0 | 1 | 2
+  /** Angle (°) at which the foot blanches on elevation (Buerger’s angle) */
+  buergerAngle?: number
+  saphenaVarix?: boolean
+  /** Tourniquet (Trendelenburg) test: does a high thigh tourniquet control the varicosities? */
+  tourniquet?: 'controlled' | 'not-controlled'
+  scar?: 'bypass' | 'vein-harvest' | 'stripping'
+  pulses?: Partial<LegPulses>
+}
+
+export interface LegsVisual {
+  right: LegSide
+  left: LegSide
+}
+
+export interface LumpVisual {
+  site: 'forearm' | 'upper-back' | 'shoulder' | 'chest-wall' | 'thigh'
+  side: 'left' | 'right'
+  /** Dimensions in cm */
+  w: number
+  h: number
+  kind: 'lipoma' | 'epidermoid' | 'ganglion' | 'abscess' | 'node' | 'sarcoma'
+  punctum?: boolean
+  /** 0..1 */
+  erythema?: number
+  lobulated?: boolean
+  transilluminates?: boolean
+  /** Tethered to the skin (dimples when the skin is moved) */
+  tethered?: boolean
+  /** Height of the dome 0..1 */
+  domed?: number
+}
+
+export interface NeckVisual {
+  goitre?: { kind: 'diffuse' | 'multinodular' | 'nodule'; side?: 'left' | 'right'; size: 1 | 2 | 3 }
+  thyroglossal?: { sizeCm: number }
+  /** Exophthalmos 0..1 */
+  proptosis?: number
+  lidRetraction?: boolean
+  lidLag?: boolean
+  /** Fine tremor 0..1 */
+  tremor?: number
+  sweaty?: boolean
+  onycholysis?: boolean
+  acropachy?: boolean
+  palmarErythema?: boolean
+  pretibialMyxoedema?: boolean
+  nodes?: 'left' | 'right' | 'both'
+  scar?: boolean
+}
+
+export interface BreastVisual {
+  lump?: {
+    side: 'left' | 'right'
+    /** Clock-face position as seen facing the patient */
+    clock: number
+    distCm: number
+    sizeCm: number
+    /** Lump visibly distorts the contour */
+    visible?: boolean
+    /** Skin dimpling over it (accentuated with pectorals tensed / arms raised) */
+    tethered?: boolean
+  }
+  skin?: 'normal' | 'peau' | 'erythema' | 'ulcer'
+  nipple?: { side: 'left' | 'right'; change: 'inverted' | 'retracted' | 'paget' | 'discharge' }
+  nodes?: 'left' | 'right'
+}
+
+export interface ScrotalVisual {
+  side: 'left' | 'right'
+  kind: 'hydrocele' | 'epididymal-cyst' | 'varicocele' | 'tumour' | 'torsion' | 'epididymitis' | 'inguinoscrotal-hernia'
+  size: 1 | 2 | 3
+  /** 0..1 */
+  erythema?: number
+  highRiding?: boolean
+}
+
+export interface StationVisual {
+  legs?: LegsVisual
+  lump?: LumpVisual
+  neck?: NeckVisual
+  breast?: BreastVisual
+  scrotum?: ScrotalVisual
 }
 
 /* ------------------------------------------------------------------ */
@@ -333,6 +452,8 @@ export interface CaseDef {
   abdo?: DeepPartial<AbdoFindings>
   /** For keyed stations: action id → finding */
   keyed?: Record<string, KeyedFinding>
+  /** What the station stage should draw */
+  visual?: StationVisual
   /** Protocol steps that are critical for this case (must be done) */
   criticalSteps?: string[]
   investigations: Record<string, InvestigationResult>

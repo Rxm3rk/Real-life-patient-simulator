@@ -8,6 +8,13 @@ import { skinPalette, type SkinPalette } from './palette'
 import { Scars } from './Scars'
 import type { Appearance, HerniaBulge, PatientPose } from './types'
 
+/**
+ * rest: lying quietly · cough: momentary impulse · standing: upright ·
+ * reduced: hernia pushed back · ring-cough: coughing with the deep ring occluded
+ */
+export type HerniaPhase = 'rest' | 'cough' | 'standing' | 'reduced' | 'ring-cough'
+export type ArmPose = 'sides' | 'hips' | 'up'
+
 export interface BodyProps {
   a: Appearance
   pose: PatientPose
@@ -15,18 +22,24 @@ export interface BodyProps {
   /** Seed for small random details (spider naevi, veins) */
   seed?: string
   /** Show a hernia that only appears on coughing / standing */
-  herniaPhase?: 'rest' | 'cough' | 'standing'
+  herniaPhase?: HerniaPhase
   /** Heart rate for visible pulsation */
   hr?: number
   /** Respiratory rate — animates the chest and abdomen */
   rr?: number
+  /** Upright patient (no blanket) */
+  standing?: boolean
+  /** Outpatient clinic: no wristband, probe or monitoring lines */
+  clinic?: boolean
+  /** Arm position (breast inspection) */
+  armPose?: ArmPose
 }
 
 const GOWN = '#a8c9da'
 const GOWN_DARK = '#86aec3'
 const BLANKET = '#dfe6ea'
 
-export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 'rest', hr = 80, rr }: BodyProps) {
+export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 'rest', hr = 80, rr, standing, clinic, armPose = 'sides' }: BodyProps) {
   const d = useMemo(() => bodyDims(a), [a])
   const lm = useMemo(() => landmarks(a, d), [a, d])
   const pal = skinPalette(a)
@@ -34,7 +47,8 @@ export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 
   const g = (n: string) => `${id}-${n}`
 
   const torso = useMemo(() => symmetricOutline(torsoContour(d, a.sex)), [d, a.sex])
-  const arm = useMemo(() => armOutline(d), [d])
+  const arm = useMemo(() => (armPose === 'hips' ? armOutline(d, 36, -58) : armPose === 'up' ? armOutline(d, 163, 177) : armOutline(d)), [d, armPose])
+  const handsInFront = armPose === 'hips'
   const armPath = useMemo(() => smoothPath([...arm.outer, ...arm.inner.slice().reverse()], true, 0.9), [arm])
   const leg = useMemo(() => smoothPath(legOutline(d, a.sex), true, 0.9), [d, a.sex])
 
@@ -44,7 +58,17 @@ export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 
   const bellyScale = 1 + breath * 0.018
 
   const showChest = exposure === 'torso' || (exposure === 'abdomen' && !female) || (!female && exposure === 'groin')
-  const blanketTop = exposure === 'gowned' ? 326 : exposure === 'abdomen' ? 446 : exposure === 'groin' || exposure === 'standing-groin' ? 488 : exposure === 'torso' ? 334 : 900
+  const blanketTop = standing
+    ? 900
+    : exposure === 'gowned'
+      ? 326
+      : exposure === 'abdomen'
+        ? 446
+        : exposure === 'groin' || exposure === 'standing-groin'
+          ? 488
+          : exposure === 'torso'
+            ? 334
+            : 900
   const gownBottom = exposure === 'gowned' ? 470 : exposure === 'legs' ? 452 : exposure === 'torso' ? 0 : female ? 250 : 0
 
   return (
@@ -141,7 +165,7 @@ export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 
             filter={`url(#${g('blur4')})`}
             transform="translate(-6 0)"
           />
-          <Hand pal={pal} wrist={arm.wrist} dir={arm.wristDir} scale={d.armScale} id={`${id}-h${s}`} />
+          {!handsInFront && <Hand pal={pal} wrist={arm.wrist} dir={arm.wristDir} scale={d.armScale} id={`${id}-h${s}`} />}
         </g>
       ))}
 
@@ -168,7 +192,15 @@ export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 
       </g>
 
       {/* Female breasts (visible only when the torso is exposed) */}
-      {female && showChest && <Breasts pal={pal} lm={lm} d={d} g={g} />}
+      {female && showChest && <Breasts pal={pal} lm={lm} d={d} g={g} lift={armPose === 'up' ? 6 : armPose === 'hips' ? 1.5 : 0} />}
+
+      {/* Hands resting on the hips sit in front of the torso */}
+      {handsInFront &&
+        [1, -1].map((s) => (
+          <g key={s} transform={`scale(${s} 1)`}>
+            <Hand pal={pal} wrist={arm.wrist} dir={arm.wristDir} scale={d.armScale * 0.82} id={`${id}-hf${s}`} />
+          </g>
+        ))}
       {!female && a.gynaecomastia && showChest && <Gynaecomastia pal={pal} lm={lm} g={g} />}
 
       {/* Underwear */}
@@ -183,7 +215,7 @@ export const Body = memo(function Body({ a, pose, id, seed = 'p', herniaPhase = 
       </g>
 
       {/* Wristband & SpO2 probe */}
-      <Devices a={a} arm={arm} pal={pal} />
+      {!clinic && armPose === 'sides' && <Devices a={a} arm={arm} pal={pal} />}
 
       {/* Blanket */}
       {blanketTop < 900 && <Blanket top={blanketTop} d={d} g={g} />}
@@ -235,8 +267,8 @@ function TorsoDetail({
       {/* clavicles */}
       {[1, -1].map((s) => (
         <g key={s} transform={`scale(${s} 1)`}>
-          <path d="M8 142 C28 146 50 141 84 146" stroke={pal.highlight} strokeWidth="3" fill="none" opacity={thin ? 0.7 : 0.45} strokeLinecap="round" filter={`url(#${g('blur2')})`} />
-          <path d="M9 146.5 C30 151 52 146 83 151" stroke={pal.deep} strokeWidth="2.4" fill="none" opacity={thin ? 0.45 : 0.22} strokeLinecap="round" filter={`url(#${g('blur2')})`} />
+          <path d="M9 143 C22 147 34 142 50 143 C62 144 72 146 80 148" stroke={pal.highlight} strokeWidth="2.6" fill="none" opacity={thin ? 0.6 : 0.34} strokeLinecap="round" filter={`url(#${g('blur2')})`} />
+          <path d="M10 147.5 C24 152 36 147 51 148 C63 149 72 151 79 153" stroke={pal.deep} strokeWidth="2" fill="none" opacity={thin ? 0.4 : 0.16} strokeLinecap="round" filter={`url(#${g('blur2')})`} />
         </g>
       ))}
       {/* chest */}
@@ -467,20 +499,63 @@ function Hand({ pal, wrist, dir, scale, id }: { pal: SkinPalette; wrist: Pt; dir
   )
 }
 
-function Breasts({ pal, lm, d, g }: { pal: SkinPalette; lm: Landmarks; d: BodyDims; g: (n: string) => string }) {
+function Breasts({ pal, lm, d, g, lift = 0 }: { pal: SkinPalette; lm: Landmarks; d: BodyDims; g: (n: string) => string; lift?: number }) {
   const r = 30 * (d.chestW / 65)
+  // with the arms raised the breasts lift and round out; hanging, the lower pole is fuller
+  const ptosis = Math.max(0, 1 - lift / 6)
   return (
     <g>
-      {[lm.nippleR, lm.nippleL].map(([x, y], i) => {
+      <defs>
+        <radialGradient id={g('breast')} cx="0.46" cy="0.34" r="0.72">
+          <stop offset="0" stopColor={mix(pal.base, pal.highlight, 0.55)} />
+          <stop offset="0.55" stopColor={pal.base} />
+          <stop offset="0.9" stopColor={mix(pal.base, pal.shadow, 0.55)} />
+          <stop offset="1" stopColor={pal.shadow} />
+        </radialGradient>
+        <radialGradient id={g('areola')} cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor={darken(pal.nipple, 0.08)} />
+          <stop offset="0.72" stopColor={pal.nipple} stopOpacity="0.9" />
+          <stop offset="1" stopColor={pal.nipple} stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={g('bfade')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#000" />
+          <stop offset="0.42" stopColor="#fff" />
+        </linearGradient>
+      </defs>
+      {[lm.nippleR, lm.nippleL].map(([x, y0], i) => {
+        const y = y0 - lift
         const s = x < 0 ? -1 : 1
         const cx = x + s * 3
+        const P = (u: number, v: number): Pt => [cx + s * u * r, y + v * r]
+        const outline: Pt[] = [
+          P(-0.05, -0.95),
+          P(0.62, -0.72),
+          P(1.02, -0.2),
+          P(1.02, 0.22 + ptosis * 0.08),
+          P(0.72, 0.72 + ptosis * 0.1),
+          P(0.08, 0.95 + ptosis * 0.1),
+          P(-0.62, 0.78 + ptosis * 0.08),
+          P(-0.95, 0.24),
+          P(-0.86, -0.42),
+        ]
+        const shape = smoothPath(outline, true, 1)
+        const fold = smoothPath([P(-0.9, 0.32), P(-0.6, 0.82 + ptosis * 0.08), P(0.08, 1.0 + ptosis * 0.1), P(0.74, 0.76 + ptosis * 0.1), P(1.02, 0.26)])
+        const maskId = g(`bm${i}`)
         return (
           <g key={i}>
-            <ellipse cx={cx + s * 4} cy={y + 12} rx={r + 2} ry={r * 0.72} fill={pal.deep} opacity="0.35" filter={`url(#${g('blur4')})`} />
-            <ellipse cx={cx} cy={y} rx={r} ry={r * 0.86} fill={`url(#${g('limb')})`} />
-            <ellipse cx={cx - s * 6} cy={y - 8} rx={r * 0.6} ry={r * 0.45} fill={pal.highlight} opacity="0.3" filter={`url(#${g('blur4')})`} />
-            <circle cx={x} cy={y} r={7.2} fill={pal.nipple} opacity="0.85" />
-            <circle cx={x} cy={y} r={2.4} fill={darken(pal.nipple, 0.2)} />
+            <mask id={maskId} maskUnits="userSpaceOnUse" x={cx - r * 1.4} y={y - r * 1.2} width={r * 2.8} height={r * 2.6}>
+              <rect x={cx - r * 1.4} y={y - r * 1.2} width={r * 2.8} height={r * 2.6} fill={`url(#${g('bfade')})`} />
+            </mask>
+            {/* shadow cast onto the chest wall below the breast (inframammary fold) */}
+            <path d={fold} stroke={pal.deep} strokeWidth="6" fill="none" opacity="0.4" filter={`url(#${g('blur4')})`} transform="translate(0 3)" />
+            <g mask={`url(#${maskId})`}>
+              <path d={shape} fill={`url(#${g('breast')})`} />
+            </g>
+            <path d={fold} stroke={darken(pal.shadow, 0.15)} strokeWidth="1.4" fill="none" opacity="0.45" filter={`url(#${g('blur2')})`} />
+            {/* areola and nipple */}
+            <circle cx={x} cy={y} r={r * 0.25} fill={`url(#${g('areola')})`} />
+            <circle cx={x} cy={y} r={r * 0.085} fill={darken(pal.nipple, 0.18)} />
+            <circle cx={x - s * r * 0.03} cy={y - r * 0.035} r={r * 0.03} fill="#fff" opacity="0.35" />
           </g>
         )
       })}
@@ -867,7 +942,7 @@ function StomaView({ stoma, lm }: { stoma: NonNullable<Appearance['stoma']>; lm:
   )
 }
 
-function herniaPosition(h: HerniaBulge, lm: Landmarks): { at: Pt; rx: number; ry: number; rot: number } {
+export function herniaPosition(h: HerniaBulge, lm: Landmarks): { at: Pt; rx: number; ry: number; rot: number } {
   const size = h.size === 'large' ? 1.6 : h.size === 'medium' ? 1.15 : 0.8
   const right = h.side !== 'left'
   switch (h.kind) {
@@ -905,16 +980,22 @@ function HerniaView({
   h: HerniaBulge
   lm: Landmarks
   pal: SkinPalette
-  phase: 'rest' | 'cough' | 'standing'
+  phase: HerniaPhase
   g: (n: string) => string
 }) {
+  const groin = h.kind === 'inguinal-indirect' || h.kind === 'inguinal-direct' || h.kind === 'femoral'
+  // With the deep ring occluded an indirect hernia is controlled; direct and femoral hernias still bulge
+  const ringControlled = phase === 'ring-cough' && h.kind === 'inguinal-indirect'
   const shown =
-    h.visible === 'always' ||
-    (h.visible === 'cough' && (phase === 'cough' || phase === 'standing')) ||
-    (h.visible === 'standing' && phase === 'standing')
+    !(phase === 'reduced' && groin) &&
+    !ringControlled &&
+    (h.visible === 'always' ||
+      phase === 'ring-cough' ||
+      (h.visible === 'cough' && (phase === 'cough' || phase === 'standing')) ||
+      (h.visible === 'standing' && (phase === 'standing' || phase === 'cough')))
   if (!shown || h.visible === 'never') return null
   const { at, rx, ry, rot } = herniaPosition(h, lm)
-  const grow = phase === 'cough' ? 1.18 : 1
+  const grow = phase === 'cough' || phase === 'ring-cough' ? 1.18 : 1
   return (
     <g transform={`translate(${at[0]} ${at[1]}) rotate(${rot}) scale(${grow})`}>
       <ellipse cx="2" cy={ry * 0.5} rx={rx * 1.05} ry={ry * 0.9} fill={pal.deep} opacity="0.35" filter={`url(#${g('blur4')})`} />

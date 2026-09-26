@@ -14,6 +14,7 @@ import { ensureCaseLoaded, useEncounter } from '../../store/encounter'
 
 const HistoryPhase = lazy(() => import('./history/HistoryPhase'))
 const ExamPhase = lazy(() => import('./exam/ExamPhase'))
+const StationExamPhase = lazy(() => import('./station/StationExamPhase'))
 const InvestigationsPhase = lazy(() => import('./investigations/InvestigationsPhase'))
 const DiagnosisPhase = lazy(() => import('./diagnosis/DiagnosisPhase'))
 const VivaPhase = lazy(() => import('./viva/VivaPhase'))
@@ -180,7 +181,12 @@ export default function SimScreen() {
           }
         >
           {s.phase === 'history' && <HistoryPhase c={c} onNext={next ? () => setPhase(next) : undefined} />}
-          {s.phase === 'exam' && <ExamPhase c={c} onNext={next ? () => setPhase(next) : undefined} />}
+          {s.phase === 'exam' &&
+            (c.exam === 'abdominal' ? (
+              <ExamPhase c={c} onNext={next ? () => setPhase(next) : undefined} />
+            ) : (
+              <StationExamPhase c={c} onNext={next ? () => setPhase(next) : undefined} />
+            ))}
           {s.phase === 'investigations' && <InvestigationsPhase c={c} onNext={next ? () => setPhase(next) : undefined} />}
           {s.phase === 'diagnosis' && <DiagnosisPhase c={c} onNext={next ? () => setPhase(next) : () => setConfirmFinish(true)} />}
           {s.phase === 'viva' && <VivaPhase c={c} onDone={() => setConfirmFinish(true)} />}

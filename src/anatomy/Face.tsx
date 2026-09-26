@@ -23,6 +23,14 @@ export interface FaceProps {
   noLines?: boolean
   /** Worry (inner brow raise) 0..1 — anxious patients */
   worry?: number
+  /** Thyroid eye signs */
+  eyes?: { retraction?: number; proptosis?: number; lag?: boolean }
+  /** Continuous gaze override: x (−1 left … 1 right), y (−1 up … 2.2 down) */
+  gaze?: { x: number; y: number }
+  /** Tongue protrusion 0..1 */
+  tongueOut?: number
+  /** Facial plethora 0..1 (Pemberton’s sign) */
+  plethora?: number
 }
 
 const HIJAB_COLORS = ['#2d3b55', '#5b2a3a', '#4a5a3c', '#8a7a64', '#3b3f46']
@@ -70,7 +78,7 @@ function symmetric(right: Pt[]): string {
   return smoothPath([...right, ...left.slice(1, -1)], true)
 }
 
-export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }: FaceProps) {
+export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0, eyes, gaze, tongueOut = 0, plethora = 0 }: FaceProps) {
   const pal = skinPalette(a)
   const hair = hairColor(a)
   const female = a.sex === 'female'
@@ -78,8 +86,8 @@ export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }
   const wr = Math.max(0, Math.min(1, worry)) * (1 - e * 0.6)
   const openBase = pose.eyesClosed ? 0.05 : 1
   const open = Math.max(0.04, openBase * (1 - 0.82 * e) - (pose.wince ?? 0) * 0.15)
-  const gazeX = pose.lookAt === 'examiner' ? -1.3 : 0
-  const gazeY = pose.lookAt === 'down' ? 1 : pose.lookAt === 'examiner' ? 0.2 : -0.2
+  const gazeX = gaze ? gaze.x * 1.6 : pose.lookAt === 'examiner' ? -1.3 : 0
+  const gazeY = gaze ? gaze.y : pose.lookAt === 'down' ? 1 : pose.lookAt === 'examiner' ? 0.2 : -0.2
   const age = a.age
   const irisColor = IRIS[a.eyeColor ?? (a.skinTone >= 3 ? 'brown' : 'hazel')]
   const hijab = a.hair === 'hijab'
@@ -92,7 +100,7 @@ export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }
   // mouth geometry
   const mouthHalf = female ? 9.6 : 10.6
   const grimace = Math.max(0, e - 0.25) / 0.75
-  const jaw = Math.max(pose.mouthOpen ?? 0, pose.coughing ? 0.9 : 0)
+  const jaw = Math.max(pose.mouthOpen ?? 0, pose.coughing ? 0.9 : 0, tongueOut * 0.42)
   const cornerY = 79 + grimace * 1.2 - (pose.speaking ? 0 : 0)
   const cornerX = mouthHalf + grimace * 2.6
   const upperLipLift = grimace * 2.2
@@ -241,6 +249,7 @@ export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }
             opacity="0.82"
           />
         )}
+        {plethora > 0 && <path d={head} fill="#c0392b" opacity={plethora * 0.28} />}
         {/* under-eye shadows (tired, unwell, older) */}
         <ellipse cx="-15.5" cy="52.5" rx="7" ry="2.6" fill={pal.deep} opacity={0.08 + (age > 55 ? 0.08 : 0) + (pose.pain ?? 0) * 0.08} filter={`url(#${g('soft')})`} />
         <ellipse cx="15.5" cy="52.5" rx="7" ry="2.6" fill={pal.deep} opacity={0.08 + (age > 55 ? 0.08 : 0) + (pose.pain ?? 0) * 0.08} filter={`url(#${g('soft')})`} />
@@ -275,6 +284,9 @@ export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }
           female={female}
           age={age}
           id={`${id}-eye${s}`}
+          retraction={eyes?.retraction ?? 0}
+          proptosis={eyes?.proptosis ?? 0}
+          lag={!!eyes?.lag}
         />
       ))}
 
@@ -344,6 +356,18 @@ export const Face = memo(function Face({ a, pose, id, bust, noLines, worry = 0 }
           fill={pal.lip}
         />
         <ellipse cx="0" cy={82 + lowerDrop} rx="4" ry="0.9" fill="#fff" opacity="0.18" />
+        {tongueOut > 0.05 && (
+          <g>
+            <path
+              d={`M-5.6 ${cornerY + 1.5} C-6.4 ${cornerY + 6 + tongueOut * 9} -3.4 ${cornerY + 8 + tongueOut * 12} 0 ${cornerY + 8.4 + tongueOut * 12} C3.4 ${cornerY + 8 + tongueOut * 12} 6.4 ${cornerY + 6 + tongueOut * 9} 5.6 ${cornerY + 1.5} Z`}
+              fill="#d86f78"
+              stroke="#b4515c"
+              strokeWidth="0.5"
+            />
+            <path d={`M0 ${cornerY + 3} L0 ${cornerY + 5 + tongueOut * 9}`} stroke="#b4515c" strokeWidth="0.6" opacity="0.6" />
+            <ellipse cx="-1.6" cy={cornerY + 4 + tongueOut * 5} rx="1.4" ry="2.2" fill="#fff" opacity="0.18" />
+          </g>
+        )}
         {mouthOpenAmt <= 0.4 && (
           <path
             d={`M${-cornerX} ${cornerY} C-5 ${79.8 - upperLipLift * 0.2} 5 ${79.8 - upperLipLift * 0.2} ${cornerX} ${cornerY}`}
@@ -424,6 +448,9 @@ function Eye({
   female,
   age,
   id,
+  retraction = 0,
+  proptosis = 0,
+  lag = false,
 }: {
   side: number
   open: number
@@ -435,14 +462,19 @@ function Eye({
   female: boolean
   age: number
   id: string
+  retraction?: number
+  proptosis?: number
+  lag?: boolean
 }) {
   const cx = side * 15.5
   const inner = side * 8.6
   const outer = side * 22.6
   const cy = 47
-  const top = cy - 3.6 * open
+  // Normally the upper lid follows the globe on downgaze; with lid lag it stays up
+  const follow = lag ? 0.15 : 0.85
+  const top = cy - 3.6 * open - retraction * 1.7 * open + Math.max(0, gazeY) * follow * open
   const lowerLift = raise * 1.1
-  const bottom = cy + 2.6 - lowerLift * 0.6
+  const bottom = cy + 2.6 - lowerLift * 0.6 + proptosis * 1.3
   const upper = `M${inner} ${cy + 0.4} C${inner + side * 3} ${top - 0.2} ${outer - side * 4} ${top - 0.2} ${outer} ${cy - 0.5}`
   const lower = `C${outer - side * 4} ${bottom + 0.4} ${inner + side * 3} ${bottom + 0.4} ${inner} ${cy + 0.4} Z`
   const shape = `${upper} ${lower}`

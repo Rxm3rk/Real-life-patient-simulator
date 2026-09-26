@@ -1,0 +1,121 @@
+import type { CaseDef } from '../../engine/types'
+
+const c: CaseDef = {
+  id: 'direct-hernia',
+  title: 'Right direct inguinal hernia',
+  presenting: 'OSCE: examine this gentleman’s groin',
+  specialty: 'Hernia & abdominal wall',
+  exam: 'groin',
+  difficulty: 2,
+  setting: 'Outpatient clinic',
+  stem: 'OSCE station (8 minutes). George Palmer, 76, has a swelling in his right groin. Please examine him and present your findings, including what type of hernia you think this is.',
+  components: ['exam', 'diagnosis', 'viva'],
+  tags: ['OSCE', 'hernia', 'direct', 'deep ring occlusion'],
+  patient: {
+    name: 'George Palmer',
+    title: 'Mr Palmer',
+    age: 76,
+    sex: 'male',
+    dob: '08/12/1949',
+    occupation: 'a retired bus driver',
+    appearance: {
+      sex: 'male',
+      age: 76,
+      skinTone: 2,
+      habitus: 'overweight',
+      hair: 'receding',
+      hairColor: 'white',
+      eyeColor: 'grey',
+      facialHair: 'moustache',
+      scars: ['left-inguinal'],
+      hernias: [{ kind: 'inguinal-direct', side: 'right', size: 'medium', visible: 'standing' }],
+    },
+    persona: { mood: 'calm', style: 'brief' },
+  },
+  vitals: { hr: 78, rhythm: 'regular', sbp: 148, dbp: 84, rr: 16, spo2: 95, temp: 36.5, avpu: 'A', pain: 0 },
+  history: {
+    opening: 'This bulge in my right groin comes out when I cough. The doctor says I’ve got a bit of a chest.',
+    answers: {},
+    key: [],
+  },
+  keyed: {
+    'comm.pain': { text: '', says: 'No, it doesn’t hurt at all.' },
+    'groin.stand': { text: 'Mr Palmer stands, holding the back of a chair for balance.' },
+    'groin.inspect': {
+      text: 'Standing, there is a symmetrical, round, dome-shaped swelling about 4 cm across in the medial right groin, just above the pubic tubercle. It does not extend into the scrotum. There is a well-healed scar in the LEFT groin from a previous hernia repair.',
+      abnormal: true,
+      meaning: 'A round, medial bulge that stays out of the scrotum in an older man is typical of a direct hernia. The left groin scar suggests previous hernia surgery — ask about it!',
+    },
+    'groin.coughLook': { text: 'On coughing the swelling bulges straight forwards and enlarges.', abnormal: true },
+    'groin.palpate': { text: 'Soft, non-tender, smooth, compressible swelling about 4 cm across, normal temperature.', abnormal: true },
+    'groin.tubercle': { text: 'The swelling lies above and medial to the right pubic tubercle.', abnormal: true, meaning: 'Inguinal hernia (above and medial).' },
+    'groin.coughFeel': { text: 'Strong expansile cough impulse.', abnormal: true },
+    'groin.getAbove': { text: 'You cannot get above it; it is separate from the testis and does not enter the scrotum.', abnormal: true },
+    'groin.scrotum': { text: 'Both testes normal, separate from the swelling.' },
+    'groin.other': { text: 'The left groin has a healed repair scar; there is no recurrence and no cough impulse.' },
+    'groin.lie': { text: 'On lying down the swelling disappears spontaneously and immediately.', abnormal: true, meaning: 'Direct hernias have a wide neck and reduce readily — and rarely strangulate.' },
+    'groin.reduce': { text: 'It is already reduced — it went back as soon as he lay down.' },
+    'groin.deepRing': {
+      text: 'With firm pressure over the deep ring, the swelling STILL bulges forward medially when he coughs.',
+      abnormal: true,
+      meaning: 'Not controlled by deep ring occlusion → direct inguinal hernia (emerging through Hesselbach’s triangle, medial to the inferior epigastric vessels).',
+    },
+    'groin.release': { text: 'On release the swelling reappears in the same medial position, bulging straight forwards rather than running along the canal.', abnormal: true },
+    'groin.auscultate': { text: 'No bowel sounds over the swelling.' },
+    'complete.abdomen': { text: 'Obese abdomen, soft and non-tender. The bladder is not palpable. No other hernias.' },
+    'complete.dre': { text: 'Smooth, symmetrically enlarged prostate (benign-feeling) — consistent with prostatism contributing to straining.', abnormal: true },
+  },
+  criticalSteps: ['st.tubercle', 'ly.deepRing'],
+  investigations: {},
+  investigationRubric: { essential: [] },
+  diagnosis: {
+    correct: 'direct-ih',
+    differentials: ['indirect-ih', 'femoral-hernia', 'hydrocele-cord', 'inguinal-lymph'],
+  },
+  management: {
+    essential: [{ id: 'reassure', why: 'Explain the diagnosis — low strangulation risk; safety-net for pain, irreducibility or vomiting.' }],
+    helpful: [
+      { id: 'hernia-elective', why: 'Offer repair if symptomatic; weigh his fitness and the recurrence risk if his cough and prostatism are not addressed.' },
+      { id: 'watchful-waiting', why: 'Reasonable for an asymptomatic direct hernia in an older man, after discussion.' },
+      { id: 'urology', why: 'Assess the prostatism that makes him strain.' },
+    ],
+    avoid: [{ id: 'hernia-emergency', why: 'There is no emergency — it reduces easily and is painless.' }],
+  },
+  viva: [
+    {
+      id: 'reliable',
+      q: 'How reliable is the deep ring occlusion test at distinguishing direct from indirect hernias?',
+      options: ['Almost 100% accurate', 'About 60–70% accurate — the definitive answer is at operation', 'Only reliable in women', 'Not used in practice at all'],
+      correct: 1,
+      answer: 'Clinical examination (including the deep ring occlusion test) only distinguishes direct from indirect hernias correctly in roughly two-thirds of cases. It matters little clinically because both are repaired the same way; the relationship to the inferior epigastric vessels is confirmed at surgery.',
+      topic: 'Examination',
+    },
+    {
+      id: 'risk',
+      q: 'What risk factors should you look for in a man with a direct inguinal hernia?',
+      answer: 'Raised intra-abdominal pressure: chronic cough (COPD, smoking), constipation, bladder outflow obstruction (prostatism), obesity, ascites, heavy lifting; also connective-tissue weakness with age, and previous hernia (bilateral disease is common).',
+      topic: 'Aetiology',
+    },
+    {
+      id: 'strangulation',
+      q: 'Why do direct hernias rarely strangulate?',
+      answer: 'They protrude through a broad defect in the posterior wall (Hesselbach’s triangle) with a wide neck, so their contents slide in and out freely. Narrow-necked hernias (femoral, indirect inguinal, paraumbilical) are the ones that strangulate.',
+      topic: 'Pathology',
+    },
+  ],
+  teaching: {
+    summary:
+      'An older man with a chronic cough and prostatism has a round, medial right groin bulge that reduces instantly on lying and is NOT controlled by deep ring occlusion — a direct inguinal hernia. The scar in the other groin tells you he has had a hernia before.',
+    keyFindings: ['Round medial bulge above and medial to the pubic tubercle', 'Does not enter the scrotum', 'Reduces immediately on lying down', 'Not controlled by deep ring occlusion; bulges straight forward', 'Left groin repair scar'],
+    pearls: [
+      'Look at both groins for scars — previous repairs point to bilateral or recurrent disease.',
+      'Direct hernias are wide-necked and rarely strangulate; indirect and femoral hernias are narrow-necked.',
+      'Always ask about and look for the cause of raised intra-abdominal pressure.',
+    ],
+    presentation:
+      'I examined Mr George Palmer, a 76-year-old man, with a chaperone present. He was comfortable at rest. Standing, there was a 4 cm soft, non-tender, round swelling in the medial right groin above and medial to the pubic tubercle, with an expansile cough impulse; it did not extend into the scrotum and both testes were normal. There was a healed left inguinal scar without recurrence. On lying down the swelling reduced spontaneously, and with pressure over the deep ring it still bulged forwards medially on coughing. These findings are consistent with a right direct inguinal hernia. I would complete the examination by examining the abdomen and prostate and assess the causes of straining.',
+    references: ['Macleod’s Clinical Examination, 14th ed. — Ch. 6: examination of the groin', 'HerniaSurge Group. International guidelines for groin hernia management. Hernia 2018'],
+  },
+}
+
+export default c

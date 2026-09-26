@@ -16,7 +16,7 @@ export function TaskCard({ title, icon, children, onClose }: { title: string; ic
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 12 }}
       transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-      className="absolute inset-x-3 bottom-3 z-30 mx-auto max-w-md overflow-hidden rounded-3xl shadow-(--shadow-float) ring-1 ring-line glass sm:bottom-5"
+      className="absolute inset-x-3 bottom-3 z-30 mx-auto max-w-md overflow-hidden rounded-3xl shadow-(--shadow-float) ring-1 ring-line glass sm:bottom-5 lg:right-auto lg:left-4 lg:mx-0 lg:w-[400px]"
     >
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <div className="flex items-center gap-2 text-[14px] font-semibold text-ink">

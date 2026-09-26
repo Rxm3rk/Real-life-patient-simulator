@@ -29,8 +29,25 @@ export const VIEW_ACTIONS: Record<ViewId, { title: string; ids: string[] }[]> = 
 export const PREP_IDS = ['comm.wash', 'comm.intro', 'comm.identity', 'comm.consent', 'comm.chaperone', 'comm.pain', 'comm.position', 'comm.expose', 'comm.analgesia']
 export const FINISH_IDS = ['comm.thank', 'comm.wash', 'complete.hernial', 'complete.dre', 'complete.genitalia', 'complete.urinalysis', 'complete.pregnancy', 'complete.cvsResp']
 
-export function ActionButton({ id, done, highlight, onClick, compact }: { id: string; done: boolean; highlight?: boolean; onClick: () => void; compact?: boolean }) {
-  const a = ACTION_BY_ID[id]
+export function ActionButton({
+  id,
+  done,
+  highlight,
+  onClick,
+  compact,
+  label,
+  short,
+}: {
+  id: string
+  done: boolean
+  highlight?: boolean
+  onClick: () => void
+  compact?: boolean
+  /** Override the abdominal action registry (stations) */
+  label?: string
+  short?: string
+}) {
+  const a = label ? { label, short } : ACTION_BY_ID[id]
   return (
     <button
       onClick={onClick}
@@ -70,7 +87,20 @@ export function RegionPad({ onPick, state, disabled }: { onPick: (r: RegionId) =
   )
 }
 
-export function FindingsLog({ s, mode, revealed, onReveal }: { s: EncounterState; mode: Mode; revealed: Set<number>; onReveal: (t: number) => void }) {
+export function FindingsLog({
+  s,
+  mode,
+  revealed,
+  onReveal,
+  labelFor,
+}: {
+  s: EncounterState
+  mode: Mode
+  revealed: Set<number>
+  onReveal: (t: number) => void
+  /** Station action labels */
+  labelFor?: (action: string) => string | undefined
+}) {
   const items = useMemo(() => s.log.filter((e) => e.obs && !e.action.startsWith('comm.') && e.action !== 'groin.expose').slice().reverse(), [s.log])
   if (!items.length)
     return (
@@ -83,7 +113,7 @@ export function FindingsLog({ s, mode, revealed, onReveal }: { s: EncounterState
     <ol className="space-y-2">
       {items.map((e) => {
         const a = ACTION_BY_ID[e.action]
-        const label = e.region ? `${a?.short ?? a?.label} · ${REGION_SHORT[e.region]}` : a?.label ?? e.action
+        const label = labelFor?.(e.action) ?? (e.region ? `${a?.short ?? a?.label} · ${REGION_SHORT[e.region]}` : a?.label ?? e.action)
         const showMeaning = !!e.obs?.meaning && (mode === 'learn' || revealed.has(e.t))
         return (
           <motion.li key={`${e.t}-${e.action}`} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-surface-1 p-3 ring-1 ring-line">

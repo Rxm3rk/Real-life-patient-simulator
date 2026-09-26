@@ -15,6 +15,10 @@ export interface HandSigns {
   blanch?: number
   cannula?: 'left' | 'right'
   scratches?: boolean
+  /** Warm, sweaty palms (thyrotoxicosis) */
+  sweaty?: boolean
+  /** Distal separation of the nail from its bed (Plummer’s nails) */
+  onycholysis?: boolean
 }
 
 export type HandView = 'dorsal' | 'palms' | 'outstretched'
@@ -153,6 +157,13 @@ function Hand({ a, signs, view, flap, id }: { a: Appearance; signs: HandSigns; v
                 {!signs.leukonychia && <path d={`M${x - tipW * 0.24} ${tipY + tipW * 1.02} Q${x} ${tipY + tipW * 0.84} ${x + tipW * 0.24} ${tipY + tipW * 1.02}`} fill="#fff" opacity="0.35" />}
                 {/* gloss */}
                 <path d={`M${x - tipW * 0.18} ${tipY + tipW * 0.3} L${x - tipW * 0.18} ${tipY + tipW * 0.8}`} stroke="#fff" strokeWidth={clubbed ? 2.4 : 1.6} opacity={clubbed ? 0.7 : 0.5} strokeLinecap="round" />
+                {signs.onycholysis && (i === 2 || i === 3) && (
+                  <path
+                    d={`M${x - tipW * 0.35} ${tipY + tipW * 0.42} Q${x} ${tipY + tipW * 0.58} ${x + tipW * 0.35} ${tipY + tipW * 0.42} L${x + tipW * 0.36} ${tipY + tipW * 0.25} C${x + tipW * 0.3} ${tipY - tipW * 0.02} ${x - tipW * 0.3} ${tipY - tipW * 0.02} ${x - tipW * 0.36} ${tipY + tipW * 0.25} Z`}
+                    fill="#f4efe2"
+                    opacity="0.92"
+                  />
+                )}
                 {signs.koilonychia && <path d={`M${x - tipW * 0.3} ${tipY + tipW * 0.5} Q${x} ${tipY + tipW * 0.66} ${x + tipW * 0.3} ${tipY + tipW * 0.5}`} stroke={darken(nail, 0.3)} strokeWidth="0.8" fill="none" />}
               </g>
             )}
@@ -194,6 +205,22 @@ function Hand({ a, signs, view, flap, id }: { a: Appearance; signs: HandSigns; v
           )}
           {/* radial pulse point */}
           <circle cx="270" cy="286" r="3" fill={mix(skin, '#c24848', 0.25)} opacity="0.6" />
+        </g>
+      )}
+
+      {signs.sweaty && (
+        <g fill="#fff" opacity="0.55">
+          {[
+            [270, 200],
+            [296, 186],
+            [322, 204],
+            [284, 226],
+            [312, 222],
+            [248, 180],
+          ].map(([cx, cy], i) => (
+            <ellipse key={i} cx={cx} cy={cy} rx={1.4} ry={2} />
+          ))}
+          <ellipse cx="300" cy="206" rx="34" ry="24" fill="#fff" opacity="0.12" />
         </g>
       )}
 

@@ -7,6 +7,7 @@ import { answerFor, INTENT_BY_ID } from '../content/intents'
 import { abdoFindings } from '../engine/abdo'
 import { observe } from '../engine/abdoActions'
 import { newEncounter, type EncounterState, type VivaAnswer } from '../engine/encounter'
+import { observeStation, stationFor } from '../engine/stations'
 import { interpret } from '../engine/matcher'
 import { computeResult, type Result } from '../engine/scoring'
 import type { Answer, CaseDef, ChatTurn, Component, Mode, Observation, Phase } from '../engine/types'
@@ -116,10 +117,12 @@ export const useEncounter = create<EncounterStore>()(
         const s = get().s
         const c = s && cachedCase(s.caseId)
         if (!s || !c) return null
-        const f = abdoFindings(c)
-        const obs = observe(action, opts.region, { c, f, analgesia: s.analgesia, detail: opts.detail, seconds: opts.seconds })
+        const station = stationFor(c.exam)
+        const obs = station
+          ? observeStation(station, c, action)
+          : observe(action, opts.region, { c, f: abdoFindings(c), analgesia: s.analgesia, detail: opts.detail, seconds: opts.seconds })
         let exposure = s.exposure
-        if (action === 'comm.expose') exposure = 'abdomen'
+        if (action === 'comm.expose') exposure = station ? station.exposure : 'abdomen'
         if (action === 'groin.expose') exposure = 'groin'
         if (action === 'comm.thank') exposure = 'gowned'
         const analgesia = s.analgesia || action === 'comm.analgesia'

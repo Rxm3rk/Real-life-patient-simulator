@@ -46,6 +46,8 @@ export interface HerniaBulge {
   visible: 'always' | 'cough' | 'standing' | 'never'
   /** Inflamed/tense (irreducible, strangulated) */
   tense?: boolean
+  /** Cannot be reduced (incarcerated) */
+  irreducible?: boolean
 }
 
 export interface Stoma {

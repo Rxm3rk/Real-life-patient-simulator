@@ -1,0 +1,100 @@
+import type { CaseDef } from '../../engine/types'
+
+const c: CaseDef = {
+  id: 'epidermoid-cyst',
+  title: 'Epidermoid (“sebaceous”) cyst of the upper back',
+  presenting: 'OSCE: examine this lump on the back',
+  specialty: 'Skin & soft tissue',
+  exam: 'lump',
+  difficulty: 1,
+  setting: 'Outpatient clinic',
+  stem: 'OSCE station (6 minutes). Chloe Barker, 32, has a lump on her upper back. Examine the lump and present your findings, then answer the examiner’s questions.',
+  components: ['exam', 'diagnosis', 'viva'],
+  tags: ['OSCE', 'lump', 'cyst', 'punctum'],
+  patient: {
+    name: 'Chloe Barker',
+    title: 'Ms Barker',
+    age: 32,
+    sex: 'female',
+    dob: '30/09/1993',
+    occupation: 'a primary school teacher',
+    appearance: { sex: 'female', age: 32, skinTone: 3, habitus: 'average', hair: 'long', hairColor: 'darkbrown', eyeColor: 'brown' },
+    persona: { mood: 'calm', style: 'normal' },
+  },
+  vitals: { hr: 72, rhythm: 'regular', sbp: 118, dbp: 74, rr: 14, spo2: 99, temp: 36.6, avpu: 'A', pain: 0 },
+  visual: { lump: { site: 'upper-back', side: 'right', w: 2, h: 2, kind: 'epidermoid', punctum: true, tethered: true, domed: 0.9 } },
+  history: { opening: 'I’ve had this lump on my back for about a year.', answers: {}, key: [] },
+  keyed: {
+    'comm.pain': { text: '', says: 'No, it isn’t sore.' },
+    'lump.inspect': {
+      text: 'Over the right scapula there is a smooth, round, dome-shaped swelling about 2 cm across with a small dark central punctum. The skin is otherwise normal — no erythema or scars.',
+      abnormal: true,
+      meaning: 'A central punctum is the hallmark of an epidermoid cyst — it is the blocked opening of the hair follicle.',
+    },
+    'lump.measure': { text: 'The lump measures 2.0 cm × 2.0 cm.', abnormal: true },
+    'lump.temp': { text: 'Normal temperature.' },
+    'lump.tender': { text: 'Non-tender.' },
+    'lump.surface': { text: 'Smooth, spherical, with a well-defined edge.', abnormal: true },
+    'lump.consistency': { text: 'Firm to slightly doughy.', abnormal: true },
+    'lump.fluctuation': { text: 'Fluctuant when tested in two planes.', abnormal: true, meaning: 'Fluctuation — the cyst contains soft keratin.' },
+    'lump.skin': { text: 'The lump is TETHERED to the skin at the punctum: the skin puckers when you move it over the lump.', abnormal: true, meaning: 'Attachment to the skin places the lesion in the dermis — an epidermoid cyst.' },
+    'lump.deep': { text: 'Freely mobile over the underlying muscle.' },
+    'lump.pulsation': { text: 'Not pulsatile.' },
+    'lump.compress': { text: 'Not compressible.' },
+    'lump.slip': { text: 'Negative slip sign.' },
+    'lump.transilluminate': { text: 'It does NOT transilluminate.', meaning: 'Its contents are keratin, not clear fluid — so despite being a cyst it does not transilluminate.' },
+    'lump.auscultate': { text: 'No bruit.' },
+    'lump.nodes': { text: 'No axillary or cervical lymphadenopathy.' },
+    'lump.distal': { text: 'Normal.' },
+    'complete.skin': { text: 'No other similar lumps.' },
+  },
+  criticalSteps: ['lk.inspect', 'fl.fixity'],
+  investigations: {},
+  investigationRubric: { essential: [] },
+  diagnosis: {
+    correct: 'epidermoid-cyst',
+    differentials: ['lipoma', 'abscess', 'dermatofibroma', 'bcc'],
+  },
+  management: {
+    essential: [{ id: 'reassure', why: 'Benign; can be left alone if asymptomatic.' }],
+    helpful: [{ id: 'excision', why: 'Elective excision under local anaesthetic with an elliptical skin incision including the punctum, when not inflamed.' }],
+    avoid: [{ id: 'abx-oral', why: 'It is not infected.' }],
+  },
+  viva: [
+    {
+      id: 'punctum',
+      q: 'Why must the punctum be excised with the cyst?',
+      options: ['To reduce recurrence — the cyst wall (epithelium) is attached there', 'For cosmetic reasons only', 'Because it contains the blood supply', 'It doesn’t need to be'],
+      correct: 0,
+      answer: 'The cyst is lined by stratified squamous epithelium continuous with the skin at the punctum. Excising an ellipse of skin including the punctum, with the intact cyst wall, reduces recurrence.',
+      topic: 'Management',
+    },
+    {
+      id: 'name',
+      q: 'Why is “sebaceous cyst” a misnomer?',
+      answer: 'The cyst arises from the infundibulum of the hair follicle and contains keratin, not sebum. True sebaceous-derived cysts (steatocystomas) are rare. Pilar (trichilemmal) cysts occur on the scalp and lack a punctum.',
+      topic: 'Pathology',
+    },
+    {
+      id: 'infected',
+      q: 'How would you manage it if it became red, hot and painful?',
+      answer: 'An infected/inflamed cyst: incision and drainage if fluctuant (± antibiotics if cellulitis), then elective excision of the cyst wall once the inflammation has settled (usually after 6+ weeks), because excision through inflamed tissue has a high recurrence and complication rate.',
+      topic: 'Management',
+    },
+  ],
+  teaching: {
+    summary:
+      'A smooth, spherical, fluctuant intradermal lump with a central punctum, tethered to the skin but mobile over deep tissues and not transilluminating — an epidermoid cyst.',
+    keyFindings: ['2 cm dome-shaped lump over the right scapula', 'Central punctum', 'Tethered to skin, mobile over muscle', 'Fluctuant but does not transilluminate'],
+    pearls: [
+      'Look carefully for a punctum — it clinches the diagnosis.',
+      'Fixity to skin (epidermoid cyst) versus free skin with the slip sign (lipoma) is the classic OSCE discriminator.',
+      'Keratin-filled cysts do not transilluminate.',
+    ],
+    presentation:
+      'I examined Ms Chloe Barker, a 32-year-old woman. Over her right scapula there is a 2 × 2 cm smooth, spherical, dome-shaped swelling with a central punctum and otherwise normal overlying skin. It is non-tender and of normal temperature, firm to doughy and fluctuant in two planes. It is tethered to the skin at the punctum but freely mobile over the underlying muscle. It is not pulsatile or compressible and does not transilluminate. There is no regional lymphadenopathy. These findings are consistent with an epidermoid cyst. If she wishes, I would offer elective excision with an ellipse of skin including the punctum.',
+    references: ['Macleod’s Clinical Examination, 14th ed. — Ch. 3: examination of a lump'],
+  },
+}
+
+export default c

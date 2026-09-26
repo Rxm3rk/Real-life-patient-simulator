@@ -1,0 +1,95 @@
+import type { CaseDef } from '../../engine/types'
+
+const c: CaseDef = {
+  id: 'hydrocele',
+  title: 'Right vaginal hydrocele',
+  presenting: 'OSCE: examine this gentleman’s scrotum',
+  specialty: 'Urology',
+  exam: 'scrotal',
+  difficulty: 1,
+  setting: 'Outpatient clinic',
+  stem: 'OSCE station (8 minutes). Harold Jenkins, 67, has a painless swelling of the right side of his scrotum. Please examine his scrotum (a chaperone is present) and present your findings.',
+  components: ['exam', 'investigations', 'diagnosis', 'viva'],
+  tags: ['OSCE', 'scrotal swelling', 'transillumination'],
+  patient: {
+    name: 'Harold Jenkins',
+    title: 'Mr Jenkins',
+    age: 67,
+    sex: 'male',
+    dob: '14/09/1958',
+    occupation: 'a retired carpenter',
+    appearance: { sex: 'male', age: 67, skinTone: 1, habitus: 'average', hair: 'receding', hairColor: 'grey', eyeColor: 'blue', facialHair: 'none' },
+    persona: { mood: 'calm', style: 'chatty' },
+  },
+  vitals: { hr: 70, rhythm: 'regular', sbp: 138, dbp: 80, rr: 14, spo2: 97, temp: 36.6, avpu: 'A', pain: 0 },
+  visual: { scrotum: { side: 'right', kind: 'hydrocele', size: 3 } },
+  history: { opening: 'I’ve got this swelling down below on the right. It’s been getting bigger for about a year.', answers: {}, key: [] },
+  keyed: {
+    'comm.pain': { text: '', says: 'No, it doesn’t hurt — it just feels heavy.' },
+    'scr.gloves': { text: 'Gloves on.' },
+    'scr.inspect': { text: 'A large, smooth swelling of the right hemiscrotum about 8 cm across. The skin is normal and stretched. The left side is normal.', abnormal: true },
+    'scr.normal': { text: 'The left testis, epididymis and cord are normal.' },
+    'scr.affected': { text: 'A smooth, non-tender, tense, fluctuant swelling. The right testis cannot be felt separately — it is surrounded by the swelling.', abnormal: true, meaning: 'A hydrocele surrounds the testis, which is often impalpable within it.' },
+    'scr.epididymis': { text: 'The epididymis cannot be distinguished within the swelling.', abnormal: true },
+    'scr.cord': { text: 'The spermatic cord above the swelling feels normal.' },
+    'scr.getAbove': { text: 'You CAN get above the swelling — the cord is normal above it.', abnormal: true, meaning: 'Able to get above → the swelling arises within the scrotum (not an inguinoscrotal hernia).' },
+    'scr.separate': { text: 'The swelling is not separate from the testis — it envelops it.', abnormal: true, meaning: 'Not separate = hydrocele (epididymal cysts are separate, above and behind the testis).' },
+    'scr.transilluminate': { text: 'It transilluminates brilliantly.', abnormal: true, meaning: 'Clear fluid transilluminates — hydrocele or epididymal cyst.' },
+    'scr.cough': { text: 'No cough impulse.' },
+    'scr.lie': { text: 'No change on lying down; it does not reduce.' },
+    'scr.cremasteric': { text: 'Cremasteric reflexes present.' },
+    'scr.nodes': { text: 'No inguinal lymphadenopathy.' },
+    'complete.abdomen': { text: 'Abdomen soft; no masses or para-aortic lymphadenopathy.' },
+  },
+  criticalSteps: ['prep.chaperone', 'pa.above', 'sp.trans'],
+  investigations: {
+    'us-scrotal': { report: 'Large right hydrocele (anechoic fluid surrounding the testis). The right testis is normal in size and echotexture with normal flow. No intratesticular mass. Left side normal.', interpretation: 'Simple hydrocele; no underlying tumour.', abnormal: true },
+  },
+  investigationRubric: {
+    essential: [{ id: 'us-scrotal', why: '!In adults, ultrasound is needed to see the testis inside a hydrocele and exclude an underlying tumour (a secondary hydrocele).' }],
+    avoid: [{ id: 'fna', why: 'Never needle or biopsy a scrotal mass without imaging.' }],
+  },
+  diagnosis: { correct: 'hydrocele', differentials: ['epididymal-cyst', 'testicular-tumour', 'strangulated-hernia', 'varicocele'] },
+  management: {
+    essential: [{ id: 'reassure', why: 'Benign if the ultrasound is normal; watchful waiting if not bothersome.' }],
+    helpful: [{ id: 'excision', why: 'Surgical repair (Jaboulay or Lord’s procedure) if large/symptomatic.' }],
+    avoid: [{ id: 'orchidectomy-inguinal', why: 'Not indicated with a normal testis on ultrasound.' }],
+  },
+  viva: [
+    {
+      id: 'types',
+      q: 'Why do children develop hydroceles, and how does their management differ?',
+      answer: 'Congenital (communicating) hydroceles result from a patent processus vaginalis, so peritoneal fluid tracks into the scrotum; they often vary in size through the day. Most resolve by 1–2 years of age; persistent ones are treated by ligating the patent processus via an inguinal approach (like a hernia repair). Adult hydroceles are usually non-communicating (vaginal) and repaired via a scrotal approach.',
+      topic: 'Pathology',
+    },
+    {
+      id: 'secondary',
+      q: 'Name causes of a secondary hydrocele.',
+      answer: 'Testicular tumour, epididymo-orchitis, torsion, trauma, and after surgery (e.g. varicocele or hernia repair). This is why an adult hydrocele needs an ultrasound to assess the underlying testis.',
+      topic: 'Causes',
+    },
+    {
+      id: 'scheme',
+      q: 'Give a systematic approach to a scrotal swelling.',
+      options: [
+        'Can I get above it? Is it separate from the testis? Does it transilluminate? Is it tender?',
+        'Is it pulsatile? Is it reducible? Is it compressible?',
+        'Is it hot? Is it red? Is it itchy?',
+        'Does it move on swallowing? Does it move with the tongue?',
+      ],
+      correct: 0,
+      answer: 'Can I get above it? (No → inguinoscrotal hernia.) Is it separate from the testis? (Yes → epididymal cyst/spermatocele or varicocele; No → hydrocele, tumour, orchitis.) Does it transilluminate? (Yes → hydrocele or epididymal cyst; No → solid: tumour, haematocele, hernia.) Is it tender? (Torsion, epididymo-orchitis.)',
+      topic: 'Examination',
+    },
+  ],
+  teaching: {
+    summary: 'A large, smooth, non-tender scrotal swelling that you can get above, which surrounds an impalpable testis and transilluminates brilliantly — a vaginal hydrocele. In adults, scan to exclude an underlying tumour.',
+    keyFindings: ['Can get above it', 'Testis not palpable separately (swelling surrounds it)', 'Transilluminates', 'No cough impulse; not reducible'],
+    pearls: ['Get above it → separate from testis? → transilluminates? — the three questions for any scrotal swelling.', 'Examine the normal side first.', 'Always offer a chaperone and wear gloves.'],
+    presentation:
+      'I examined Mr Harold Jenkins, a 67-year-old man, with a chaperone present. There is a large, smooth swelling of the right hemiscrotum about 8 cm across with normal overlying skin. The left testis, epididymis and cord are normal. The right-sided swelling is non-tender, tense and fluctuant; I can get above it, and the right testis cannot be palpated separately because the swelling surrounds it. It transilluminates brilliantly and has no cough impulse. There is no inguinal lymphadenopathy. These findings are consistent with a right hydrocele. I would arrange a scrotal ultrasound to confirm the diagnosis and assess the underlying testis.',
+    references: ['Macleod’s Clinical Examination, 14th ed. — Ch. 15: The reproductive system (examination of the scrotum)'],
+  },
+}
+
+export default c

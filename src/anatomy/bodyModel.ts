@@ -227,15 +227,19 @@ export interface LimbOutline {
   elbow: Pt
 }
 
-/** Right arm (viewer's right = patient's LEFT) built from a centreline. */
-export function armOutline(d: BodyDims, abductionDeg = 11): LimbOutline {
+/**
+ * Right arm (viewer's right = patient's LEFT) built from a centreline.
+ * `abductionDeg` is the upper-arm angle from hanging straight down;
+ * `forearmDeg` the forearm angle on the same scale (default: nearly straight).
+ */
+export function armOutline(d: BodyDims, abductionDeg = 11, forearmDeg?: number): LimbOutline {
   const s = d.armScale
   const shoulder: Pt = [d.shoulderW - 17, 166]
   const ang = (abductionDeg * Math.PI) / 180
   const upperLen = 128
   const foreLen = 106
   const elbow: Pt = [shoulder[0] + Math.sin(ang) * upperLen, shoulder[1] + Math.cos(ang) * upperLen]
-  const ang2 = ang + (3 * Math.PI) / 180
+  const ang2 = forearmDeg === undefined ? ang + (3 * Math.PI) / 180 : (forearmDeg * Math.PI) / 180
   const wrist: Pt = [elbow[0] + Math.sin(ang2) * foreLen, elbow[1] + Math.cos(ang2) * foreLen]
 
   // centreline samples: [point, halfWidth]
@@ -264,8 +268,8 @@ export function armOutline(d: BodyDims, abductionDeg = 11): LimbOutline {
     outer.push([p[0] + nx * hw, p[1] + ny * hw])
     inner.push([p[0] - nx * hw, p[1] - ny * hw])
   }
-  // the deltoid cap rounds over the shoulder
-  outer[0] = [d.shoulderW + 1, 170]
+  // the deltoid cap rounds over the shoulder (arm down)
+  if (abductionDeg < 60) outer[0] = [d.shoulderW + 1, 170]
   const dirLen = foreLen
   return {
     outer,

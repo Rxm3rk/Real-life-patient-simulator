@@ -1,6 +1,7 @@
 import { memo, useMemo, useRef, type PointerEvent as RPointerEvent } from 'react'
 import { bodyDims, landmarks, REGION_ORDER, REGION_SHORT, regionCentre, type Landmarks, type RegionId } from '../../../anatomy/bodyModel'
 import type { Pt } from '../../../anatomy/geometry'
+import type { HerniaPhase } from '../../../anatomy/Body'
 import { BedScene } from '../../../anatomy/Scene'
 import type { Exposure, PatientPose } from '../../../anatomy/types'
 import type { CaseDef } from '../../../engine/types'
@@ -23,7 +24,7 @@ export interface StageProps {
   shot: Shot
   exposure: Exposure
   pose: PatientPose
-  herniaPhase: 'rest' | 'cough' | 'standing'
+  herniaPhase: HerniaPhase
   effects: Effect[]
   showRegions: boolean
   showLandmarks: boolean
@@ -162,7 +163,7 @@ function LandmarkDots({ lm, shot }: { lm: Landmarks; shot: Shot }) {
   )
 }
 
-function EffectView({ ef }: { ef: Effect }) {
+export function EffectView({ ef }: { ef: Effect }) {
   const [x, y] = ef.at
   const base = { transformBox: 'fill-box' as const, transformOrigin: 'center' }
   switch (ef.kind) {

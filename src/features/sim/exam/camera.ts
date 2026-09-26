@@ -25,11 +25,18 @@ export function fit(shot: { cx: number; cy: number; w: number; h: number }, aspe
 /** On small screens the whole bed is too small to read — frame head to knees. */
 export const COMPACT_BED = { cx: 0, cy: 318, w: 420, h: 700 }
 
+export type ShotRect = { cx: number; cy: number; w: number; h: number }
+
 /** Critically-damped camera that glides between shots. */
 export function useCamera(shot: Shot, aspect: number, compact = false) {
   let spec = shot === 'bed' && compact ? COMPACT_BED : SHOTS[shot]
   // leave room for the tool dock on phones: frame a little larger and lower
   if (compact && shot !== 'bed') spec = { ...spec, cy: spec.cy + spec.h * 0.1, h: spec.h * 1.12, w: spec.w * 1.04 }
+  return useCameraRect(spec, aspect)
+}
+
+/** Camera gliding to an arbitrary target rectangle (scene units). */
+export function useCameraRect(spec: ShotRect, aspect: number) {
   const target = fit(spec, aspect || 1)
   const [vb, setVb] = useState(target)
   const cur = useRef(target)
