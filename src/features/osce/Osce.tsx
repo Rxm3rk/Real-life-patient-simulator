@@ -1,9 +1,13 @@
-import { Page, PageHeader } from '../../components/layout/AppShell'
+import { lazy } from 'react'
 
-export default function Osce(_props: { section?: string; item?: string }) {
-  return (
-    <Page>
-      <PageHeader title="Osce" subtitle="Coming together…" />
-    </Page>
-  )
+const OsceHome = lazy(() => import('./OsceHome'))
+const Runner = lazy(() => import('./Runner'))
+const Results = lazy(() => import('./Results'))
+const Examiner = lazy(() => import('./Examiner'))
+
+export default function Osce({ section, item }: { section?: string; item?: string }) {
+  if (section === 'run') return <Runner />
+  if (section === 'results' && item) return <Results id={item} />
+  if (section === 'examiner') return <Examiner kind={item} />
+  return <OsceHome />
 }

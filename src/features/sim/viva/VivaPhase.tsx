@@ -4,11 +4,12 @@ import { useState } from 'react'
 import { uiTick } from '../../../audio/engine'
 import { Button } from '../../../components/ui/Button'
 import type { CaseDef } from '../../../engine/types'
-import { cn } from '../../../lib/utils'
+import { cn, optionOrder } from '../../../lib/utils'
 import { useEncounter } from '../../../store/encounter'
 
 export default function VivaPhase({ c, onDone }: { c: CaseDef; onDone: () => void }) {
   const s = useEncounter((st) => st.s)!
+  const attemptSeed = s.attemptId
   const answer = useEncounter((st) => st.answerViva)
   const [i, setI] = useState(() => Math.max(0, c.viva.findIndex((q) => !s.viva[q.id])))
   const q = c.viva[i]
@@ -65,7 +66,8 @@ export default function VivaPhase({ c, onDone }: { c: CaseDef; onDone: () => voi
 
             {isMcq ? (
               <div className="mt-5 space-y-2">
-                {q.options!.map((opt, k) => {
+                {optionOrder(`${attemptSeed}:${q.id}`, q.options!.length).map((k, pos) => {
+                  const opt = q.options![k]
                   const chosen = a?.choice === k
                   const correct = q.correct === k
                   return (
@@ -84,7 +86,7 @@ export default function VivaPhase({ c, onDone }: { c: CaseDef; onDone: () => voi
                         answered && !chosen && !correct && 'bg-surface-1 text-muted ring-line',
                       )}
                     >
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-2 text-[12px] font-bold text-muted ring-1 ring-line">{String.fromCharCode(65 + k)}</span>
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-2 text-[12px] font-bold text-muted ring-1 ring-line">{String.fromCharCode(65 + pos)}</span>
                       <span className="flex-1">{opt}</span>
                       {answered && correct && <CheckCircle2 size={18} className="text-success" />}
                       {answered && chosen && !correct && <XCircle size={18} className="text-danger" />}

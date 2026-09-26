@@ -33,6 +33,8 @@ const routes: RouteDef[] = [
   { pattern: '/learn/:section', render: (p) => <Learn section={p.section} /> },
   { pattern: '/learn/:section/:item', render: (p) => <Learn section={p.section} item={p.item} /> },
   { pattern: '/osce', render: () => <Osce /> },
+  { pattern: '/osce/:section', render: (p) => <Osce section={p.section} /> },
+  { pattern: '/osce/:section/:item', render: (p) => <Osce section={p.section} item={p.item} key={p.item} /> },
   { pattern: '/progress', render: () => <Progress /> },
   { pattern: '/settings', render: () => <Settings /> },
   { pattern: '/lab/anatomy', render: () => <AnatomyLab />, bare: true },

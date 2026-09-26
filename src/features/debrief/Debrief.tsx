@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, BookOpen, Check, ChevronDown, Clock, Lightbulb, MessagesSquare, RotateCcw, Share2, Sparkles, Stethoscope, Trophy, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Clock, Lightbulb, MessagesSquare, RotateCcw, Share2, Sparkles, Stethoscope, Timer, Trophy, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { uiTick } from '../../audio/engine'
@@ -14,6 +14,7 @@ import type { CaseDef } from '../../engine/types'
 import { navigate } from '../../lib/router'
 import { cn, formatDuration } from '../../lib/utils'
 import { useEncounter } from '../../store/encounter'
+import { useOsce } from '../../store/osce'
 import { useProgress } from '../../store/progress'
 
 const GRADE_TONE: Record<Grade, { color: string; bg: string; text: string }> = {
@@ -39,6 +40,15 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
   }, [rec])
 
   const result = useMemo(() => (c && rec ? computeResult(c, rec.state) : null), [c, rec])
+
+  // OSCE circuit: record this station's result and offer the next one
+  const circuit = useOsce((st) => st.circuit)
+  const completeStation = useOsce((st) => st.complete)
+  const advance = useOsce((st) => st.advance)
+  const stationIdx = circuit ? circuit.stations.findIndex((x) => x.attemptId === attemptId) : -1
+  useEffect(() => {
+    if (result && stationIdx >= 0) completeStation(attemptId, result.pct, result.grade)
+  }, [result, stationIdx, attemptId, completeStation])
 
   useEffect(() => {
     if (result && (result.grade === 'Excellent' || result.grade === 'Good pass')) uiTick('success')
@@ -78,9 +88,37 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
-      <button onClick={() => navigate('/ward')} className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
-        <ArrowLeft size={16} /> Ward
+      <button onClick={() => navigate(stationIdx >= 0 ? '/osce/run' : '/ward')} className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
+        <ArrowLeft size={16} /> {stationIdx >= 0 ? 'OSCE circuit' : 'Ward'}
       </button>
+
+      {circuit && stationIdx >= 0 && stationIdx === circuit.index && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-5 flex flex-col gap-3 rounded-3xl bg-accent-soft p-4 ring-1 ring-accent/30 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-fg">
+              <Timer size={18} />
+            </span>
+            <div>
+              <div className="text-[15px] font-semibold text-ink">
+                OSCE circuit · station {stationIdx + 1} of {circuit.stations.length} complete
+              </div>
+              <div className="text-[13px] text-muted">Review your feedback, then move on when you’re ready.</div>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => {
+              const last = circuit.index + 1 >= circuit.stations.length
+              const id = circuit.id
+              advance()
+              navigate(last ? `/osce/results/${id}` : '/osce/run')
+            }}
+            trailing={<ArrowRight size={16} />}
+          >
+            {circuit.index + 1 >= circuit.stations.length ? 'Circuit results' : 'Next station'}
+          </Button>
+        </motion.div>
+      )}
 
       {/* Hero */}
       <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="overflow-hidden rounded-3xl bg-surface-1 ring-1 ring-line shadow-(--shadow-lift)">

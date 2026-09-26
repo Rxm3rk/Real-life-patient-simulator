@@ -91,3 +91,11 @@ export function vibrate(pattern: number | number[]) {
     /* unsupported */
   }
 }
+
+/** A stable, seeded display order for multiple-choice options (so the answer isn’t always first). */
+export function optionOrder(seed: string, n: number): number[] {
+  return shuffle(
+    Array.from({ length: n }, (_, i) => i),
+    seededRandom(hashString(seed)),
+  )
+}

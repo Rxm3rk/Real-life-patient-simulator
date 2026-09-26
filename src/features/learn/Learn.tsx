@@ -1,9 +1,25 @@
-import { Page, PageHeader } from '../../components/layout/AppShell'
+import { lazy } from 'react'
 
-export default function Learn(_props: { section?: string; item?: string }) {
-  return (
-    <Page>
-      <PageHeader title="Learn" subtitle="Coming together…" />
-    </Page>
-  )
+const LearnHome = lazy(() => import('./LearnHome'))
+const Routine = lazy(() => import('./Routine'))
+const Drill = lazy(() => import('./Drill'))
+const SignsAtlas = lazy(() => import('./SignsAtlas'))
+const ScarAtlas = lazy(() => import('./ScarAtlas'))
+const VivaCards = lazy(() => import('./VivaCards'))
+
+export default function Learn({ section, item }: { section?: string; item?: string }) {
+  switch (section) {
+    case 'routine':
+      return <Routine kind={item} />
+    case 'drill':
+      return <Drill kind={item} />
+    case 'signs':
+      return <SignsAtlas id={item} />
+    case 'scars':
+      return <ScarAtlas />
+    case 'viva':
+      return <VivaCards />
+    default:
+      return <LearnHome />
+  }
 }

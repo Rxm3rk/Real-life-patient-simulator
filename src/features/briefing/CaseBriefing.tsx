@@ -1,9 +1,10 @@
-import { ArrowLeft, BookOpenCheck, Check, ClipboardList, Dumbbell, GraduationCap, Play, Stethoscope, Timer } from 'lucide-react'
+import { ArrowLeft, BookOpenCheck, Check, ClipboardList, Dumbbell, GraduationCap, Play, Share2, Stethoscope, Timer } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Face } from '../../anatomy/Face'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/primitives'
+import { toast } from '../../components/ui/Toast'
 import { CASE_META, loadCase } from '../../content/cases'
 import { news2 } from '../../engine/news2'
 import type { CaseDef, Component, Mode } from '../../engine/types'
@@ -55,11 +56,30 @@ export default function CaseBriefing({ id }: { id: string }) {
 
   useEffect(() => {
     let alive = true
-    loadCase(id).then((x) => alive && setC(x))
+    loadCase(id).then((x) => {
+      if (!alive || !x) return
+      setC(x)
+      // default to the components this station was written for
+      setComps(x.components)
+    })
     return () => {
       alive = false
     }
   }, [id])
+
+  const share = async () => {
+    const url = `${location.origin}${location.pathname}#/case/${id}`
+    const text = `Try this surgical case on Bedside: ${meta?.presenting}`
+    try {
+      if (navigator.share) await navigator.share({ title: 'Bedside — surgical case', text, url })
+      else {
+        await navigator.clipboard.writeText(url)
+        toast({ tone: 'success', title: 'Link copied', body: 'Send it to a friend — it opens this patient directly.' })
+      }
+    } catch {
+      /* share sheet dismissed */
+    }
+  }
 
   if (!meta) return <div className="p-10 text-muted">Case not found.</div>
 
@@ -187,7 +207,7 @@ export default function CaseBriefing({ id }: { id: string }) {
           <div>
             <div className="mb-3 text-[11px] font-semibold tracking-[0.14em] text-faint uppercase">Station components</div>
             <div className="flex flex-wrap gap-2">
-              {COMPONENTS.map((k) => {
+              {COMPONENTS.filter((k) => !c || c.components.includes(k.id)).map((k) => {
                 const on = comps.includes(k.id)
                 return (
                   <button
@@ -208,7 +228,9 @@ export default function CaseBriefing({ id }: { id: string }) {
               })}
             </div>
             <p className="mt-3 text-[13px] leading-relaxed text-muted">
-              Tip: for pure OSCE examination practice, keep only <span className="font-medium text-ink">Examination</span> (and optionally Viva).
+              {c && !c.components.includes('history')
+                ? 'This is an examination station — the examiner gives you the history in the instructions.'
+                : <>Tip: for pure OSCE examination practice, keep only <span className="font-medium text-ink">Examination</span> (and optionally Viva).</>}
             </p>
           </div>
 
@@ -222,8 +244,13 @@ export default function CaseBriefing({ id }: { id: string }) {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-2 text-[12px] text-faint">
-            <BookOpenCheck size={14} /> Examination sequence follows Macleod’s Clinical Examination (14th ed.).
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-[12px] text-faint">
+              <BookOpenCheck size={14} className="shrink-0" /> Examination sequence follows Macleod’s Clinical Examination (14th ed.).
+            </div>
+            <Button size="sm" variant="ghost" onClick={share} leading={<Share2 size={15} />}>
+              Share
+            </Button>
           </div>
         </motion.div>
       </div>

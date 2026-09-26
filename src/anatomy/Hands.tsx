@@ -44,7 +44,7 @@ export const HandsIllustration = memo(function HandsIllustration({
     <g>
       <defs>
         <radialGradient id={`${id}-er`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#d9534f" stopOpacity="0.55" />
+          <stop offset="0" stopColor="#d9534f" stopOpacity="0.72" />
           <stop offset="1" stopColor="#d9534f" stopOpacity="0" />
         </radialGradient>
         <filter id={`${id}-blur`} x="-20%" y="-20%" width="140%" height="140%">
