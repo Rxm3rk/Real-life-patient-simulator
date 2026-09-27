@@ -2,7 +2,7 @@
 
 Bedside is a general-surgery patient simulator for final-year students. You take a history, then examine the patient step by step in Macleod's order: you wash your hands, gain consent, expose, look, feel and listen. The patient responds as you go. Each encounter finishes with investigations, a management plan, examiner viva questions and a marked OSCE debrief.
 
-It runs in the browser on phones, tablets and laptops, works offline once it has loaded, and can be installed to the home screen as an app.
+The patients are lifelike 3D people you can turn, zoom and examine by touch. It runs in the browser on phones, tablets and laptops, works offline once it has loaded, and can be installed to the home screen as an app.
 
 > **Educational use only.** The cases are simulated and the content is simplified for exam preparation. Nothing here is medical advice or a substitute for clinical supervision.
 
@@ -24,7 +24,7 @@ It runs in the browser on phones, tablets and laptops, works offline once it has
 Each case covers some or all of five parts:
 
 1. **History.** Type or dictate your questions in free text and the patient answers in character. SOCRATES, systems review, PMH, drugs, allergies, family and social history, and ICE are all tracked.
-2. **Examination.** The patient is drawn anatomically and changes as you examine. They cough, stand, swallow, stick out their tongue, raise their arms, wince when you palpate the tender spot, and turn pale when you raise the leg. Some steps are hands-on:
+2. **Examination.** The patient is a 3D model on a bed, couch or chair, and changes as you examine. They cough, stand, swallow, stick out their tongue, raise their arms, wince when you palpate the tender spot, and turn pale when you raise the leg. Some steps are hands-on:
    - count a pulse against the clock
    - listen for bruits and bowel sounds
    - run a hand-held Doppler, with synthesised triphasic, biphasic and monophasic signals and venous reflux on calf squeeze
@@ -38,12 +38,26 @@ Each case covers some or all of five parts:
 
 Your **debrief** marks the encounter the way an OSCE examiner would. You get domain scores, missed critical steps, steps done out of order (for example palpating before you inspected), and a global grade.
 
+### 3D patients
+
+Every patient is a full 3D person built from their case: sex, age, build, skin tone and hair. Their signs are on the body itself, and they move the way the examination needs:
+
+- **You examine by touch.** Tap a region to palpate or percuss it, and your hand presses into the abdomen. Listen with a stethoscope, feel a pulse, and press a pitting ankle.
+- **The signs are real shapes on the skin.** A hernia bulges and swells on coughing, a goitre rises when the patient swallows, and a thyroglossal cyst moves when they stick their tongue out. Breast lumps tether the skin, lumps stand proud and transilluminate, varicose veins fill on standing, and ulcers, gangrene, scars, stomas, jaundice, caput medusae and Cullen's sign all appear.
+- **The patient is placed for each part of the examination.** They lie flat at 45° or 0°, sit on the edge of the bed, stand, turn round, raise their arms or rest their hands on their hips. The camera moves to each view. On a phone it looks down from the foot of the bed, so the patient reads head-up like a chart.
+- **The face stays in view.** A picture-in-picture inset shows the face while you palpate, so you can watch for a wince.
+- **The bedside is set up for each case**, with a cannula and drip, oxygen, a catheter bag, a vomit bowl and an observations chart where they belong.
+- **You talk to them in 3D.** During history taking on a laptop, or a tablet held sideways, you talk to the patient in 3D.
+- **Every case has a portrait**, a pre-rendered 3D image used as the patient's avatar.
+
+The scrotal examination keeps its illustrated close-up. The 3D patients need WebGL 2 and are loaded only when you first see one. A device without graphics acceleration defaults to the lighter illustrated patients. You can switch between the two under **Settings → 3D patients**.
+
 ### Learn
 
 - **Routines.** The Macleod's sequence for all eight examinations, with the reasoning behind each step.
 - **Drills.** Put the steps in order, one chunk at a time, one section at a time, or the whole routine.
-- **Signs atlas.** 26 signs, drawn by the same anatomy engine, with what each one means and how to elicit it.
-- **Scar atlas.** The classic abdominal incisions, with an explore mode and a quiz.
+- **Signs atlas.** 26 signs, with what each one means and how to elicit it. 18 of them can be shown on a 3D patient you can turn round, with buttons to make the patient cough, swallow, stick out their tongue or raise their arms. The rest are illustrated.
+- **Scar atlas.** The classic abdominal incisions on a 3D torso, with an explore mode and a quiz.
 - **Viva flashcards.** 120 examiner questions, served weakest first.
 
 ### OSCE mode
@@ -83,7 +97,7 @@ Until Pages is enabled, the workflow skips deployment and doesn't fail.
 npm run build:single
 ```
 
-This writes `dist-single/index.html`, a self-contained file of about 1.8 MB with no server needed. You can send it over WhatsApp or email, or put it on a USB stick. It opens by double-clicking. Progress is saved in whichever browser opens it.
+This writes `dist-single/index.html`, a self-contained file of about 7 MB, 3D patients included, with no server needed. You can send it over WhatsApp or email, or put it on a USB stick. It opens by double-clicking. Progress is saved in whichever browser opens it.
 
 ### Option 3: any static host
 
@@ -108,14 +122,15 @@ npm run dev        # http://localhost:5173
 | `npm run typecheck` | TypeScript project check |
 | `npm run lint` | oxlint |
 | `npm test` | Unit tests (Vitest) for case data integrity, history matching and scoring |
-| `npm run e2e` | End-to-end tests (Playwright) on a desktop and a phone viewport |
+| `npm run e2e` | End-to-end tests (Playwright) on a desktop and a phone viewport, including the 3D patients (drawn in software on machines without a GPU) |
 
 The first time you run the end-to-end tests on a new machine, install a browser with `npx playwright install chromium`.
 
 ## How it's built
 
 - **React 19, TypeScript and Vite.** Styling is Tailwind CSS v4, with light and dark themes. Animation uses Motion. State lives in Zustand and is persisted to `localStorage`.
-- **The anatomy is parametric SVG** (`src/anatomy/`). Every patient is generated from an appearance description (sex, age, habitus, skin tone, hair) plus the case's signs, so the same renderer draws a goitre, a hernia, an ulcer or a scar. Nothing is a stock photo.
+- **The 3D patients** (`src/anatomy3d/`) use three.js. Each body is baked offline from the CC0 MakeHuman base mesh and rig to match the patient's appearance (see `scripts/human/README.md`). The skin, hair, gowns, bedding and props are generated at runtime. The clinical signs are drawn in the skin shader: swellings displace the surface, while patches, scars, veins and the region grid are painted on. Poses come from the rig, and the camera frames each step. Nothing is a stock photo or a hand-made model.
+- **The illustrated patients are parametric SVG** (`src/anatomy/`), drawn from the same appearance description and signs. They are the fallback when 3D isn't available, and the examination logic works in their coordinates. A tap on the 3D body is mapped back into them.
 - **The examination engine** (`src/engine/`) defines each station's actions, its steps in Macleod's order, the order rules and the normal findings. Each case overrides only what is abnormal, which keeps the cases short and consistent.
 - **Audio** (bowel sounds, bruits, Doppler signals, the monitor tone) is synthesised with the Web Audio API.
 - **Offline support.** A Workbox service worker precaches the app.
@@ -127,5 +142,7 @@ The first time you run the end-to-end tests on a new machine, install a browser 
 3. Run `npm test`. The case-integrity tests check that every history question, investigation, diagnosis, management option and examination finding the case refers to actually exists, and that each multiple-choice answer is valid.
 
 ## Licence and disclaimer
+
+The 3D human base mesh, shape targets, expressions and rig come from [MakeHuman](http://www.makehumancommunity.org/) and [MPFB2](https://github.com/makehumancommunity/mpfb2) assets released under CC0 1.0. None of their program code is used.
 
 This project is for personal and educational use. Clinical content is simplified for teaching. Always follow local guidelines and senior advice in real practice.
