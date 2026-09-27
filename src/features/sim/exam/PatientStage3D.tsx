@@ -220,6 +220,8 @@ export function PatientStage3D(props: PatientStage3DProps) {
           scene.setPose({ posture: postureRef.current }, true)
           scene.setClothing(clothingFor(p.exposure, female))
         }
+        // the drip, catheter bag, vomit bowl… around the bed
+        scene.setBedside({ ...c.bedside, drip: !!(c.bedside?.drip || a.lines?.drip) })
         p.onReadyScene?.(scene, warp)
         scene.shot(shotOf(scene), true)
         setReady(true)

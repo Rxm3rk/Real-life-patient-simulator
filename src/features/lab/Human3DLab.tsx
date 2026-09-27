@@ -18,6 +18,7 @@ import { useLocation } from '../../lib/router'
  *   &dir=x,y,z &dist=n (camera direction and distance for the shot)
  *   &goitre=1|2|3 &gkind=diffuse|multinodular|nodule &tg=1 (thyroglossal cyst) &swallow=1 (swallow every 2.5 s)
  *   &breast=1 (a left breast cancer: lump, tethering, retracted nipple, axillary node)
+ *   &bedside=1 (drip stand, catheter bag, vomit bowl, walking frame)
  */
 export default function Human3DLab() {
   const { query } = useLocation()
@@ -65,6 +66,8 @@ export default function Human3DLab() {
             }),
           )
         if (query.get('swallow')) window.setInterval(() => scene.swallow(), 2500)
+        const bedside = query.get('bedside')
+        if (bedside) scene.setBedside({ drip: true, catheterUrine: 'tea', vomitBowl: 'bilious', walkingFrame: true })
         const lump = query.get('lump')
         if (lump) {
           const l = { site: lump as 'forearm', side: 'right' as const, w: 4.5, h: 3.5, kind: 'lipoma' as const, lobulated: true, domed: 0.42 }

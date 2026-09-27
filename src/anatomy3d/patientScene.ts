@@ -9,6 +9,8 @@ import { createHair, type HairModel } from './hair'
 import { computeNormals, createHuman, type GpuMorph, type HumanModel } from './human'
 import { createMaterials, type PatientMaterials } from './materials'
 import { axisRot, buildPose, Poser, wristAxis, type PoseSpec } from './poses'
+import type { BedsideItems } from '../anatomy/Scene'
+import { attachedItems, bedsideProps, type Attached, type Bedside } from './bedside'
 import { createExaminerHand, createObsChart, createStethoscope, type ExaminerHand, type Stethoscope } from './props'
 import { buildBlanket, createRoom, createSet, type ExamSet, type SetKind } from './sets'
 import { appearanceSigns, applyGrid, applyVeins, herniaBulges, herniaSize, SignLayer, type LiveBulge, type Patch, type Segment, type Vein } from './signs'
@@ -140,6 +142,11 @@ export class PatientScene {
   private hand: ExaminerHand | null = null
   private steth: Stethoscope | null = null
   private chart: ReturnType<typeof createObsChart> | null = null
+  private attached: Attached | null = null
+  private cannula: THREE.Object3D | null = null
+  private bedside: Bedside | null = null
+  private bedsideItems: (BedsideItems & { drip?: boolean }) | null = null
+  private lineEnd = new THREE.Vector3(Infinity, 0, 0)
   private touch: { c: number; rest: THREE.Vector3; t: number; depth: number; hold: number; mode: 'palm' | 'fingertips'; taps: number } | null = null
   private listenAt: { c: number; rest: THREE.Vector3 } | null = null
   private readonly appearance: Appearance
@@ -196,6 +203,27 @@ export class PatientScene {
     this.anchor.add(human.root)
     this.poser = new Poser(human)
     this.restNormals = computeNormals(human.positions, base.index, base.renderToCompact, base.meta.compactCount)
+    // what's on the patient: a stoma, a cannula, oxygen
+    this.attached = attachedItems({
+      stoma: a.stoma,
+      lines: a.lines,
+      A: this.anatomy,
+      h: human,
+      surface: (rest) => {
+        const c = this.nearestCompact(rest)
+        const n = this.restNormals!
+        const P = human.positions
+        return { point: new THREE.Vector3(P[c * 3], P[c * 3 + 1], P[c * 3 + 2]), normal: new THREE.Vector3(n[c * 3], n[c * 3 + 1], n[c * 3 + 2]) }
+      },
+      noseTip: this.restLandmark('noseTip'),
+      chin: this.restLandmark('chin'),
+    })
+    for (const [bone, o] of this.attached.onBones) {
+      o.position.sub(human.rest[bone].head)
+      o.traverse((x) => ((x as THREE.Mesh).isMesh ? (x.castShadow = true) : null))
+      human.bones[bone].add(o)
+      if (bone.startsWith('hand_') || bone.startsWith('lowerarm_')) this.cannula = o
+    }
     this.hand = createExaminerHand(human, base)
     this.steth = createStethoscope()
     this.stage.scene.add(this.hand.object, this.steth.object)
@@ -295,12 +323,28 @@ export class PatientScene {
     this.stage.invalidate()
   }
 
+  /** What's around the bed: a drip, a catheter bag, a vomit bowl, a walking frame. */
+  setBedside(items: (BedsideItems & { drip?: boolean }) | null) {
+    this.bedsideItems = items
+    this.bedside?.group.removeFromParent()
+    this.bedside?.dispose()
+    this.bedside = null
+    if (!items || this.set.kind !== 'bed') return
+    this.bedside = bedsideProps(items, this.set)
+    this.set.group.add(this.bedside.group)
+    this.lineEnd.set(Infinity, 0, 0)
+    this.stage.invalidate()
+  }
+
   /** Move to another place: the couch, the clinic floor, a chair (the patient goes with you, instantly). */
   setSet(kind: SetKind) {
     if (kind === this.set.kind) return
+    this.bedside?.dispose()
+    this.bedside = null
     this.set.group.removeFromParent()
     this.set.dispose()
     this.set = createSet(kind)
+    if (this.bedsideItems) this.setBedside(this.bedsideItems)
     if (this.human) this.set.fitTo?.(this.human)
     this.stage.scene.add(this.set.group)
     if (this.chart) this.chart.object.visible = kind === 'bed'
@@ -765,6 +809,14 @@ export class PatientScene {
       }
       busy = true
     }
+    // the giving set follows the cannula (re-routed only when it has moved)
+    if (this.bedside && this.cannula && !busy) {
+      const p = this.cannula.getWorldPosition(new THREE.Vector3())
+      if (p.distanceTo(this.lineEnd) > 0.05) {
+        this.lineEnd.copy(p)
+        this.bedside.lineTo(p)
+      }
+    }
     if (this.steth && this.listenAt) {
       const s = this.surfaceAt(this.listenAt.rest, this.listenAt.c)
       // the tubing runs off towards the examiner on the patient's right
@@ -960,6 +1012,8 @@ export class PatientScene {
 
   dispose() {
     this.disposed = true
+    this.attached?.dispose()
+    this.bedside?.dispose()
     this.hand?.dispose()
     this.steth?.dispose()
     this.chart?.dispose()
