@@ -172,6 +172,8 @@ float sg_n( vec3 x ) {
 export const SIGN_ALBEDO = /* glsl */ `
   float sgGloss = 0.0;
   vec3 sgGlow = vec3( 0.0 );
+  // raised relief (scars, veins), turned into a normal perturbation later
+  float sgRelief = 0.0;
   // screen-space footprint of a pixel, taken outside any branch (derivatives need uniform control flow)
   float sgPx = max( length( fwidth( vObj ) ), 1e-4 );
   for ( int i = 0; i < ${MAX_PATCHES}; i++ ) {
@@ -242,10 +244,14 @@ export const SIGN_ALBEDO = /* glsl */ `
     float w = uSegA[i].w;
     float sd = sg_segDist( vObj, uSegA[i].xyz, uSegB[i].xyz );
     if ( sd > w * 3.0 ) continue;
-    // healed scars are pale and slightly pink in fair skin, lighter or darker than the skin around them in dark skin
-    vec3 healed = mix( mix( skin * 1.12, vec3( 0.86, 0.7, 0.68 ), 0.45 ), skin * vec3( 1.45, 1.3, 1.25 ), uDark );
+    // healed scars are pale, faintly pink and shiny in fair skin; lighter (or darker) than the skin around them in dark skin
+    vec3 healed = mix( mix( skin * vec3( 1.12, 0.94, 0.94 ), vec3( 0.95, 0.74, 0.72 ), 0.6 ), skin * vec3( 1.45, 1.3, 1.25 ), uDark );
     vec3 scar = uSegB[i].w > 0.5 ? vec3( 0.72, 0.3, 0.32 ) : healed;
-    skin = mix( skin, scar, smoothstep( w, w * 0.35, sd ) );
+    float core = smoothstep( w, w * 0.35, sd );
+    skin = mix( skin, scar, core );
+    // a fine darker margin where the scar meets normal skin
+    skin = mix( skin, skin * 0.9, smoothstep( w * 1.8, w * 1.1, sd ) * ( 1.0 - core ) * 0.6 );
+    sgRelief = max( sgRelief, smoothstep( w * 1.1, w * 0.1, sd ) * 0.6 );
     // suture marks either side of a fresh wound
     if ( uSegB[i].w > 0.5 ) skin = mix( skin, skin * 0.8, smoothstep( w * 2.2, w * 1.6, sd ) * step( 0.7, fract( dot( vObj, uSegB[i].xyz - uSegA[i].xyz ) * 40.0 ) ) );
     sgGloss = max( sgGloss, smoothstep( w, w * 0.3, sd ) * 0.5 );
@@ -292,6 +298,7 @@ export const SIGN_ALBEDO = /* glsl */ `
   }
   sgVeinH *= 0.35 + 0.65 * uVeinFill;
   skin = mix( skin, skin * vec3( 0.52, 0.64, 1.02 ), sgVeinH * 0.72 );
+  sgRelief = max( sgRelief, sgVeinH );
 
   // touch feedback rings
   for ( int i = 0; i < ${MAX_RIPPLES}; i++ ) {
@@ -307,9 +314,9 @@ export const SIGN_ALBEDO = /* glsl */ `
   }
 `
 
-/** Raised veins: tilt the normal by the slope of the vein relief. */
+/** Raised veins and scars: tilt the normal by the slope of their relief. */
 export const SIGN_NORMALS = /* glsl */ `
-  if ( uVeinN > 0 ) normal = sh_perturb( - vViewPosition, normal, vec2( dFdx( sgVeinH ), dFdy( sgVeinH ) ) * 0.05, faceDirection );
+  if ( uVeinN > 0 || uSegN > 0 ) normal = sh_perturb( - vViewPosition, normal, vec2( dFdx( sgRelief ), dFdy( sgRelief ) ) * 0.05, faceDirection );
 `
 
 /** Glow from the grid and touch rings (after the emissive map, so it reads in shadow too). */
@@ -427,18 +434,31 @@ export function herniaBulges(hs: HerniaBulge[], A: Anatomy): (Bulge & { visible:
   })
 }
 
+/** A scar's course on the skin, as polylines (front scars placed as seen from the front; a loin incision wraps round the flank). */
+export function scarOnSkin(id: ScarId, A: Anatomy): THREE.Vector3[][] {
+  const onBody = (p: THREE.Vector3) => (id === 'left-loin' ? A.onSkin(p) : A.onFront(p.x, p.y))
+  return scarPaths(id, A).map((path) => path.map(onBody))
+}
+
+/** Scars as skin segments. */
+export function scarSegments(ids: ScarId[], A: Anatomy): Segment[] {
+  const segments: Segment[] = []
+  for (const id of ids)
+    for (const pts of scarOnSkin(id, A)) for (let i = 0; i < pts.length - 1; i++) segments.push({ a: pts[i], b: pts[i + 1], width: id.startsWith('lap') ? 0.034 : 0.027 })
+  return segments
+}
+
+/** A point in the middle of a scar (for a marker or to aim the camera at it). */
+export function scarAnchor(id: ScarId, A: Anatomy): THREE.Vector3 {
+  const paths = scarOnSkin(id, A)
+  const longest = paths.reduce((a, b) => (b.length > a.length ? b : a))
+  return longest[Math.floor(longest.length / 2)].clone()
+}
+
 /** The static signs of an abdominal patient's appearance. */
 export function appearanceSigns(a: Appearance, A: Anatomy): { patches: Patch[]; segments: Segment[] } {
   const patches: Patch[] = []
-  const segments: Segment[] = []
-  for (const id of a.scars ?? []) {
-    // scars on the front are placed looking at the patient from the front; a loin incision wraps round the flank
-    const onBody = (p: THREE.Vector3) => (id === 'left-loin' ? A.onSkin(p) : A.onFront(p.x, p.y))
-    for (const path of scarPaths(id, A)) {
-      const pts = path.map(onBody)
-      for (let i = 0; i < pts.length - 1; i++) segments.push({ a: pts[i], b: pts[i + 1], width: id.startsWith('lap') ? 0.028 : 0.022 })
-    }
-  }
+  const segments: Segment[] = scarSegments(a.scars ?? [], A)
   if (a.spiderNaevi) {
     const spots = [v3(0.55, 0, 0), v3(-0.7, 0.25, 0), v3(0.9, 0.5, 0), v3(-0.3, 0.7, 0), v3(0.2, 0.95, 0), v3(-1.0, 0.95, 0), v3(1.2, 0.2, 0)]
     for (const o of spots.slice(0, Math.max(2, a.spiderNaevi))) patches.push({ at: A.onFront(o.x, A.sternalNotch.y - 1.4 + o.y), r: 0.07, kind: 'spider' })

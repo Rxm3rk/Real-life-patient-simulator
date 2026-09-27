@@ -1,6 +1,6 @@
 import { ArrowLeft, Check, HelpCircle, Layers, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { uiTick } from '../../audio/engine'
 import { Body } from '../../anatomy/Body'
 import { bodyDims, landmarks } from '../../anatomy/bodyModel'
@@ -11,7 +11,12 @@ import { Button } from '../../components/ui/Button'
 import { Segmented } from '../../components/ui/primitives'
 import { navigate } from '../../lib/router'
 import { cn, shuffle } from '../../lib/utils'
+import { use3dPatients } from '../../lib/webgl'
 import { useProgress } from '../../store/progress'
+import { useSettings } from '../../store/settings'
+
+// three.js and the 3D torso load only when they're used
+const ScarTorso3D = lazy(() => import('./ScarTorso3D'))
 
 const TORSO: Appearance = { sex: 'male', age: 50, skinTone: 2, habitus: 'average', hair: 'short', hairColor: 'brown', eyeColor: 'brown', facialHair: 'none' }
 const ALL = Object.keys(SCAR_INFO) as ScarId[]
@@ -23,6 +28,9 @@ export default function ScarAtlas() {
   const [answer, setAnswer] = useState<ScarId | null>(null)
   const [score, setScore] = useState({ right: 0, total: 0 })
   const record = useProgress((s) => s.recordDrill)
+  const patients3d = useSettings((s) => s.patients3d)
+  const [fail3d, setFail3d] = useState(false)
+  const use3d = !fail3d && use3dPatients(patients3d)
   const d = useMemo(() => bodyDims(TORSO), [])
   const lm = useMemo(() => landmarks(TORSO, d), [d])
 
@@ -66,30 +74,53 @@ export default function ScarAtlas() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="relative overflow-hidden rounded-3xl bg-stage ring-1 ring-line">
-          <svg viewBox="-125 105 250 300" className="block aspect-[5/6] w-full" role="img" aria-label="Torso showing a surgical scar">
-            <rect x="-400" y="-400" width="800" height="1200" fill="var(--stage)" />
-            <Body a={a} pose={{ exposure: 'abdomen', pain: 0, wince: 0 }} id="scaratlas" standing clinic />
-            {mode === 'explore' &&
-              ALL.map((id) => {
-                const [x, y] = scarAnchor(id, lm)
-                const on = id === sel
-                return (
-                  <g key={id} transform={`translate(${x} ${y})`} onClick={() => setSel(id)} style={{ cursor: 'pointer' }}>
-                    <circle r="9" fill="transparent" />
-                    <circle r={on ? 3.6 : 2.6} fill={on ? 'var(--accent)' : '#fbbf3c'} stroke="#fff" strokeWidth="0.9" />
-                  </g>
-                )
-              })}
-          </svg>
-          {mode === 'explore' && <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/55 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur">Tap a marker or pick from the list</div>}
-        </div>
+        {use3d ? (
+          <div className="relative overflow-hidden rounded-3xl bg-stage ring-1 ring-line">
+            <Suspense fallback={<div className="aspect-[5/6] w-full animate-pulse bg-surface-2/40" />}>
+              <ScarTorso3D shown={shown} explore={mode === 'explore'} onPick={setSel} onUnavailable={() => setFail3d(true)} className="aspect-[5/6] w-full" />
+            </Suspense>
+            {mode === 'explore' && (
+              <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/55 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur">
+                Tap a marker, drag to turn the patient
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative overflow-hidden rounded-3xl bg-stage ring-1 ring-line">
+            <svg viewBox="-125 105 250 300" className="block aspect-[5/6] w-full" role="img" aria-label="Torso showing a surgical scar">
+              <rect x="-400" y="-400" width="800" height="1200" fill="var(--stage)" />
+              <Body a={a} pose={{ exposure: 'abdomen', pain: 0, wince: 0 }} id="scaratlas" standing clinic />
+              {mode === 'explore' &&
+                ALL.map((id) => {
+                  const [x, y] = scarAnchor(id, lm)
+                  const on = id === sel
+                  return (
+                    <g key={id} transform={`translate(${x} ${y})`} onClick={() => setSel(id)} style={{ cursor: 'pointer' }}>
+                      <circle r="9" fill="transparent" />
+                      <circle r={on ? 3.6 : 2.6} fill={on ? 'var(--accent)' : '#fbbf3c'} stroke="#fff" strokeWidth="0.9" />
+                    </g>
+                  )
+                })}
+            </svg>
+            {mode === 'explore' && (
+              <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/55 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur">
+                Tap a marker or pick from the list
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="space-y-4">
           {mode === 'explore' ? (
             <>
               <AnimatePresence mode="wait">
-                <motion.div key={sel} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="rounded-3xl bg-surface-1 p-5 ring-1 ring-line shadow-(--shadow-soft)">
+                <motion.div
+                  key={sel}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="rounded-3xl bg-surface-1 p-5 ring-1 ring-line shadow-(--shadow-soft)"
+                >
                   <div className="text-[11px] font-semibold tracking-[0.14em] text-accent uppercase">Incision</div>
                   <h2 className="mt-1 text-[20px] font-semibold text-ink">{info.name}</h2>
                   <div className="mt-3 text-[11px] font-semibold tracking-[0.14em] text-faint uppercase">Typical operation</div>
@@ -102,7 +133,10 @@ export default function ScarAtlas() {
                   <button
                     key={id}
                     onClick={() => setSel(id)}
-                    className={cn('flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[13.5px] transition', id === sel ? 'bg-accent-soft font-semibold text-ink' : 'text-muted hover:bg-surface-2 hover:text-ink')}
+                    className={cn(
+                      'flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[13.5px] transition',
+                      id === sel ? 'bg-accent-soft font-semibold text-ink' : 'text-muted hover:bg-surface-2 hover:text-ink',
+                    )}
                   >
                     {SCAR_INFO[id].name}
                   </button>

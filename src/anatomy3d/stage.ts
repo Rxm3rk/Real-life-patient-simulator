@@ -227,5 +227,12 @@ export class Stage3D {
     this.controls?.dispose()
     this.env.dispose()
     this.renderer.dispose()
+    // give the context back once the canvas has left the page (browsers only allow a handful at once);
+    // a canvas that stays, e.g. React re-running an effect, keeps it for the next renderer
+    const renderer = this.renderer
+    const canvas = this.canvas
+    window.setTimeout(() => {
+      if (!canvas.isConnected) renderer.forceContextLoss()
+    }, 0)
   }
 }
