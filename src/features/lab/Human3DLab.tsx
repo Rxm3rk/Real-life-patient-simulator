@@ -5,6 +5,8 @@ import { PatientScene, type BlanketFrom } from '../../anatomy3d/patientScene'
 import type { Arms, Posture } from '../../anatomy3d/poses'
 import type { SetKind } from '../../anatomy3d/sets'
 import { shotFor, type ShotName } from '../../anatomy3d/shots'
+import * as THREE from 'three'
+import { breastSigns, lumpPlace, lumpSigns, neckSigns } from '../../anatomy3d/stationSigns'
 import baseMeta from '../../assets/human/base.json'
 import { useLocation } from '../../lib/router'
 
@@ -14,6 +16,8 @@ import { useLocation } from '../../lib/router'
  *   &grid=1 (regions, with RIF/EPI tinted) &phase=cough|standing|reduced|ring-cough
  *   &touch=light|deep|percuss|press|pit|listen (what a tap does)
  *   &dir=x,y,z &dist=n (camera direction and distance for the shot)
+ *   &goitre=1|2|3 &gkind=diffuse|multinodular|nodule &tg=1 (thyroglossal cyst) &swallow=1 (swallow every 2.5 s)
+ *   &breast=1 (a left breast cancer: lump, tethering, retracted nipple, axillary node)
  */
 export default function Human3DLab() {
   const { query } = useLocation()
@@ -52,6 +56,28 @@ export default function Human3DLab() {
         if (query.get('dist')) shot.dist = +query.get('dist')!
         scene.shot(shot, true)
         if (query.get('grid')) scene.setGrid(true, { RIF: 'deep', EPI: 'light', UMB: 'light' })
+        const goitre = query.get('goitre')
+        if (goitre)
+          scene.setExtraSigns(
+            neckSigns({ goitre: { kind: (query.get('gkind') as 'diffuse') ?? 'diffuse', size: +goitre as 2 }, thyroglossal: query.get('tg') ? { sizeCm: 2 } : undefined }, scene.anatomy!, scene.human!, {
+              swallow: () => scene.swallowNow,
+              tongue: () => scene.tongueNow,
+            }),
+          )
+        if (query.get('swallow')) window.setInterval(() => scene.swallow(), 2500)
+        const lump = query.get('lump')
+        if (lump) {
+          const l = { site: lump as 'forearm', side: 'right' as const, w: 4.5, h: 3.5, kind: 'lipoma' as const, lobulated: true, domed: 0.42 }
+          const place = lumpPlace(l, scene.anatomy!, scene.human!, (rest) => scene.surfaceAt(rest).normal.y)
+          scene.setExtraSigns(lumpSigns(l, place, !!query.get('torch')))
+          const s = scene.surfaceAt(place.at)
+          if (!query.get('dir')) scene.shot({ target: s.point, dir: s.normal.clone().add(new THREE.Vector3(0, 0.45, 0)).normalize(), dist: 6, fov: 30 }, true)
+          ;(window as unknown as { __lump: unknown }).__lump = { place, point: s.point, normal: s.normal }
+        }
+        if (query.get('breast'))
+          scene.setExtraSigns(
+            breastSigns({ lump: { side: 'left', clock: 2, distCm: 3.5, sizeCm: 3, visible: true, tethered: true }, nipple: { side: 'left', change: 'retracted' }, nodes: 'left' }, scene.anatomy!, scene.human!),
+          )
         const phase = query.get('phase') as HerniaPhase | null
         if (phase) scene.setHerniaPhase(phase)
         const touch = query.get('touch')

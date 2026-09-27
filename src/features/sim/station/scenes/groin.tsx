@@ -6,15 +6,11 @@ import { BedScene } from '../../../../anatomy/Scene'
 import { isClinic } from '../../../../engine/setting'
 import { lastIndex, type SceneCtx, type SceneSpec, type Zone } from '../types'
 
-export function groinScene(x: SceneCtx): SceneSpec {
-  const { c, view, exposed, cue, log } = x
-  const a = c.patient.appearance
-  const d = bodyDims(a)
-  const lm = landmarks(a, d)
-  const hernia = (a.hernias ?? []).find((h) => h.kind === 'inguinal-indirect' || h.kind === 'inguinal-direct' || h.kind === 'femoral')
-  const right = (hernia?.side ?? 'right') === 'right'
+/** The groin hernia's state at this point in the examination (shared by the 2D and 3D stages). */
+export function groinPhase(x: SceneCtx): HerniaPhase {
+  const { c, view, cue, log } = x
+  const hernia = (c.patient.appearance.hernias ?? []).find((h) => h.kind === 'inguinal-indirect' || h.kind === 'inguinal-direct' || h.kind === 'femoral')
   const standing = view === 'standing'
-
   // Reduced once pushed back, until the patient coughs freely, stands, or the pressure is released
   const reducible = !hernia?.irreducible
   const reduced = reducible && !standing && lastIndex(log, ['groin.reduce', 'groin.deepRing']) > lastIndex(log, ['groin.release', 'groin.stand', 'groin.coughLook', 'groin.coughFeel'])
@@ -22,6 +18,18 @@ export function groinScene(x: SceneCtx): SceneSpec {
   if (cue.kind === 'cough') phase = 'cough'
   if (cue.kind === 'reduce' && reducible) phase = 'reduced'
   if (cue.kind === 'deep-ring' && reducible) phase = 'ring-cough'
+  return phase
+}
+
+export function groinScene(x: SceneCtx): SceneSpec {
+  const { c, view, exposed, cue } = x
+  const a = c.patient.appearance
+  const d = bodyDims(a)
+  const lm = landmarks(a, d)
+  const hernia = (a.hernias ?? []).find((h) => h.kind === 'inguinal-indirect' || h.kind === 'inguinal-direct' || h.kind === 'femoral')
+  const right = (hernia?.side ?? 'right') === 'right'
+  const standing = view === 'standing'
+  const phase = groinPhase(x)
 
   const exposure = exposed ? (standing ? 'standing-groin' : 'groin') : 'gowned'
   const coughing = cue.kind === 'cough' || cue.kind === 'deep-ring'

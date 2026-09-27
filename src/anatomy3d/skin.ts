@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { Appearance } from '../anatomy/types'
 import regionsAUrl from '../assets/human/regionsA.png?url'
 import regionsBUrl from '../assets/human/regionsB.png?url'
-import { SIGN_ALBEDO, SIGN_DISPLACE, SIGN_EMISSIVE, SIGN_FRAG_HEADER, SIGN_NORMAL, SIGN_VERT_HEADER, type SignUniforms } from './signs'
+import { SIGN_ALBEDO, SIGN_DISPLACE, SIGN_EMISSIVE, SIGN_FRAG_HEADER, SIGN_NORMAL, SIGN_NORMALS, SIGN_VERT_HEADER, type SignUniforms } from './signs'
 import { invalidateStages } from './stage'
 
 /**
@@ -63,7 +63,8 @@ const HAIR_RGB: Record<Appearance['hairColor'], string> = {
 }
 
 export function skinLook(a: Appearance, tone: string): SkinLook {
-  const beard = a.sex === 'male' ? ({ none: 0.12, stubble: 0.42, beard: 1, moustache: 0.55 } as const)[a.facialHair ?? 'none'] : 0
+  // clean-shaven men still have a faint shadow over the beard area
+  const beard = a.sex === 'male' ? ({ none: 0.24, stubble: 0.45, beard: 1, moustache: 0.55 } as const)[a.facialHair ?? 'none'] : 0
   const browHair = a.hairColor === 'blonde' ? '#6b5236' : a.hairColor === 'white' || a.hairColor === 'grey' ? '#6e6964' : HAIR_RGB[a.hairColor]
   return {
     tone,
@@ -89,7 +90,11 @@ uniform vec3 uHair;
 uniform float uBeard;
 uniform float uBrows;
 uniform float uBodyHair;
-uniform float uLegHair;
+uniform vec2 uLegHair;
+uniform vec2 uShiny;
+uniform vec4 uLegTintR;
+uniform vec4 uLegTintL;
+uniform vec2 uLegY;
 uniform float uJaundice;
 uniform float uPallor;
 uniform float uFlush;
@@ -97,8 +102,8 @@ uniform float uCyanosis;
 uniform float uSweat;
 uniform float uMottle;
 uniform float uDark;
-uniform vec2 uCoverOn;
-varying vec2 vCover;
+uniform vec3 uCoverOn;
+varying vec3 vCover;
 varying float vAO;
 varying float vFlush;
 varying float vLids;
@@ -183,7 +188,13 @@ const ALBEDO = /* glsl */ `
   float stubble = sh_follicles( vObj, clamp( beard * 1.3, 0.0, 0.95 ), 0.0075 );
   skin = mix( skin, hairCol * 0.55 + skin * 0.1, stubble * 0.8 );
   skin = mix( skin, skin * 0.86, beard * 0.25 ); // follicles under the skin read as a blue-grey shadow
-  float bodyHair = vHair * uBodyHair * ( vObj.y < 8.0 ? uLegHair : 1.0 );
+  // each leg on its own below the knee: hair loss, and pallor / rubor / cyanosis strongest at the foot
+  bool rightSide = vObj.x < 0.0;
+  float legHair = rightSide ? uLegHair.x : uLegHair.y;
+  vec4 legTint = rightSide ? uLegTintR : uLegTintL;
+  float distal = smoothstep( uLegY.x + 0.4, uLegY.y - 0.2, vObj.y );
+  skin = mix( skin, skin * legTint.rgb, clamp( legTint.a * ( 0.25 + 0.75 * distal ), 0.0, 1.0 ) * step( vObj.y, uLegY.x + 0.6 ) );
+  float bodyHair = vHair * uBodyHair * ( vObj.y < 8.0 ? legHair : 1.0 );
   float hairs = sh_follicles( vObj * vec3( 1.0, 0.35, 1.0 ), bodyHair * 0.55, 0.012 );
   skin = mix( skin, hairCol * 0.7, hairs * 0.55 );
   diffuseColor.rgb = skin;
@@ -195,7 +206,7 @@ const ROUGH = /* glsl */ `
   roughnessFactor = mix( roughnessFactor, 0.24, regB.b );          // nails
   roughnessFactor = mix( roughnessFactor, roughnessFactor * 0.82, vFlush * 0.4 ); // oilier nose/cheeks
   roughnessFactor = mix( roughnessFactor, 0.36, uSweat * 0.6 );
-  roughnessFactor = mix( roughnessFactor, 0.36, ( 1.0 - uLegHair ) * step( vObj.y, 5.5 ) * vHair ); // shiny hairless shins
+  roughnessFactor = mix( roughnessFactor, 0.32, ( vObj.x < 0.0 ? uShiny.x : uShiny.y ) * step( vObj.y, 5.5 ) * vHair ); // shiny, thin skin over the shins
   roughnessFactor = mix( roughnessFactor, 0.3, sgGloss );          // moist ulcer beds, shiny scars
 `
 
@@ -219,7 +230,13 @@ export function createSkinMaterial(look: SkinLook, signs: SignUniforms) {
     uBeard: { value: look.beard },
     uBrows: { value: look.brows },
     uBodyHair: { value: look.bodyHair },
-    uLegHair: { value: look.legHair },
+    uLegHair: { value: new THREE.Vector2(look.legHair, look.legHair) },
+    uShiny: { value: new THREE.Vector2(0, 0) },
+    /** per leg: colour multiplier (rgb) and strength (a), strongest at the foot */
+    uLegTintR: { value: new THREE.Vector4(1, 1, 1, 0) },
+    uLegTintL: { value: new THREE.Vector4(1, 1, 1, 0) },
+    /** knee and ankle heights (rest pose) */
+    uLegY: { value: new THREE.Vector2(5, 0.8) },
     uJaundice: { value: look.jaundice },
     uPallor: { value: look.pallor },
     uFlush: { value: look.flush },
@@ -227,8 +244,8 @@ export function createSkinMaterial(look: SkinLook, signs: SignUniforms) {
     uSweat: { value: look.sweat },
     uMottle: { value: look.mottle },
     uDark: { value: THREE.MathUtils.clamp((0.62 - lum) / 0.45, 0, 1) },
-    /** (briefs, gown top) worn: hide the skin well inside them */
-    uCoverOn: { value: new THREE.Vector2() },
+    /** (briefs, gown top, lifted gown) worn: hide the skin well inside them */
+    uCoverOn: { value: new THREE.Vector3() },
   }
   // a 1×1 white map switches on the UV varyings; the shader below replaces its sampling
   white ??= Object.assign(new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1), { needsUpdate: true })
@@ -255,12 +272,12 @@ attribute float aAO;
 attribute float aFlush;
 attribute float aLids;
 attribute float aHair;
-attribute vec2 aCover;
+attribute vec3 aCover;
 varying float vAO;
 varying float vFlush;
 varying float vLids;
 varying float vHair;
-varying vec2 vCover;
+varying vec3 vCover;
 varying vec3 vObj;
 ${SIGN_VERT_HEADER}`,
       )
@@ -275,7 +292,7 @@ ${SIGN_DISPLACE}`,
       .replace('#include <common>', `#include <common>\n${HEADER}\n${SIGN_FRAG_HEADER}`)
       .replace('#include <map_fragment>', ALBEDO.replace('diffuseColor.rgb = skin;', `${SIGN_ALBEDO}\n  diffuseColor.rgb = skin;`))
       .replace('#include <roughnessmap_fragment>', ROUGH)
-      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>\n${PORES}`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>\n${PORES}\n${SIGN_NORMALS}`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${SIGN_EMISSIVE}`)
       .replace(
         '#include <aomap_fragment>',
@@ -295,6 +312,6 @@ ${SIGN_DISPLACE}`,
         ),
       )
   }
-  m.customProgramCacheKey = () => 'bedside-skin-v4'
+  m.customProgramCacheKey = () => 'bedside-skin-v7'
   return { material: m, uniforms }
 }

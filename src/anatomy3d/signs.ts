@@ -19,9 +19,10 @@ export const MAX_BULGES = 12
 export const MAX_PATCHES = 16
 export const MAX_SEGS = 28
 export const MAX_RIPPLES = 6
+export const MAX_VEINS = 24
 
-export type PatchKind = 'tint' | 'ulcer' | 'gangrene' | 'bruise' | 'spider' | 'caput' | 'punctum' | 'pigment' | 'striae'
-const PATCH_CODE: Record<PatchKind, number> = { tint: 0, ulcer: 1, gangrene: 2, bruise: 3, spider: 4, caput: 5, punctum: 6, pigment: 7, striae: 8 }
+export type PatchKind = 'tint' | 'ulcer' | 'gangrene' | 'bruise' | 'spider' | 'caput' | 'punctum' | 'pigment' | 'striae' | 'peau' | 'eczema' | 'glow'
+const PATCH_CODE: Record<PatchKind, number> = { tint: 0, ulcer: 1, gangrene: 2, bruise: 3, spider: 4, caput: 5, punctum: 6, pigment: 7, striae: 8, peau: 9, eczema: 10, glow: 11 }
 
 export interface Bulge {
   id: string
@@ -50,6 +51,19 @@ export interface Segment {
   fresh?: boolean
 }
 
+/** A stretch of superficial vein: tortuous (a wiggle across its course) and raised when it fills. */
+export interface Vein {
+  a: THREE.Vector3
+  b: THREE.Vector3
+  /** half-width, decimetres */
+  width: number
+  /** outward skin normal along the stretch (the wiggle runs across the course, in the skin) */
+  normal: THREE.Vector3
+  /** sideways wiggle amplitude (dm) and its phase */
+  wiggle: number
+  phase: number
+}
+
 export function createSignUniforms() {
   return {
     uBulgeC: { value: Array.from({ length: MAX_BULGES }, () => new THREE.Vector4()) },
@@ -72,6 +86,12 @@ export function createSignUniforms() {
     uRipA: { value: Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector4()) },
     uRipB: { value: Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector4()) },
     uRipN: { value: 0 },
+    // varicose veins: a (xyz, half-width), b (xyz, wiggle), normal (xyz, phase); fill 0 (lying) .. 1 (standing)
+    uVeinA: { value: Array.from({ length: MAX_VEINS }, () => new THREE.Vector4()) },
+    uVeinB: { value: Array.from({ length: MAX_VEINS }, () => new THREE.Vector4()) },
+    uVeinC: { value: Array.from({ length: MAX_VEINS }, () => new THREE.Vector4()) },
+    uVeinN: { value: 0 },
+    uVeinFill: { value: 1 },
   }
 }
 export type SignUniforms = ReturnType<typeof createSignUniforms>
@@ -130,6 +150,11 @@ uniform float uRegion[9];
 uniform vec4 uRipA[${MAX_RIPPLES}];
 uniform vec4 uRipB[${MAX_RIPPLES}];
 uniform int uRipN;
+uniform vec4 uVeinA[${MAX_VEINS}];
+uniform vec4 uVeinB[${MAX_VEINS}];
+uniform vec4 uVeinC[${MAX_VEINS}];
+uniform int uVeinN;
+uniform float uVeinFill;
 float sg_segDist( vec3 p, vec3 a, vec3 b ) {
   vec3 ab = b - a;
   float t = clamp( dot( p - a, ab ) / max( dot( ab, ab ), 1e-6 ), 0.0, 1.0 );
@@ -192,10 +217,24 @@ export const SIGN_ALBEDO = /* glsl */ `
     } else if ( kind < 7.5 ) {          // pigmentation (haemosiderin), mottled
       float m = smoothstep( 0.35, 0.65, sg_n( vObj * 14.0 ) );
       skin = mix( skin, skin * col, smoothstep( 1.1, 0.4, d + wob * 0.6 ) * ( 0.55 + 0.45 * m ) * str );
-    } else {                            // striae: pale-purple streaks
+    } else if ( kind < 8.5 ) {          // striae: pale-purple streaks
       vec3 v = vObj - c;
       float s = pow( abs( sin( ( v.y * 0.35 + v.x ) * 36.0 + sg_n( vObj * 6.0 ) * 3.0 ) ), 12.0 );
       skin = mix( skin, skin * vec3( 0.95, 0.82, 0.92 ), s * smoothstep( 1.0, 0.4, d ) * 0.7 );
+    } else if ( kind < 9.5 ) {          // peau d'orange: oedematous skin pitted at the hair follicles
+      float m = smoothstep( 1.0, 0.45, d + wob * 0.4 ) * str;
+      float pits = smoothstep( 0.62, 0.86, sg_n( vObj * 150.0 ) );
+      skin = mix( skin, skin * vec3( 1.04, 0.9, 0.82 ), m * 0.45 );
+      skin = mix( skin, skin * 0.74, pits * m * 0.6 );
+    } else if ( kind < 10.5 ) {         // venous eczema: red-brown, rough and scaly
+      float m = smoothstep( 1.05, 0.35, d + wob ) * str;
+      float scale = smoothstep( 0.55, 0.75, sg_n( vObj * 70.0 ) );
+      skin = mix( skin, skin * vec3( 1.02, 0.7, 0.62 ), m * ( 0.55 + 0.25 * sg_n( vObj * 18.0 ) ) );
+      skin = mix( skin, mix( skin, vec3( 0.93, 0.86, 0.8 ), 0.5 ), scale * m * 0.5 );
+    } else {                            // light passing through (a transilluminating lump)
+      float m = smoothstep( 1.0, 0.1, d ) * str;
+      sgGlow += col * m * m * 1.4;
+      skin = mix( skin, col, m * 0.35 );
     }
   }
   for ( int i = 0; i < ${MAX_SEGS}; i++ ) {
@@ -235,6 +274,25 @@ export const SIGN_ALBEDO = /* glsl */ `
       sgGlow += vec3( 0.22 ) * line * dash;
     }
   }
+  // varicose veins: tortuous blue cords that fill on standing
+  float sgVeinH = 0.0;
+  for ( int i = 0; i < ${MAX_VEINS}; i++ ) {
+    if ( i >= uVeinN ) break;
+    vec3 a = uVeinA[i].xyz;
+    vec3 ab = uVeinB[i].xyz - a;
+    float len2 = max( dot( ab, ab ), 1e-6 );
+    float t = clamp( dot( vObj - a, ab ) / len2, 0.0, 1.0 );
+    vec3 v = vObj - a - ab * t;
+    vec3 across = normalize( cross( ab, uVeinC[i].xyz ) );
+    float along = t * sqrt( len2 );
+    float wig = uVeinB[i].w * ( sin( along * 26.0 + uVeinC[i].w ) + 0.45 * sin( along * 61.0 + uVeinC[i].w * 2.3 ) );
+    float dist = length( v - across * wig );
+    float w = uVeinA[i].w * ( 0.55 + 0.45 * uVeinFill );
+    sgVeinH = max( sgVeinH, smoothstep( w, w * 0.2, dist ) );
+  }
+  sgVeinH *= 0.35 + 0.65 * uVeinFill;
+  skin = mix( skin, skin * vec3( 0.52, 0.64, 1.02 ), sgVeinH * 0.72 );
+
   // touch feedback rings
   for ( int i = 0; i < ${MAX_RIPPLES}; i++ ) {
     if ( i >= uRipN ) break;
@@ -247,6 +305,11 @@ export const SIGN_ALBEDO = /* glsl */ `
     skin = mix( skin, uRipB[i].rgb, ring * 0.7 );
     sgGlow += uRipB[i].rgb * ring * 0.6;
   }
+`
+
+/** Raised veins: tilt the normal by the slope of the vein relief. */
+export const SIGN_NORMALS = /* glsl */ `
+  if ( uVeinN > 0 ) normal = sh_perturb( - vViewPosition, normal, vec2( dFdx( sgVeinH ), dFdy( sgVeinH ) ) * 0.05, faceDirection );
 `
 
 /** Glow from the grid and touch rings (after the emissive map, so it reads in shadow too). */
@@ -387,6 +450,16 @@ export function appearanceSigns(a: Appearance, A: Anatomy): { patches: Patch[]; 
   // a tense (strangulating) hernia is red and angry over the lump
   for (const b of herniaBulges(a.hernias ?? [], A)) if (b.hernia.tense) patches.push({ at: b.at, r: b.r * 1.1, kind: 'tint', color: '#ff9a8a', strength: 0.7 })
   return { patches, segments }
+}
+
+/** Write the veins into the shared uniforms. */
+export function applyVeins(u: SignUniforms, veins: Vein[]) {
+  veins.slice(0, MAX_VEINS).forEach((v, i) => {
+    u.uVeinA.value[i].set(v.a.x, v.a.y, v.a.z, v.width)
+    u.uVeinB.value[i].set(v.b.x, v.b.y, v.b.z, v.wiggle)
+    u.uVeinC.value[i].set(v.normal.x, v.normal.y, v.normal.z, v.phase)
+  })
+  u.uVeinN.value = Math.min(MAX_VEINS, veins.length)
 }
 
 /** Write signs into the shared uniforms. */

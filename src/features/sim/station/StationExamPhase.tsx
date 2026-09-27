@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowRight, Layers, Lightbulb, ListChecks, MapPin, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { speak, uiTick, type DopplerKind, type Listen } from '../../../audio/engine'
 import type { Pt } from '../../../anatomy/geometry'
 import { Button } from '../../../components/ui/Button'
@@ -15,16 +15,22 @@ import { stationActions, stationFor, type StationAction, type StationCue } from 
 import type { CaseDef, LegSide, Observation, PulseGrade } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
+import { use3dPatients } from '../../../lib/webgl'
 import { useEncounter } from '../../../store/encounter'
+import { useSettings } from '../../../store/settings'
 import { ActionButton, FindingsLog, GuidePanel } from '../exam/panels'
 import type { Effect, EffectKind } from '../exam/Stage'
 import { ListenTask, ManoeuvreCaption, PulseTask } from '../exam/tasks'
 import { FaceCam } from '../FaceCam'
 import { monitorLabel, VitalsMonitor } from '../VitalsMonitor'
+import { has3dStation } from './has3d'
 import { sceneFor } from './scenes'
 import { StationCanvas } from './StationCanvas'
 import { BuergerTask, DopplerTask, PulseFeel, TourniquetTask } from './tasks'
 import { lastIndex, type CueState, type SceneCtx, type SceneExtra, type Zone } from './types'
+
+// three.js and the 3D patient load only when they're used
+const StationStage3D = lazy(() => import('./StationStage3D'))
 
 type STask =
   | { kind: 'pulse'; action: string }
@@ -121,6 +127,9 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
   const desktop = useMediaQuery('(min-width: 1024px)')
   const learn = s.mode === 'learn'
   const acute = !isClinic(c.setting)
+  const patients3d = useSettings((st) => st.patients3d)
+  const [fail3d, setFail3d] = useState(false)
+  const use3d = !fail3d && has3dStation(c.exam) && use3dPatients(patients3d)
 
   const [view, setView] = useState(def.views[0].id)
   const [cue, setCue] = useState<CueState>({ kind: null, key: 0 })
@@ -430,15 +439,43 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
   const feel = extra.feel
   const stage = (
     <div className="relative h-full w-full">
-      <StationCanvas
-        spec={spec}
-        effects={effects}
-        onZone={onZone}
-        onMiss={(pt) => addEffect('tap', pt)}
-        showZones={showZones || (learn && !task)}
-        highlight={highlight}
-        overlay={feel ? <PulseFeel key={feel.key} at={feel.at} grade={feel.grade} hr={c.vitals.hr} scale={spec.effectScale ?? 1} /> : null}
-      />
+      {use3d ? (
+        <Suspense
+          fallback={
+            <div className="absolute inset-0 grid place-items-center bg-stage">
+              <div className="flex items-center gap-2.5 rounded-full bg-surface-1/85 px-4 py-2 text-[13px] font-medium text-muted shadow-(--shadow-lift) ring-1 ring-line backdrop-blur">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                Bringing the patient in…
+              </div>
+            </div>
+          }
+        >
+          <StationStage3D
+            x={sceneCtx}
+            spec={spec}
+            effects={effects}
+            onZone={onZone}
+            onMiss={(pt) => addEffect('tap', pt)}
+            showZones={showZones || (learn && !task)}
+            highlight={highlight}
+            feel={feel ?? null}
+            reaction={{ peak: reaction.wince, key: reaction.key, says: reaction.says }}
+            compact={!desktop}
+            faceLabel={desktop ? 'Watch the face' : undefined}
+            onUnavailable={() => setFail3d(true)}
+          />
+        </Suspense>
+      ) : (
+        <StationCanvas
+          spec={spec}
+          effects={effects}
+          onZone={onZone}
+          onMiss={(pt) => addEffect('tap', pt)}
+          showZones={showZones || (learn && !task)}
+          highlight={highlight}
+          overlay={feel ? <PulseFeel key={feel.key} at={feel.at} grade={feel.grade} hr={c.vitals.hr} scale={spec.effectScale ?? 1} /> : null}
+        />
+      )}
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-2.5 sm:p-3">
         <div className="pointer-events-auto">
@@ -456,7 +493,7 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
               </button>
             ))}
         </div>
-        {!spec.faceVisible && (
+        {!spec.faceVisible && !use3d && (
           <div className="pointer-events-auto">
             <FaceCam a={c.patient.appearance} pain={basePain} wince={reaction.wince} winceKey={reaction.key} says={reaction.says} size={desktop ? 'md' : 'sm'} label={desktop ? 'Watch the face' : undefined} />
           </div>

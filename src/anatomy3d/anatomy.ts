@@ -59,10 +59,21 @@ function frontMap(h: HumanModel, base: HumanBase) {
   const part = base.meta.parts.find((p) => p.name === 'body')!
   const P = h.positions
   const r2c = base.renderToCompact
+  // the arms hang beside the chest in the rest pose: leave them out so the chest wall is found behind them
+  const armBones = new Set(base.meta.bones.map((b, i) => (/^(upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)_/.test(b) ? i : -1)).filter((i) => i >= 0))
+  const onArm = (c: number) => {
+    let w = 0
+    for (let k = 0; k < 4; k++) if (armBones.has(base.skinIndex[c * 4 + k])) w += base.skinWeight[c * 4 + k] / 255
+    return w > 0.5
+  }
   for (let i = part.start; i < part.start + part.count; i += 3) {
-    const a = r2c[base.index[i]] * 3
-    const b = r2c[base.index[i + 1]] * 3
-    const c = r2c[base.index[i + 2]] * 3
+    const ca = r2c[base.index[i]]
+    const cb = r2c[base.index[i + 1]]
+    const cc = r2c[base.index[i + 2]]
+    if (onArm(ca) || onArm(cb) || onArm(cc)) continue
+    const a = ca * 3
+    const b = cb * 3
+    const c = cc * 3
     const ax = (P[a] - x0) / res
     const ay = (P[a + 1] - y0) / res
     const bx = (P[b] - x0) / res

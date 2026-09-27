@@ -90,19 +90,24 @@ export function arterialScene(x: SceneCtx): SceneSpec {
   }
 }
 
+/** Standing with their back to you: once asked to turn round, until the next front-facing manoeuvre. */
+export function venousFromBehind(x: SceneCtx) {
+  return (
+    x.view === 'standing' &&
+    lastIndex(x.log, ['ven.back']) > lastIndex(x.log, ['ven.inspect', 'ven.palpate', 'ven.oedema', 'ven.sfj', 'ven.cough', 'ven.tap', 'ven.stand']) &&
+    x.cue.kind !== 'tourniquet'
+  )
+}
+
 export function venousScene(x: SceneCtx): SceneSpec {
-  const { c, view, exposed, log } = x
+  const { c, view, exposed } = x
   const a = c.patient.appearance
   const d = bodyDims(a)
   const lm = landmarks(a, d)
   const legs = c.visual?.legs ?? NORMAL_LEGS
   const k = a.sex === 'female' ? 17 : 21
   const standing = view === 'standing'
-  // from behind once asked to turn round, until the next front-facing manoeuvre
-  const back =
-    standing &&
-    lastIndex(log, ['ven.back']) > lastIndex(log, ['ven.inspect', 'ven.palpate', 'ven.oedema', 'ven.sfj', 'ven.cough', 'ven.tap', 'ven.stand']) &&
-    x.cue.kind !== 'tourniquet'
+  const back = venousFromBehind(x)
   const fill = x.extra.veinFill ?? (standing ? 1 : 0.35)
 
   const body: BodyProps = {

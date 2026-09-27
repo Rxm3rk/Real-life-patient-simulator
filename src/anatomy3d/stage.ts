@@ -68,11 +68,11 @@ export class Stage3D {
     this.env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     pmrem.dispose()
     this.scene.environment = this.env
-    this.scene.environmentIntensity = 0.55
+    this.scene.environmentIntensity = 0.68
     this.scene.background = new THREE.Color(opts.background ?? '#0b1220')
 
     // Key light from above-front-left of the patient, soft shadows
-    this.key = new THREE.DirectionalLight('#fff4ea', 2.1)
+    this.key = new THREE.DirectionalLight('#fff4ea', 1.85)
     this.key.position.set(-6, 14, 12)
     this.key.castShadow = true
     this.key.shadow.mapSize.set(1024, 1024)
@@ -91,7 +91,7 @@ export class Stage3D {
     this.rim = new THREE.DirectionalLight('#cfe0ff', 0.9)
     this.rim.position.set(8, 10, -14)
     this.scene.add(this.rim)
-    this.scene.add(new THREE.HemisphereLight('#f4f1ea', '#3b3a38', 0.35))
+    this.scene.add(new THREE.HemisphereLight('#f4f1ea', '#3b3a38', 0.42))
 
     this.controls = opts.controls === false ? null : new OrbitControls(this.camera, canvas)
     if (this.controls) {

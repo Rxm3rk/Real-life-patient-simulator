@@ -8,7 +8,7 @@ import type { HumanModel } from './human'
  * own rest skeleton. The Poser blends smoothly between targets.
  */
 
-export type Posture = 'stand' | 'supine' | 'recline45' | 'sitUp' | 'sitEdge'
+export type Posture = 'stand' | 'supine' | 'recline45' | 'sitUp' | 'sitEdge' | 'sitChair'
 export type Arms = 'sides' | 'hips' | 'up' | 'forward' | 'forwardPalmsUp' | 'relaxed'
 
 export interface PoseSpec {
@@ -157,8 +157,10 @@ export function buildPose(h: HumanModel, spec: PoseSpec): PoseTarget {
       hipFlex = 88
       break
     case 'sitEdge':
+    case 'sitChair':
       hipFlex = 88
       kneeFlex = 88
+      if (spec.turned) rootQ.setFromAxisAngle(Y, Math.PI)
       break
   }
   if (hipFlex)

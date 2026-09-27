@@ -11,7 +11,7 @@ import { createMaterials, type PatientMaterials } from './materials'
 import { axisRot, buildPose, Poser, wristAxis, type PoseSpec } from './poses'
 import { createExaminerHand, createObsChart, createStethoscope, type ExaminerHand, type Stethoscope } from './props'
 import { buildBlanket, createRoom, createSet, type ExamSet, type SetKind } from './sets'
-import { appearanceSigns, applyGrid, herniaBulges, herniaSize, SignLayer, type LiveBulge } from './signs'
+import { appearanceSigns, applyGrid, applyVeins, herniaBulges, herniaSize, SignLayer, type LiveBulge, type Patch, type Segment, type Vein } from './signs'
 import { Stage3D } from './stage'
 
 /**
@@ -28,6 +28,8 @@ export interface ClothingState {
   /** Modesty towel over the genitals */
   drape?: boolean
   gownTop?: boolean
+  /** The gown lifted above the umbilicus (groin examination) */
+  gownUp?: boolean
   chestBand?: boolean
   gownSkirt?: boolean
   /** Blanket over a lying patient, from a body landmark or a fraction of the bed (0 = head end, 1 = feet); null = none */
@@ -117,6 +119,14 @@ export class PatientScene {
   /** Surface anatomy of this patient's rest-pose body */
   anatomy: Anatomy | null = null
   private hernias: { id: string; h: HerniaBulge }[] = []
+  /** Signs from the patient's appearance, and those a station adds (leg ulcers, a goitre, a breast lump…) */
+  private baseSigns: { patches: Patch[]; segments: Segment[]; bulges: LiveBulge[] } = { patches: [], segments: [], bulges: [] }
+  /** 0..1 envelope of a swallow in progress (a goitre rises with it) */
+  swallowNow = 0
+  private swallowT = -1
+  /** fine postural tremor of the outstretched hands, 0..1 */
+  private tremor = 0
+  private eyeRest: THREE.Vector3[] = []
   private herniaPhase: HerniaPhase = 'rest'
   private coughT = -1
   /** a wince that peaks and fades (e.g. when you press on a tender spot) */
@@ -166,8 +176,9 @@ export class PatientScene {
     this.hair = createHair(human, base, a)
     if (this.hair) human.root.add(this.hair.object)
     this.anatomy = anatomyOf(human, base)
+    this.set.fitTo?.(human)
     this.clothes = createGarments(human, base, a, this.signs.u, this.anatomy)
-    human.geometry.setAttribute('aCover', new THREE.BufferAttribute(this.clothes.cover, 2))
+    human.geometry.setAttribute('aCover', new THREE.BufferAttribute(this.clothes.cover, 3))
     this.anchor.add(human.root)
     this.poser = new Poser(human)
     this.restNormals = computeNormals(human.positions, base.index, base.renderToCompact, base.meta.compactCount)
@@ -191,7 +202,7 @@ export class PatientScene {
   private initSigns() {
     const A = this.anatomy!
     const a = this.appearance
-    this.signs.setStatic(appearanceSigns(a, A))
+    const fromLook = appearanceSigns(a, A)
     const bulges: LiveBulge[] = []
     herniaBulges(a.hernias ?? [], A).forEach((b) => {
       this.hernias.push({ id: b.id, h: b.hernia })
@@ -229,7 +240,58 @@ export class PatientScene {
         },
       })
     }
+    this.baseSigns = { patches: fromLook.patches, segments: fromLook.segments, bulges }
+    this.signs.setStatic(fromLook)
     this.signs.setBulges(bulges)
+  }
+
+  /** Add a station's signs to the patient's own (replacing any added before). */
+  setExtraSigns(x: { patches?: Patch[]; segments?: Segment[]; bulges?: LiveBulge[]; veins?: Vein[] }) {
+    const b = this.baseSigns
+    this.signs.setStatic({ patches: [...b.patches, ...(x.patches ?? [])], segments: [...b.segments, ...(x.segments ?? [])] })
+    this.signs.setBulges([...b.bulges, ...(x.bulges ?? [])])
+    applyVeins(this.signs.u, x.veins ?? [])
+    this.stage.invalidate()
+  }
+
+  /** Varicose veins fill on standing and empty when the leg is raised or a tourniquet controls them (0..1). */
+  setVeinFill(v: number) {
+    this.signs.u.uVeinFill.value = v
+    this.stage.invalidate()
+  }
+
+  /** A swallow: the larynx (and a goitre with it) rises and falls. */
+  swallow() {
+    this.swallowT = 0
+    this.stage.invalidate()
+  }
+
+  /** Fine tremor of the outstretched hands (thyrotoxicosis), 0..1. */
+  setTremor(v: number) {
+    this.tremor = v
+    this.stage.invalidate()
+  }
+
+  /** Exophthalmos: the eyes sit forward in the orbits, 0..1. */
+  setProptosis(v: number) {
+    const h = this.human
+    if (!h) return
+    if (!this.eyeRest.length) this.eyeRest = [h.eyes.left.position.clone(), h.eyes.right.position.clone()]
+    ;[h.eyes.left, h.eyes.right].forEach((e, i) => e.position.copy(this.eyeRest[i]).add(new THREE.Vector3(0, 0.02 * v, 0.045 * v)))
+    this.stage.invalidate()
+  }
+
+  /** Move to another place: the couch, the clinic floor, a chair (the patient goes with you, instantly). */
+  setSet(kind: SetKind) {
+    if (kind === this.set.kind) return
+    this.set.group.removeFromParent()
+    this.set.dispose()
+    this.set = createSet(kind)
+    if (this.human) this.set.fitTo?.(this.human)
+    this.stage.scene.add(this.set.group)
+    if (this.chart) this.chart.object.visible = kind === 'bed'
+    this.applyPose(true)
+    this.stage.invalidate()
   }
 
   /** Show the nine abdominal regions on the skin, tinting those already palpated. */
@@ -271,6 +333,11 @@ export class PatientScene {
     this.stage.invalidate()
   }
 
+  /** How far the tongue is out right now, 0..1 (a thyroglossal cyst follows it). */
+  get tongueNow() {
+    return this.morphNow.get('tongueOut') ?? 0
+  }
+
   /** The skin vertex nearest a rest-pose point (for moving labels cheaply every frame). */
   nearestVertex(rest: THREE.Vector3) {
     return this.nearestCompact(rest)
@@ -306,6 +373,9 @@ export class PatientScene {
       const hingeZ = this.set.headZ + (this.set.kind === 'bed' ? 7.95 : 7)
       // hip joint just in front of the hinge, a hand's breadth above the seat
       T.pos.set(0, this.set.surfaceY + 0.95 - pelvisY, hingeZ + 0.55)
+    } else if (p.posture === 'sitChair') {
+      // hips over the back of the seat, facing the examiner
+      T.pos.set(0, this.set.surfaceY + 0.9 - pelvisY, -1.6)
     } else if (p.posture === 'sitEdge' || p.posture === 'sitUp') {
       // sit on the near (patient's-right-side) edge facing the examiner
       T.rotY = -Math.PI / 2
@@ -367,11 +437,11 @@ export class PatientScene {
   setClothing(c: ClothingState) {
     if (!this.clothes) return
     const show: Partial<Record<GarmentName, boolean>> = {}
-    for (const k of ['briefs', 'drape', 'gownTop', 'chestBand', 'gownSkirt'] as const) if (c[k] !== undefined) show[k] = c[k]
+    for (const k of ['briefs', 'drape', 'gownTop', 'gownUp', 'chestBand', 'gownSkirt'] as const) if (c[k] !== undefined) show[k] = c[k]
     this.clothes.show(show)
     if (this.mats && this.clothes) {
       const m = this.clothes.meshes
-      this.mats.skin.uCoverOn.value.set(m.briefs.visible ? 1 : 0, m.gownTop.visible ? 1 : 0)
+      this.mats.skin.uCoverOn.value.set(m.briefs.visible ? 1 : 0, m.gownTop.visible ? 1 : 0, m.gownUp.visible ? 1 : 0)
     }
     if (c.blanketFrom !== undefined && c.blanketFrom !== this.blanketFrom) {
       this.blanketFrom = c.blanketFrom
@@ -437,11 +507,29 @@ export class PatientScene {
   }
 
   /** Skin tints that change during an encounter (e.g. pallor as a patient shocks). */
-  setSkin(values: Partial<{ jaundice: number; pallor: number; flush: number; cyanosis: number; sweat: number; mottle: number; legHair: number }>) {
+  setSkin(values: Partial<{ jaundice: number; pallor: number; flush: number; cyanosis: number; sweat: number; mottle: number }>) {
     const u = this.mats?.skin
     if (!u) return
-    const map = { jaundice: u.uJaundice, pallor: u.uPallor, flush: u.uFlush, cyanosis: u.uCyanosis, sweat: u.uSweat, mottle: u.uMottle, legHair: u.uLegHair } as const
+    const map = { jaundice: u.uJaundice, pallor: u.uPallor, flush: u.uFlush, cyanosis: u.uCyanosis, sweat: u.uSweat, mottle: u.uMottle } as const
     for (const [k, v] of Object.entries(values)) if (v !== undefined) map[k as keyof typeof map].value = v
+    this.stage.invalidate()
+  }
+
+  /**
+   * One leg below the knee: hair (0 = lost), shiny thin skin, and a colour
+   * (pallor, dependent rubor, cyanosis) that deepens towards the foot.
+   */
+  setLeg(side: 'left' | 'right', v: { hair?: number; shiny?: number; tint?: [number, number, number]; tintAmount?: number }) {
+    const u = this.mats?.skin
+    const h = this.human
+    if (!u || !h) return
+    const i = side === 'right' ? 'x' : 'y'
+    if (v.hair !== undefined) u.uLegHair.value[i] = v.hair
+    if (v.shiny !== undefined) u.uShiny.value[i] = v.shiny
+    const t = side === 'right' ? u.uLegTintR.value : u.uLegTintL.value
+    if (v.tint !== undefined) t.set(v.tint[0], v.tint[1], v.tint[2], t.w)
+    if (v.tintAmount !== undefined) t.w = v.tintAmount
+    u.uLegY.value.set(h.rest.calf_l.head.y, this.restLandmark('medialMalleolusL').y)
     this.stage.invalidate()
   }
 
@@ -589,7 +677,7 @@ export class PatientScene {
    * Your hand on the patient: laid flat and pressed in (palpation), fingertips pressed (pitting,
    * nodes), or resting while the other hand's finger taps it (percussion). The skin gives under it.
    */
-  touchAt(rest: THREE.Vector3, kind: 'light' | 'deep' | 'percuss' | 'press' | 'pit') {
+  touchAt(rest: THREE.Vector3, kind: 'light' | 'deep' | 'percuss' | 'press' | 'pit' | 'feel') {
     if (!this.human) return
     const c = this.nearestCompact(rest)
     const spec = {
@@ -598,6 +686,8 @@ export class PatientScene {
       percuss: { depth: 0.015, r: 0.4, hold: 0.55, mode: 'palm' as const, taps: 2 },
       press: { depth: 0.07, r: 0.2, hold: 0.55, mode: 'fingertips' as const, taps: 0 },
       pit: { depth: 0.1, r: 0.2, hold: 1.2, mode: 'fingertips' as const, taps: 0 },
+      // fingertips resting on a pulse while you count
+      feel: { depth: 0.03, r: 0.18, hold: 2.2, mode: 'fingertips' as const, taps: 0 },
     }[kind]
     this.touch = { c, rest: rest.clone(), t: 0, depth: spec.depth, hold: spec.hold, mode: spec.mode, taps: spec.taps }
     // pitting oedema refills slowly after the thumb lifts
@@ -747,6 +837,16 @@ export class PatientScene {
       if (ct > 1.2) this.coughT = -1
       busy = true
     }
+    // a swallow: up in a third of a second, a moment at the top, then down
+    if (this.swallowT >= 0) {
+      const st = (this.swallowT += dt)
+      this.swallowNow = st < 0.35 ? THREE.MathUtils.smoothstep(st, 0, 0.35) : st < 0.6 ? 1 : 1 - THREE.MathUtils.smoothstep(st, 0.6, 1.1)
+      if (st > 1.1) {
+        this.swallowT = -1
+        this.swallowNow = 0
+      }
+      busy = true
+    }
     // a passing wince
     let winceNow = 0
     if (this.winceT >= 0) {
@@ -757,14 +857,17 @@ export class PatientScene {
     }
     if (this.poser) {
       const add = this.poser.additive
-      // asterixis: the wrists drop forward about their own flexion axes
+      // asterixis (the wrists drop forward) and a fine tremor, about each wrist's own flexion axis
+      const shake = this.tremor > 0.01 ? this.tremor * (1.4 * Math.sin(t * 2 * Math.PI * 9.5) + 0.5 * Math.sin(t * 2 * Math.PI * 13.1 + 1.3)) : 0
       for (const side of ['l', 'r'] as const) {
         const name = `hand_${side}`
-        if (this.flap > 0.01) {
+        const deg = 38 * this.flap + shake
+        if (Math.abs(deg) > 0.01) {
           const k = wristAxis(h, side).applyQuaternion(this.poser.current(name))
-          add.set(name, new THREE.Quaternion().setFromAxisAngle(k, THREE.MathUtils.degToRad(38 * this.flap)))
+          add.set(name, new THREE.Quaternion().setFromAxisAngle(k, THREE.MathUtils.degToRad(deg)))
         } else add.delete(name)
       }
+      if (this.tremor > 0.01) busy = true
       if (cough > 0) {
         add.set('spine_02', axisRot('x', 7 * cough))
         add.set('spine_03', axisRot('x', 5 * cough))

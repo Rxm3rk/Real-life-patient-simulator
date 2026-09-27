@@ -8,7 +8,7 @@ import type { HumanModel } from './human'
  * standing examinations. Units are decimetres; the patient's head is at −z.
  */
 
-export type SetKind = 'bed' | 'couch' | 'standing'
+export type SetKind = 'bed' | 'couch' | 'standing' | 'chair'
 
 export interface ExamSet {
   kind: SetKind
@@ -19,6 +19,8 @@ export interface ExamSet {
   headZ: number
   /** Tilt the back rest (degrees); 0 = flat */
   setBackrest(deg: number): void
+  /** Fit the set to the patient (a chair's seat at the height of their knees) */
+  fitTo?(h: HumanModel): void
   dispose(): void
 }
 
@@ -193,8 +195,55 @@ function standingArea(): ExamSet {
   }
 }
 
+/** A clinic chair (in the curtained area) for seated examinations: the neck, hands, a lump on the forearm. */
+function clinicChair(): ExamSet {
+  const area = standingArea()
+  const chair = new THREE.Group()
+  chair.name = 'chair'
+  const frame = mat('#3b4550', 0.4, 0.5)
+  const pad = mat('#46607a', 0.7)
+  const seat = new THREE.Mesh(new RoundedBoxGeometry(4.6, 0.6, 4.4, 3, 0.2), pad)
+  const back = new THREE.Mesh(new RoundedBoxGeometry(4.4, 3.6, 0.5, 3, 0.2), pad)
+  const legs: THREE.Mesh[] = []
+  for (const x of [-1.9, 1.9])
+    for (const z of [-1.8, 1.8]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1, 10), frame)
+      leg.userData.at = [x, z]
+      legs.push(leg)
+    }
+  chair.add(seat, back, ...legs)
+  castAll(chair)
+  area.group.add(chair)
+  const place = (seatTop: number) => {
+    seat.position.set(0, seatTop - 0.3, -1)
+    back.position.set(0, seatTop + 1.9, -3.1)
+    back.rotation.x = -0.12
+    for (const leg of legs) {
+      const [x, z] = leg.userData.at as [number, number]
+      leg.scale.y = seatTop - 0.6
+      leg.position.set(x, (seatTop - 0.6) / 2, z - 1)
+    }
+  }
+  place(4.6)
+  return {
+    ...area,
+    kind: 'chair',
+    surfaceY: 4.6,
+    fitTo(h) {
+      // seat at the height of the knee joint, so the feet rest flat on the floor
+      const seatTop = h.rest.calf_l.head.y - 0.55
+      this.surfaceY = seatTop
+      place(seatTop)
+    },
+    dispose() {
+      area.dispose()
+      chair.traverse((o) => (o as THREE.Mesh).geometry?.dispose())
+    },
+  }
+}
+
 export function createSet(kind: SetKind): ExamSet {
-  return kind === 'bed' ? hospitalBed() : kind === 'couch' ? examCouch() : standingArea()
+  return kind === 'bed' ? hospitalBed() : kind === 'couch' ? examCouch() : kind === 'chair' ? clinicChair() : standingArea()
 }
 
 /** Floor and a soft vignette backdrop shared by every set. */

@@ -16,12 +16,12 @@ import { SIGN_DISPLACE, SIGN_NORMAL, SIGN_VERT_HEADER, type SignUniforms } from 
  * navel) but never sinks below the skin.
  */
 
-export type GarmentName = 'briefs' | 'gownTop' | 'chestBand' | 'gownSkirt' | 'drape'
+export type GarmentName = 'briefs' | 'gownTop' | 'gownUp' | 'chestBand' | 'gownSkirt' | 'drape'
 type ClippedName = Exclude<GarmentName, 'drape'>
 
 export interface Garments {
   meshes: Record<GarmentName, THREE.SkinnedMesh>
-  /** Per render vertex of the body: (briefs, gown top) 1 where the skin lies well inside the garment, hidden while it's worn */
+  /** Per render vertex of the body: (briefs, gown top, lifted gown) 1 where the skin lies well inside the garment, hidden while it's worn */
   cover: Float32Array
   show(which: Partial<Record<GarmentName, boolean>>): void
   /** Breathing: the same abdominal excursion as the skin, so the fabric moves with it */
@@ -96,21 +96,15 @@ const SPECS: Record<ClippedName, Spec> = {
   },
   gownTop: {
     part: 'body',
-    fields: (L, h) => {
-      const sleeve = (v: CV) => {
-        const side = v.p.x >= 0 ? 'l' : 'r'
-        const b = h.rest[`upperarm_${side}`]
-        const dir = b.tail.clone().sub(b.head).normalize()
-        return v.p.clone().sub(b.head).dot(dir) - L.upperArmLen * 0.42
-      }
-      return [
-        // round neckline, lower at the front
-        (v) => v.p.y - (L.neckY - 0.1 - 0.32 * THREE.MathUtils.smoothstep(v.p.z, 0.25, 0.85)),
-        (v) => L.hipY - 0.25 - v.p.y,
-        // short sleeves: only where the skin rides on the arm
-        (v) => (v.arm > 0.5 ? sleeve(v) : -1),
-      ]
-    },
+    fields: (L, h) => gownFields(L, h, L.hipY - 0.25),
+    offset: 0.07,
+    bridge: 0.9,
+    smooth: 10,
+  },
+  // the gown lifted above the umbilicus for a groin examination
+  gownUp: {
+    part: 'body',
+    fields: (L, h) => gownFields(L, h, L.navelY + 0.35),
     offset: 0.07,
     bridge: 0.9,
     smooth: 10,
@@ -129,6 +123,23 @@ const SPECS: Record<ClippedName, Spec> = {
     bridge: 0,
     smooth: 0,
   },
+}
+
+/** A short-sleeved gown with a round neckline, down to `hemY`. */
+function gownFields(L: Landmarks, h: HumanModel, hemY: number): Field[] {
+  const sleeve = (v: CV) => {
+    const side = v.p.x >= 0 ? 'l' : 'r'
+    const b = h.rest[`upperarm_${side}`]
+    const dir = b.tail.clone().sub(b.head).normalize()
+    return v.p.clone().sub(b.head).dot(dir) - L.upperArmLen * 0.42
+  }
+  return [
+    // round neckline, lower at the front
+    (v) => v.p.y - (L.neckY - 0.1 - 0.32 * THREE.MathUtils.smoothstep(v.p.z, 0.25, 0.85)),
+    (v) => hemY - v.p.y,
+    // short sleeves: only where the skin rides on the arm
+    (v) => (v.arm > 0.5 ? sleeve(v) : -1),
+  ]
 }
 
 /* ------------------------------------------------------------ clipping */
@@ -266,11 +277,13 @@ export function createGarments(h: HumanModel, base: HumanBase, a: Appearance, si
     return out
   }
   const briefsIn = coverOf('briefs', 0.12)
-  const gownIn = coverOf('gownTop', 0.35)
-  const cover = new Float32Array(base.renderToCompact.length * 2)
+  const gownIn = coverOf('gownTop', 0.22)
+  const gownUpIn = coverOf('gownUp', 0.22)
+  const cover = new Float32Array(base.renderToCompact.length * 3)
   base.renderToCompact.forEach((c, r) => {
-    cover[r * 2] = briefsIn[c]
-    cover[r * 2 + 1] = gownIn[c]
+    cover[r * 3] = briefsIn[c]
+    cover[r * 3 + 1] = gownIn[c]
+    cover[r * 3 + 2] = gownUpIn[c]
   })
 
   for (const [name, spec] of Object.entries(SPECS) as [ClippedName, Spec][]) {

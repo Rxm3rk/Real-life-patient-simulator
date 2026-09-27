@@ -17,6 +17,7 @@ export function shotFor(scene: PatientScene, name: ShotName): Shot {
   const lying = p.posture === 'supine'
   const reclined = p.posture === 'recline45'
   const sitting = p.posture === 'sitEdge' || p.posture === 'sitUp'
+  const chair = p.posture === 'sitChair'
   const face = lm('noseTip')
   const navel = lm('navel')
   const pubis = lm('pubis')
@@ -49,7 +50,7 @@ export function shotFor(scene: PatientScene, name: ShotName): Shot {
   }
 
   // reclined, sitting or standing: the patient faces the examiner
-  const forward = reclined ? v(0, 0.55, 0.85) : sitting ? v(-1, 0.12, 0).normalize() : v(0, 0.08, 1)
+  const forward = reclined ? v(0, 0.55, 0.85) : sitting ? v(-1, 0.12, 0).normalize() : chair ? v(0, 0.12, 1).normalize() : v(0, 0.08, 1)
   switch (name) {
     case 'overview':
       return sitting || reclined
@@ -58,7 +59,8 @@ export function shotFor(scene: PatientScene, name: ShotName): Shot {
     case 'face':
       return { target: face.clone().add(v(0, 0.2, 0)), dir: forward, dist: 6.5, fov: 30 }
     case 'neck':
-      return { target: lm('thyroidCartilage'), dir: forward.clone().add(v(0, -0.12, 0)), dist: 6.8, fov: 30 }
+      // three-quarters from the examiner's side and a little below: swellings show in profile
+      return { target: mid(lm('thyroidCartilage'), lm('sternalNotch'), 0.4), dir: forward.clone().normalize().add(v(sitting ? 0 : -0.62, -0.12, sitting ? 0.62 : 0)), dist: 6.2, fov: 30 }
     case 'thyroidBehind': {
       const back = forward.clone().multiplyScalar(-1).add(v(0, 0.55, 0))
       return { target: lm('thyroidCartilage').add(v(0, 0.3, 0)), dir: back, dist: 9, fov: 32 }
