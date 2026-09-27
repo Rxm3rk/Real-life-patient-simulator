@@ -6,7 +6,7 @@ import type { Pt } from '../../../anatomy/geometry'
 import { Button } from '../../../components/ui/Button'
 import { Segmented } from '../../../components/ui/primitives'
 import { Sheet } from '../../../components/ui/Sheet'
-import { toast } from '../../../components/ui/Toast'
+import { toast, useToasts } from '../../../components/ui/Toast'
 import { abdoFindings } from '../../../engine/abdo'
 import { protocolFor } from '../../../engine/protocols'
 import type { ProtocolStep, StepCtx } from '../../../engine/protocols/abdominal'
@@ -18,7 +18,7 @@ import { cn } from '../../../lib/utils'
 import { use3dPatients } from '../../../lib/webgl'
 import { useEncounter } from '../../../store/encounter'
 import { useSettings } from '../../../store/settings'
-import { ActionButton, FindingsLog, GuidePanel } from '../exam/panels'
+import { ActionButton, FindingStrip, FindingsLog, GuidePanel } from '../exam/panels'
 import type { Effect, EffectKind } from '../exam/Stage'
 import { ListenTask, ManoeuvreCaption, PulseTask } from '../exam/tasks'
 import { FaceCam } from '../FaceCam'
@@ -39,6 +39,8 @@ type STask =
   | { kind: 'doppler'; action: string; mode: DopplerKind; venous: boolean; reflux: boolean; label: string }
   | { kind: 'buerger' }
   | { kind: 'tourniquet' }
+
+const taskAction = (t: STask) => (t.kind === 'buerger' ? 'art.buerger' : t.kind === 'tourniquet' ? 'ven.tourniquet' : t.action)
 
 /** How long each visual cue plays (ms). */
 const CUE_MS: Partial<Record<StationCue, number>> = {
@@ -116,6 +118,12 @@ const PREP = ['comm.wash', 'comm.intro', 'comm.identity', 'comm.consent', 'comm.
 
 let effectSeq = 1
 let welcomed = ''
+let welcomeTip = ''
+/** The opening tip has done its job once you start examining: clear it off the stage. */
+const clearWelcome = () => {
+  if (welcomeTip) useToasts.getState().dismiss(welcomeTip)
+  welcomeTip = ''
+}
 
 export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => void }) {
   const def = stationFor(c.exam)!
@@ -171,7 +179,7 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
   useEffect(() => {
     if (s.log.length === 0 && s.mode !== 'osce' && welcomed !== s.attemptId) {
       welcomed = s.attemptId
-      toast({
+      welcomeTip = toast({
         tone: 'tip',
         title: def.title,
         body: def.intimate
@@ -246,7 +254,12 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
 
   const onAction = (id: string, at?: Pt, zoneId?: string) => {
     const a = A[id]
-    if (!a || task) return
+    if (!a) return
+    clearWelcome()
+    // pressing the manoeuvre that is already playing just finishes it; a panel already open for this action stays open
+    if (task?.kind === 'script' && task.action === id) return completeScript(task)
+    if (task && taskAction(task) === id) return
+    endTask()
     if (a.view !== 'any' && a.view !== view && def.views.some((v) => v.id === a.view)) setView(a.view)
     if (a.contact && !exposed) {
       toast({ tone: 'warning', title: 'Not exposed yet', body: 'Explain, gain consent and expose the patient appropriately first (Before you start → Expose).' })
@@ -294,17 +307,34 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
     if (obs && a.cue && a.cue !== 'expose' && a.cue !== 'stand' && a.cue !== 'lie') playCue(a.cue)
   }
 
-  const onScriptDone = useCallback(() => {
-    if (!task || task.kind !== 'script') return
-    const t = task
+  const completeScript = (t: Extract<STask, { kind: 'script' }>) => {
     setTask(null)
     run(t.action)
     if (t.cue && t.cueAt === 'end' && t.cue !== 'stand' && t.cue !== 'lie') playCue(t.cue)
+  }
+
+  const onScriptDone = useCallback(() => {
+    if (task?.kind === 'script') completeScript(task)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task])
 
+  /**
+   * A new action never waits on the last one: a manoeuvre still playing
+   * completes at once, and a task panel is ended as its close button would
+   * (the stethoscope is lifted and counts; an unfinished pulse count,
+   * Doppler, Buerger's or tourniquet test is put down).
+   */
+  const endTask = () => {
+    const t = task
+    if (!t) return
+    if (t.kind === 'script') return completeScript(t)
+    setTask(null)
+    if (t.kind === 'listen') run(t.action)
+    if (t.kind === 'buerger') setExtra({ buerger: undefined })
+    if (t.kind === 'tourniquet') setExtra({ veinFill: undefined, tourniquet: false })
+  }
+
   const onZone = (z: Zone, pt: Pt) => {
-    if (task) return
     const pick = z.actions.find((id) => A[id] && available(A[id]) && !did(id)) ?? z.actions[0]
     onAction(pick, z.at, z.id)
     if (!A[pick]?.contact) addEffect('tap', pt)
@@ -360,8 +390,10 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
       </Group>
       {groups.map((g) => {
         const here = g.ids.some((id) => viewOf(id) === view || viewOf(id) === 'any')
+        // buttons for another view work all the same (they switch to it), so they look it: name the view instead of fading them
+        const other = def.views.length > 1 && !here ? def.views.find((v) => v.id === viewOf(g.ids[0]))?.label : undefined
         return (
-          <Group key={g.title} title={g.title} dim={def.views.length > 1 && !here}>
+          <Group key={g.title} title={g.title} note={other}>
             <div className="grid grid-cols-2 gap-1.5">
               {g.ids.map((id) => (
                 <ActionButton key={id} id={id} label={A[id].label} short={A[id].short} compact done={did(id)} highlight={highlight === id} onClick={() => onAction(id)} />
@@ -650,22 +682,7 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
     <div className="flex h-full min-h-0 flex-col">
       <div className="relative h-[52%] min-h-[290px] shrink-0">{stage}</div>
       {viewSwitcher && <div className="shrink-0 border-t border-line bg-bg">{viewSwitcher}</div>}
-      <AnimatePresence initial={false}>
-        {latest && (
-          <motion.button
-            key={latest.key}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            onClick={() => setTab('findings')}
-            className="shrink-0 border-t border-line bg-surface-1 px-4 py-2.5 text-left"
-          >
-            <div className="text-[10px] font-semibold tracking-[0.12em] text-faint uppercase">{latest.label}</div>
-            <p className="mt-0.5 line-clamp-3 text-[13px] leading-snug text-ink">{latest.obs.text}</p>
-            {latest.obs.meaning && learn && <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-violet">{latest.obs.meaning}</p>}
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <FindingStrip latest={latest} learn={learn} onOpen={() => setTab('findings')} />
       <div className="flex min-h-0 flex-1 flex-col border-t border-line bg-bg">
         <div className="flex items-center gap-2 px-3 pt-2.5">
           <div className="flex-1">{tabs}</div>
@@ -683,10 +700,13 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
   )
 }
 
-function Group({ title, children, dim }: { title: string; children: React.ReactNode; dim?: boolean }) {
+function Group({ title, children, note }: { title: string; children: React.ReactNode; note?: string }) {
   return (
-    <div className={cn('transition-opacity', dim && 'opacity-60')}>
-      <div className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">{title}</div>
+    <div>
+      <div className="mb-2 flex items-baseline gap-2 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">
+        {title}
+        {note && <span className="text-[10.5px] font-medium tracking-normal normal-case">· {note} view</span>}
+      </div>
       {children}
     </div>
   )

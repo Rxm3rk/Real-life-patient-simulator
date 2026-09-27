@@ -454,18 +454,18 @@ export function PatientStage3D(props: PatientStage3DProps) {
     const canvas = canvasRef.current
     if (!canvas) return
     const pointers = new Set<number>()
-    let down: { x: number; y: number; t: number; id: number } | null = null
+    let down: { x: number; y: number; t: number; id: number; touch: boolean } | null = null
     const onDown = (e: PointerEvent) => {
       pointers.add(e.pointerId)
-      down = pointers.size === 1 ? { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId } : null
+      down = pointers.size === 1 ? { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId, touch: e.pointerType !== 'mouse' } : null
     }
     const onUp = (e: PointerEvent) => {
       pointers.delete(e.pointerId)
       const d = down
       down = null
       if (!d || d.id !== e.pointerId) return
-      // a drag or a long press turns the camera; a quick tap examines
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || performance.now() - d.t > 650) return
+      // a drag or a long press turns the camera; a tap examines (a fingertip wanders more than a mouse)
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > (d.touch ? 16 : 8) || performance.now() - d.t > (d.touch ? 900 : 650)) return
       tap(e.clientX, e.clientY)
     }
     const onCancel = (e: PointerEvent) => {

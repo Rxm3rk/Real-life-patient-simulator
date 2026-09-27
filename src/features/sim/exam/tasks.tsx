@@ -267,11 +267,31 @@ export function CrtTask({ crt, onSubmit, onClose, onBlanch }: { crt: number; onS
 
 /* ------------------------------ Stethoscope ------------------------------ */
 
-export function ListenTask({ kind, hr, label, onStop, minSeconds = 0 }: { kind: Listen; hr: number; label: string; onStop: (seconds: number) => void; minSeconds?: number }) {
+export function ListenTask({
+  kind,
+  hr,
+  label,
+  onStop,
+  onTick,
+  minSeconds = 0,
+}: {
+  kind: Listen
+  hr: number
+  label: string
+  onStop: (seconds: number) => void
+  /** the seconds listened so far, for a parent that ends the listening itself */
+  onTick?: (seconds: number) => void
+  minSeconds?: number
+}) {
   const [sec, setSec] = useState(0)
   const [fast, setFast] = useState(false)
   const fastRef = useRef(fast)
   fastRef.current = fast
+  const tickRef = useRef(onTick)
+  tickRef.current = onTick
+  useEffect(() => {
+    tickRef.current?.(sec)
+  }, [sec])
 
   useEffect(() => {
     const h = startListening(kind, hr)

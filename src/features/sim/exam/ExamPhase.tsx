@@ -30,7 +30,7 @@ import type { Exposure } from '../../../anatomy/types'
 import { Button } from '../../../components/ui/Button'
 import { Segmented } from '../../../components/ui/primitives'
 import { Sheet } from '../../../components/ui/Sheet'
-import { toast } from '../../../components/ui/Toast'
+import { toast, useToasts } from '../../../components/ui/Toast'
 import { abdoFindings } from '../../../engine/abdo'
 import { ACTION_BY_ID, type ViewId } from '../../../engine/abdoActions'
 import { protocolFor } from '../../../engine/protocols'
@@ -45,7 +45,7 @@ import { useSettings } from '../../../store/settings'
 import { FaceCam } from '../FaceCam'
 import { monitorLabel, VitalsMonitor } from '../VitalsMonitor'
 import type { Shot } from './camera'
-import { ActionButton, FINISH_IDS, FindingsLog, GuidePanel, PREP_IDS, RegionPad, VIEW_ACTIONS } from './panels'
+import { ActionButton, FindingStrip, FINISH_IDS, FindingsLog, GuidePanel, PREP_IDS, RegionPad, VIEW_ACTIONS } from './panels'
 import type { PatientStageApi, StageHit } from './PatientStage3D'
 import { nearest, Stage, type Effect, type EffectKind } from './Stage'
 import { CrtTask, ListenTask, ManoeuvreCaption, PulseTask } from './tasks'
@@ -82,8 +82,16 @@ type Task =
   | { kind: 'liver' }
   | { kind: 'script'; steps: string[]; action: string; detail?: string; at?: Pt[] }
 
+const taskAction = (t: Task) => (t.kind === 'pulse' ? 'hands.pulse' : t.kind === 'crt' ? 'hands.crt' : t.kind === 'liver' ? 'abdo.liver' : t.action)
+
 let effectSeq = 1
 let welcomed = ''
+let welcomeTip = ''
+/** The opening tip has done its job once you start examining: clear it off the stage. */
+const clearWelcome = () => {
+  if (welcomeTip) useToasts.getState().dismiss(welcomeTip)
+  welcomeTip = ''
+}
 
 export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => void }) {
   const s = useEncounter((st) => st.s)!
@@ -147,7 +155,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
   useEffect(() => {
     if (s.log.length === 0 && s.mode !== 'osce' && welcomed !== s.attemptId) {
       welcomed = s.attemptId
-      toast({ tone: 'tip', title: 'Before you touch the patient', body: 'Clean your hands, introduce yourself, confirm identity, explain and gain consent, offer a chaperone and ask about pain.', duration: 7000 })
+      welcomeTip = toast({ tone: 'tip', title: 'Before you touch the patient', body: 'Clean your hands, introduce yourself, confirm identity, explain and gain consent, offer a chaperone and ask about pain.', duration: 7000 })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -166,6 +174,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
   }
 
   const violationsBefore = useRef<Set<string>>(new Set())
+  const listenSec = useRef(0)
 
   const run = (action: string, opts: { region?: RegionId; detail?: string; seconds?: number; at?: Pt } = {}): Observation | null => {
     const def = ACTION_BY_ID[action]
@@ -211,8 +220,9 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
 
   /* ---------------------------- stage taps ---------------------------- */
 
-  const onPoint = (pt: Pt, hit?: StageHit | null) => {
-    if (task) return
+  const onPoint = (pt: Pt, hit?: StageHit | null, useTool: Tool = tool) => {
+    clearWelcome()
+    endTask()
     if (view === 'bed') {
       const chart = Math.hypot(pt[0] - 118, pt[1] - 842) < 50
       if (chart) {
@@ -225,7 +235,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
     if (view === 'abdomen') {
       // the 3D stage knows the region under your finger on the patient's own body
       const r = hit ? hit.region : regionAt(pt, lm, d)
-      if (tool === 'look') {
+      if (useTool === 'look') {
         run('abdo.inspect')
         return
       }
@@ -237,18 +247,18 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
         run('abdo.light', { region: r })
         return
       }
-      if (tool === 'light' || tool === 'deep') {
-        addEffect(tool, pt)
-        const obs = run(tool === 'light' ? 'abdo.light' : 'abdo.deep', { region: r, at: pt })
-        if (obs && (obs.reaction ?? 0) >= 0.3 && learn) addEffect('tender', r === 'LIF' && tool === 'deep' && f.abdomen.rovsing ? lm.mcburney : pt)
-      } else if (tool === 'percTender') {
+      if (useTool === 'light' || useTool === 'deep') {
+        addEffect(useTool, pt)
+        const obs = run(useTool === 'light' ? 'abdo.light' : 'abdo.deep', { region: r, at: pt })
+        if (obs && (obs.reaction ?? 0) >= 0.3 && learn) addEffect('tender', r === 'LIF' && useTool === 'deep' && f.abdomen.rovsing ? lm.mcburney : pt)
+      } else if (useTool === 'percTender') {
         addEffect('press', pt)
         run('abdo.percTender', { region: r, at: pt })
-      } else if (tool === 'percuss') {
+      } else if (useTool === 'percuss') {
         const note = f.abdomen.regions[r].note
         addEffect('percuss', pt, learn ? note : undefined, 1400)
         run('abdo.percuss', { region: r, at: pt })
-      } else if (tool === 'listen') {
+      } else if (useTool === 'listen') {
         startListen(pt)
       }
       return
@@ -316,6 +326,11 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
   const onAction = (id: string) => {
     const def = ACTION_BY_ID[id]
     if (!def) return
+    clearWelcome()
+    // pressing the manoeuvre that is already playing just finishes it; a panel already open for this action stays open
+    if (task?.kind === 'script' && task.action === id) return completeScript(task)
+    if (task && taskAction(task) === id) return
+    endTask()
     if (def.view !== 'any' && def.view !== view) setView(def.view)
     // Tasks that need interaction
     if (id === 'hands.pulse') return setTask({ kind: 'pulse' })
@@ -345,9 +360,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
     run(id)
   }
 
-  const onScriptDone = useCallback(() => {
-    if (!task || task.kind !== 'script') return
-    const t = task
+  const completeScript = (t: Extract<Task, { kind: 'script' }>) => {
     setTask(null)
     if (t.at) t.at.forEach((p, i) => window.setTimeout(() => addEffect(t.action === 'abdo.liverSpan' || t.action === 'abdo.shifting' ? 'percuss' : 'press', p), i * 120))
     if (t.action === 'abdo.liverSpan' || t.action === 'abdo.shifting') {
@@ -355,8 +368,28 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
     }
     run(t.action, { detail: t.detail })
     if (t.action === 'hands.flap') setFlap(0)
+  }
+
+  const onScriptDone = useCallback(() => {
+    if (task?.kind === 'script') completeScript(task)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task])
+
+  /**
+   * A new action never waits on the last one: a manoeuvre still playing
+   * completes at once, and a task panel is ended as its close button would
+   * (the stethoscope is lifted and the listening so far counts; an unfinished
+   * pulse count, capillary refill or liver edge is put down).
+   */
+  const endTask = () => {
+    const t = task
+    if (!t) return
+    if (t.kind === 'script') return completeScript(t)
+    setTask(null)
+    if (t.kind === 'crt') setBlanch(0)
+    if (t.kind === 'listen') run(t.action, { seconds: listenSec.current })
+    listenSec.current = 0
+  }
 
   // asterixis animation during the flap test
   useEffect(() => {
@@ -498,7 +531,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
       </div>
 
       {/* tool dock */}
-      {view === 'abdomen' && !task && (
+      {view === 'abdomen' && (!task || task.kind === 'script') && (
         <div className="absolute inset-x-0 bottom-2 z-20 flex justify-center px-2">
           <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1 shadow-(--shadow-float) ring-1 ring-line no-scrollbar glass">
             {TOOLS.map((t) => (
@@ -589,9 +622,13 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
             kind={task.sound}
             hr={c.vitals.hr}
             label={task.label}
+            onTick={(sec) => {
+              listenSec.current = sec
+            }}
             onStop={(sec) => {
               const t = task
               setTask(null)
+              listenSec.current = 0
               run(t.action, { seconds: sec })
             }}
           />
@@ -614,6 +651,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
     </div>
   )
 
+  const padTool: Tool = tool === 'look' || tool === 'listen' ? 'light' : tool
   const actionsPanel = (
     <div className="space-y-5">
       <Group title="Before you start">
@@ -633,13 +671,13 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
         </Group>
       ))}
       {view === 'abdomen' && (
-        <Group title={`Palpate by region — ${TOOLS.find((t) => t.id === tool)?.label}`}>
+        <Group title={`Palpate by region — ${TOOLS.find((t) => t.id === padTool)?.label}`}>
           <RegionPad
             state={regionState}
-            disabled={tool === 'look' || tool === 'listen'}
             onPick={(r) => {
-              const centre = regionCentreSafe(r, lm)
-              onPoint(centre)
+              // the pad always examines: from Look or Listen it takes up light palpation
+              if (padTool !== tool) setTool(padTool)
+              onPoint(regionCentreSafe(r, lm), null, padTool)
             }}
           />
         </Group>
@@ -727,22 +765,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
     <div className="flex h-full min-h-0 flex-col">
       <div className="relative h-[54%] min-h-[300px] shrink-0">{stage}</div>
       <div className="shrink-0 border-t border-line bg-bg">{viewSwitcher}</div>
-      <AnimatePresence initial={false}>
-        {latest && (
-          <motion.button
-            key={latest.key}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            onClick={() => setTab('findings')}
-            className="shrink-0 border-t border-line bg-surface-1 px-4 py-2.5 text-left"
-          >
-            <div className="text-[10px] font-semibold tracking-[0.12em] text-faint uppercase">{latest.label}</div>
-            <p className="mt-0.5 line-clamp-3 text-[13px] leading-snug text-ink">{latest.obs.text}</p>
-            {latest.obs.meaning && learn && <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-violet">{latest.obs.meaning}</p>}
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <FindingStrip latest={latest} learn={learn} onOpen={() => setTab('findings')} />
       <div className="flex min-h-0 flex-1 flex-col border-t border-line bg-bg">
         <div className="flex items-center gap-2 px-3 pt-2.5">
           <div className="flex-1">{tabs}</div>

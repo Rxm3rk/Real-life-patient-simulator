@@ -1,6 +1,6 @@
 import { ClipboardCheck, FlaskConical, MessagesSquare, Stethoscope, Trophy, X, Brain } from 'lucide-react'
 import { motion } from 'motion/react'
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { unlockAudio } from '../../audio/engine'
 import { PatientAvatar } from '../../components/PatientAvatar'
 import { Button } from '../../components/ui/Button'
@@ -66,6 +66,23 @@ export default function SimScreen() {
     if (remaining === 0) toast({ tone: 'danger', title: 'Time’s up', body: 'The examiner asks you to stop. You can still finish your plan.' })
   }, [remaining])
 
+  // tips drop in below the header, so its tabs and Finish button stay free to press
+  const headerRef = useRef<HTMLElement>(null)
+  const loaded = !!s && !!c
+  useLayoutEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const root = document.documentElement
+    const set = () => root.style.setProperty('--toast-top', `${el.offsetHeight}px`)
+    set()
+    const ro = new ResizeObserver(set)
+    ro.observe(el)
+    return () => {
+      ro.disconnect()
+      root.style.removeProperty('--toast-top')
+    }
+  }, [loaded])
+
   if (!s || !c) {
     return (
       <div className="grid min-h-dvh place-items-center bg-bg">
@@ -87,7 +104,7 @@ export default function SimScreen() {
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-bg">
       {/* Header */}
-      <header className="relative z-30 shrink-0 border-b border-line bg-bg/85 backdrop-blur-xl safe-top">
+      <header ref={headerRef} className="relative z-30 shrink-0 border-b border-line bg-bg/85 backdrop-blur-xl safe-top">
         <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-4">
           <button
             onClick={() => setConfirmExit(true)}

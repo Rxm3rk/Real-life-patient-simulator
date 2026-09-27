@@ -57,7 +57,9 @@ export function Toaster() {
   const dismiss = useToasts((s) => s.dismiss)
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-[90] flex flex-col items-center gap-2 px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:items-end md:px-5"
+      className="pointer-events-none fixed inset-x-0 top-0 z-[90] flex flex-col items-center gap-2 px-3 md:items-end md:px-5"
+      // below a screen's header when it has one (--toast-top), so the header stays usable
+      style={{ paddingTop: 'calc(var(--toast-top, env(safe-area-inset-top, 0px)) + 0.75rem)' }}
       aria-live="polite"
     >
       <AnimatePresence initial={false}>

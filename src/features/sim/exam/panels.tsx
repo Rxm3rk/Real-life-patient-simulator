@@ -1,5 +1,5 @@
 import { AlertCircle, Check, ChevronRight, Eye, Lightbulb, Sparkles } from 'lucide-react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { REGION_LABEL, REGION_ORDER, REGION_SHORT, type RegionId } from '../../../anatomy/bodyModel'
 import { Button } from '../../../components/ui/Button'
@@ -7,7 +7,7 @@ import { Badge, ProgressBar } from '../../../components/ui/primitives'
 import { ACTION_BY_ID, type ViewId } from '../../../engine/abdoActions'
 import type { EncounterState } from '../../../engine/encounter'
 import type { ProtocolStep, StepCtx } from '../../../engine/protocols/abdominal'
-import type { Mode } from '../../../engine/types'
+import type { Mode, Observation } from '../../../engine/types'
 import { cn } from '../../../lib/utils'
 
 export const VIEW_ACTIONS: Record<ViewId, { title: string; ids: string[] }[]> = {
@@ -62,6 +62,41 @@ export function ActionButton({
       {highlight && <span className="absolute -inset-0.5 animate-[blink-soft_1.4s_ease-in-out_infinite] rounded-xl ring-2 ring-accent/60" />}
       <span className={cn('grid h-4 w-4 shrink-0 place-items-center rounded-full', done ? 'bg-success text-white' : 'ring-1 ring-line-strong')}>{done && <Check size={10} strokeWidth={3.5} />}</span>
       <span className="leading-tight">{compact ? a?.short ?? a?.label : a?.label}</span>
+    </button>
+  )
+}
+
+/**
+ * The latest finding, above the actions on a phone. It keeps the same height
+ * whatever it says, so the buttons below never shift under your finger; a new
+ * finding fades in over the last. Tap it for the full list.
+ */
+export function FindingStrip({ latest, learn, onOpen }: { latest: { label: string; obs: Observation; key: number } | null; learn: boolean; onOpen: () => void }) {
+  return (
+    <button onClick={onOpen} aria-live="polite" className="relative h-[84px] shrink-0 overflow-hidden border-t border-line bg-surface-1 text-left">
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={latest?.key ?? 0}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="absolute inset-0 px-4 py-2"
+        >
+          {latest ? (
+            <>
+              <div className="truncate text-[10px] font-semibold tracking-[0.12em] text-faint uppercase">{latest.label}</div>
+              <p className={cn('mt-0.5 text-[13px] leading-snug text-ink', latest.obs.meaning && learn ? 'line-clamp-2' : 'line-clamp-3')}>{latest.obs.text}</p>
+              {latest.obs.meaning && learn && <p className="mt-0.5 line-clamp-1 text-[12px] leading-snug text-violet">{latest.obs.meaning}</p>}
+            </>
+          ) : (
+            <div className="flex h-full items-center gap-2 text-[13px] text-muted">
+              <Eye size={15} className="shrink-0 text-faint" />
+              Tap an action, or the patient, to examine. Findings show here.
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </button>
   )
 }
