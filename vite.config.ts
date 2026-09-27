@@ -55,7 +55,8 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+          // bin: the 3D bodies; webp: the patient portraits
+          globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,bin}'],
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         },
       }),

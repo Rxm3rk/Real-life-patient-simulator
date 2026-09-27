@@ -64,7 +64,8 @@ export function shotFor(scene: PatientScene, name: ShotName): Shot {
       return { target: face.clone().add(v(0, 0.2, 0)), dir: forward, dist: 6.5, fov: 30 }
     case 'neck':
       // three-quarters from the examiner's side and a little below: swellings show in profile
-      return { target: mid(lm('thyroidCartilage'), lm('sternalNotch'), 0.4), dir: forward.clone().normalize().add(v(sitting ? 0 : -0.62, -0.12, sitting ? 0.62 : 0)), dist: 6.2, fov: 30 }
+      // framed from the eyes to the clavicles, so the eye signs of thyroid disease are in view too
+      return { target: mid(lm('thyroidCartilage'), lm('sternalNotch'), 0.4).addScaledVector(headUp, 0.5), dir: forward.clone().normalize().add(v(sitting ? 0 : -0.62, -0.12, sitting ? 0.62 : 0)), dist: 7.6, fov: 30 }
     case 'thyroidBehind': {
       const back = forward.clone().multiplyScalar(-1).add(v(0, 0.55, 0))
       return { target: lm('thyroidCartilage').add(v(0, 0.3, 0)), dir: back, dist: 9, fov: 32 }
