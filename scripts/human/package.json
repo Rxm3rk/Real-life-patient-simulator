@@ -1,0 +1,12 @@
+{
+  "name": "bedside-human-bake",
+  "private": true,
+  "type": "module",
+  "description": "Offline bake of the 3D patients from MakeHuman CC0 data. Not part of the app build; see README.md in this folder.",
+  "scripts": {
+    "bake": "node bake.mjs"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.4"
+  }
+}

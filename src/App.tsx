@@ -15,6 +15,7 @@ const Osce = lazy(() => import('./features/osce/Osce'))
 const Progress = lazy(() => import('./features/progress/Progress'))
 const Settings = lazy(() => import('./features/settings/Settings'))
 const AnatomyLab = lazy(() => import('./features/lab/AnatomyLab'))
+const Human3DLab = lazy(() => import('./features/lab/Human3DLab'))
 
 interface RouteDef {
   pattern: string
@@ -38,6 +39,7 @@ const routes: RouteDef[] = [
   { pattern: '/progress', render: () => <Progress /> },
   { pattern: '/settings', render: () => <Settings /> },
   { pattern: '/lab/anatomy', render: () => <AnatomyLab />, bare: true },
+  { pattern: '/lab/3d', render: () => <Human3DLab />, bare: true },
 ]
 
 function Fallback() {

@@ -1,0 +1,454 @@
+{
+ "case:appendicitis": {
+  "sex": "male",
+  "age": 24,
+  "skinTone": 3,
+  "habitus": "average",
+  "hair": "short",
+  "hairColor": "darkbrown",
+  "eyeColor": "brown",
+  "facialHair": "stubble",
+  "flushed": 0.35,
+  "dehydrated": true,
+  "lines": {
+   "cannula": "left-hand"
+  }
+ },
+ "case:cholecystitis": {
+  "sex": "female",
+  "age": 46,
+  "skinTone": 2,
+  "habitus": "overweight",
+  "hair": "bob",
+  "hairColor": "brown",
+  "eyeColor": "blue",
+  "flushed": 0.4,
+  "scars": [
+   "pfannenstiel"
+  ],
+  "lines": {
+   "cannula": "right-forearm",
+   "drip": true
+  }
+ },
+ "case:sbo-femoral": {
+  "sex": "female",
+  "age": 83,
+  "skinTone": 1,
+  "habitus": "thin",
+  "hair": "bun",
+  "hairColor": "white",
+  "eyeColor": "blue",
+  "distension": 2,
+  "distensionType": "gas",
+  "visiblePeristalsis": true,
+  "scars": [
+   "pfannenstiel"
+  ],
+  "hernias": [
+   {
+    "kind": "femoral",
+    "side": "right",
+    "size": "medium",
+    "visible": "always",
+    "tense": true
+   }
+  ],
+  "dehydrated": true,
+  "sweaty": true,
+  "lines": {
+   "cannula": "left-forearm",
+   "drip": true
+  }
+ },
+ "case:perforated-du": {
+  "sex": "male",
+  "age": 52,
+  "skinTone": 5,
+  "habitus": "average",
+  "hair": "receding",
+  "hairColor": "black",
+  "eyeColor": "brown",
+  "facialHair": "stubble",
+  "sweaty": true,
+  "pallor": 0.25,
+  "lines": {
+   "cannula": "right-hand",
+   "oxygen": "mask"
+  }
+ },
+ "case:pancreatitis": {
+  "sex": "male",
+  "age": 44,
+  "skinTone": 1,
+  "habitus": "average",
+  "hair": "crop",
+  "hairColor": "blonde",
+  "eyeColor": "blue",
+  "facialHair": "stubble",
+  "flushed": 0.25,
+  "sweaty": true,
+  "spiderNaevi": 2,
+  "lines": {
+   "cannula": "left-hand"
+  }
+ },
+ "case:diverticulitis": {
+  "sex": "female",
+  "age": 68,
+  "skinTone": 2,
+  "habitus": "overweight",
+  "hair": "bob",
+  "hairColor": "grey",
+  "eyeColor": "green",
+  "flushed": 0.3,
+  "glasses": true,
+  "lines": {
+   "cannula": "right-hand"
+  }
+ },
+ "case:cholangitis": {
+  "sex": "male",
+  "age": 72,
+  "skinTone": 6,
+  "habitus": "overweight",
+  "hair": "receding",
+  "hairColor": "grey",
+  "eyeColor": "brown",
+  "jaundice": 0.7,
+  "sweaty": true,
+  "lines": {
+   "cannula": "left-hand",
+   "drip": true
+  }
+ },
+ "case:ruptured-aaa": {
+  "sex": "male",
+  "age": 74,
+  "skinTone": 2,
+  "habitus": "average",
+  "hair": "bald",
+  "hairColor": "grey",
+  "eyeColor": "grey",
+  "pallor": 0.7,
+  "sweaty": true,
+  "visiblePulsation": true,
+  "lines": {
+   "cannula": "left-forearm",
+   "oxygen": "mask"
+  }
+ },
+ "case:mesenteric-ischaemia": {
+  "sex": "female",
+  "age": 79,
+  "skinTone": 1,
+  "habitus": "thin",
+  "hair": "bob",
+  "hairColor": "white",
+  "eyeColor": "blue",
+  "sweaty": true,
+  "pallor": 0.3,
+  "lines": {
+   "cannula": "right-hand"
+  }
+ },
+ "case:pancreatic-cancer": {
+  "sex": "male",
+  "age": 68,
+  "skinTone": 4,
+  "habitus": "thin",
+  "hair": "bald",
+  "hairColor": "grey",
+  "eyeColor": "brown",
+  "facialHair": "moustache",
+  "glasses": true,
+  "jaundice": 0.85,
+  "cachexia": true,
+  "excoriations": true
+ },
+ "case:caecal-cancer": {
+  "sex": "female",
+  "age": 76,
+  "skinTone": 3,
+  "habitus": "thin",
+  "hair": "bob",
+  "hairColor": "grey",
+  "eyeColor": "brown",
+  "pallor": 0.75,
+  "glasses": true
+ },
+ "case:liver-disease": {
+  "sex": "male",
+  "age": 55,
+  "skinTone": 6,
+  "habitus": "average",
+  "hair": "crop",
+  "hairColor": "black",
+  "eyeColor": "brown",
+  "distension": 3,
+  "distensionType": "fluid",
+  "umbilicus": "everted",
+  "caputMedusae": true,
+  "spiderNaevi": 7,
+  "gynaecomastia": true,
+  "bodyHairLoss": true,
+  "jaundice": 0.45,
+  "scars": [
+   "lap-chole"
+  ]
+ },
+ "case:ileostomy": {
+  "sex": "male",
+  "age": 34,
+  "skinTone": 2,
+  "habitus": "thin",
+  "hair": "short",
+  "hairColor": "brown",
+  "eyeColor": "green",
+  "facialHair": "beard",
+  "scars": [
+   "midline"
+  ],
+  "stoma": {
+   "type": "ileostomy",
+   "side": "right",
+   "bag": false
+  }
+ },
+ "case:inguinal-hernia": {
+  "sex": "male",
+  "age": 38,
+  "skinTone": 5,
+  "habitus": "average",
+  "hair": "crop",
+  "hairColor": "black",
+  "eyeColor": "brown",
+  "facialHair": "stubble",
+  "hernias": [
+   {
+    "kind": "inguinal-indirect",
+    "side": "right",
+    "size": "medium",
+    "visible": "standing"
+   }
+  ]
+ },
+ "case:femoral-hernia": {
+  "sex": "female",
+  "age": 71,
+  "skinTone": 1,
+  "habitus": "thin",
+  "hair": "bob",
+  "hairColor": "grey",
+  "eyeColor": "blue",
+  "glasses": true,
+  "hernias": [
+   {
+    "kind": "femoral",
+    "side": "right",
+    "size": "small",
+    "visible": "always",
+    "irreducible": true
+   }
+  ]
+ },
+ "case:direct-hernia": {
+  "sex": "male",
+  "age": 76,
+  "skinTone": 2,
+  "habitus": "overweight",
+  "hair": "receding",
+  "hairColor": "white",
+  "eyeColor": "grey",
+  "facialHair": "moustache",
+  "scars": [
+   "left-inguinal"
+  ],
+  "hernias": [
+   {
+    "kind": "inguinal-direct",
+    "side": "right",
+    "size": "medium",
+    "visible": "standing"
+   }
+  ]
+ },
+ "case:lipoma": {
+  "sex": "male",
+  "age": 47,
+  "skinTone": 1,
+  "habitus": "overweight",
+  "hair": "short",
+  "hairColor": "brown",
+  "eyeColor": "blue",
+  "facialHair": "none"
+ },
+ "case:epidermoid-cyst": {
+  "sex": "female",
+  "age": 32,
+  "skinTone": 3,
+  "habitus": "average",
+  "hair": "long",
+  "hairColor": "darkbrown",
+  "eyeColor": "brown"
+ },
+ "case:graves": {
+  "sex": "female",
+  "age": 29,
+  "skinTone": 4,
+  "habitus": "thin",
+  "hair": "bun",
+  "hairColor": "black",
+  "eyeColor": "brown",
+  "sweaty": true,
+  "flushed": 0.25
+ },
+ "case:mng": {
+  "sex": "female",
+  "age": 58,
+  "skinTone": 1,
+  "habitus": "overweight",
+  "hair": "bob",
+  "hairColor": "blonde",
+  "eyeColor": "blue"
+ },
+ "case:thyroglossal-cyst": {
+  "sex": "female",
+  "age": 19,
+  "skinTone": 2,
+  "habitus": "average",
+  "hair": "long",
+  "hairColor": "auburn",
+  "eyeColor": "green"
+ },
+ "case:fibroadenoma": {
+  "sex": "female",
+  "age": 23,
+  "skinTone": 3,
+  "habitus": "average",
+  "hair": "long",
+  "hairColor": "black",
+  "eyeColor": "brown"
+ },
+ "case:breast-cancer": {
+  "sex": "female",
+  "age": 64,
+  "skinTone": 1,
+  "habitus": "overweight",
+  "hair": "short",
+  "hairColor": "grey",
+  "eyeColor": "hazel",
+  "glasses": true
+ },
+ "case:clti": {
+  "sex": "male",
+  "age": 72,
+  "skinTone": 2,
+  "habitus": "thin",
+  "hair": "bald",
+  "hairColor": "grey",
+  "eyeColor": "grey",
+  "facialHair": "stubble",
+  "lines": {
+   "cannula": "left-hand"
+  }
+ },
+ "case:claudication": {
+  "sex": "male",
+  "age": 64,
+  "skinTone": 1,
+  "habitus": "overweight",
+  "hair": "receding",
+  "hairColor": "grey",
+  "eyeColor": "brown",
+  "facialHair": "none"
+ },
+ "case:venous-ulcer": {
+  "sex": "female",
+  "age": 58,
+  "skinTone": 2,
+  "habitus": "overweight",
+  "hair": "bob",
+  "hairColor": "brown",
+  "eyeColor": "hazel"
+ },
+ "case:testicular-torsion": {
+  "sex": "male",
+  "age": 15,
+  "skinTone": 1,
+  "habitus": "thin",
+  "hair": "short",
+  "hairColor": "blonde",
+  "eyeColor": "blue",
+  "sweaty": true,
+  "pallor": 0.25
+ },
+ "case:hydrocele": {
+  "sex": "male",
+  "age": 67,
+  "skinTone": 1,
+  "habitus": "average",
+  "hair": "receding",
+  "hairColor": "grey",
+  "eyeColor": "blue",
+  "facialHair": "none"
+ },
+ "case:testicular-tumour": {
+  "sex": "male",
+  "age": 29,
+  "skinTone": 4,
+  "habitus": "average",
+  "hair": "short",
+  "hairColor": "black",
+  "eyeColor": "brown",
+  "facialHair": "beard"
+ },
+ "atlas:man": {
+  "sex": "male",
+  "age": 58,
+  "skinTone": 2,
+  "habitus": "average",
+  "hair": "short",
+  "hairColor": "brown",
+  "eyeColor": "blue",
+  "facialHair": "none"
+ },
+ "atlas:woman": {
+  "sex": "female",
+  "age": 54,
+  "skinTone": 2,
+  "habitus": "average",
+  "hair": "bob",
+  "hairColor": "brown",
+  "eyeColor": "hazel"
+ },
+ "atlas:torso": {
+  "sex": "male",
+  "age": 50,
+  "skinTone": 2,
+  "habitus": "average",
+  "hair": "short",
+  "hairColor": "brown",
+  "eyeColor": "brown",
+  "facialHair": "none"
+ },
+ "atlas:olderWoman": {
+  "sex": "female",
+  "age": 62,
+  "skinTone": 2,
+  "habitus": "average",
+  "hair": "short",
+  "hairColor": "grey",
+  "eyeColor": "hazel"
+ },
+ "atlas:olderMan": {
+  "sex": "male",
+  "age": 66,
+  "skinTone": 2,
+  "habitus": "average",
+  "hair": "short",
+  "hairColor": "brown",
+  "eyeColor": "blue",
+  "facialHair": "none"
+ }
+}
