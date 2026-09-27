@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import type { HerniaPhase } from '../../anatomy/Body'
 import type { Appearance } from '../../anatomy/types'
-import { PatientScene } from '../../anatomy3d/patientScene'
+import { PatientScene, type BlanketFrom } from '../../anatomy3d/patientScene'
 import type { Arms, Posture } from '../../anatomy3d/poses'
 import type { SetKind } from '../../anatomy3d/sets'
 import { shotFor, type ShotName } from '../../anatomy3d/shots'
@@ -10,6 +11,9 @@ import { useLocation } from '../../lib/router'
 /**
  * Development view of the 3D patients:
  * /lab/3d?body=<key>&set=bed|couch|standing&pose=supine|recline45|stand|sitEdge&arms=…&wear=briefs,gownTop&blanket=0.55&shot=abdomen
+ *   &grid=1 (regions, with RIF/EPI tinted) &phase=cough|standing|reduced|ring-cough
+ *   &touch=light|deep|percuss|press|pit|listen (what a tap does)
+ *   &dir=x,y,z &dist=n (camera direction and distance for the shot)
  */
 export default function Human3DLab() {
   const { query } = useLocation()
@@ -33,9 +37,33 @@ export default function Human3DLab() {
         scene.setPose({ posture, arms: (query.get('arms') ?? undefined) as Arms | undefined, turned: query.get('turned') === '1' }, true)
         const wear = new Set((query.get('wear') ?? '').split(',').filter(Boolean))
         const blanket = query.get('blanket')
-        scene.setClothing({ briefs: wear.has('briefs'), gownTop: wear.has('gownTop'), chestBand: wear.has('chestBand'), gownSkirt: wear.has('gownSkirt'), blanketFrom: blanket ? +blanket : null })
+        scene.setClothing({
+          briefs: wear.has('briefs'),
+          drape: wear.has('drape'),
+          gownTop: wear.has('gownTop'),
+          chestBand: wear.has('chestBand'),
+          gownSkirt: wear.has('gownSkirt'),
+          blanketFrom: !blanket ? null : isNaN(+blanket) ? (blanket as BlanketFrom) : +blanket,
+        })
         scene.setExpression({ pain: +(query.get('pain') ?? 0), lookAt: 'camera' })
-        scene.shot(shotFor(scene, (query.get('shot') ?? 'overview') as ShotName), true)
+        const shot = shotFor(scene, (query.get('shot') ?? 'overview') as ShotName)
+        const dir = query.get('dir')?.split(',').map(Number)
+        if (dir?.length === 3) shot.dir.set(dir[0], dir[1], dir[2])
+        if (query.get('dist')) shot.dist = +query.get('dist')!
+        scene.shot(shot, true)
+        if (query.get('grid')) scene.setGrid(true, { RIF: 'deep', EPI: 'light', UMB: 'light' })
+        const phase = query.get('phase') as HerniaPhase | null
+        if (phase) scene.setHerniaPhase(phase)
+        const touch = query.get('touch')
+        if (touch)
+          canvas.addEventListener('pointerdown', (e) => {
+            const r = canvas.getBoundingClientRect()
+            const hit = scene.pick(e.clientX - r.left, e.clientY - r.top)
+            if (!hit) return
+            if (touch === 'listen') scene.listen(hit.rest)
+            else scene.touchAt(hit.rest, touch as 'light')
+            scene.signs.ripple(hit.rest)
+          })
         setStatus(`${key}`)
         ;(window as unknown as { __lab: unknown }).__lab = { scene, stage: scene.stage, human: scene.human }
       })

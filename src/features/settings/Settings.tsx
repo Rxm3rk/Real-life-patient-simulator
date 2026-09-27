@@ -7,6 +7,7 @@ import { Segmented, Switch } from '../../components/ui/primitives'
 import { Sheet } from '../../components/ui/Sheet'
 import { toast } from '../../components/ui/Toast'
 import { EMBEDDED } from '../../lib/env'
+import { use3dPatients, webgl2Supported, webglTier } from '../../lib/webgl'
 import { useProgress } from '../../store/progress'
 import { useSettings, type ThemePref } from '../../store/settings'
 
@@ -142,6 +143,18 @@ export default function Settings() {
           </Row>
           <Row label="Abdominal regions in Practice mode" hint="Overlay the nine regions while you palpate (always on in Learn mode).">
             <Switch checked={st.showRegions} onChange={(showRegions) => set({ showRegions })} label="Show regions" />
+          </Row>
+          <Row
+            label="3D patients"
+            hint={
+              !webgl2Supported()
+                ? 'This browser can’t show 3D graphics, so patients are illustrated.'
+                : webglTier() === 'software'
+                  ? 'This device has no graphics acceleration, so 3D patients would be slow. Turn on to try them anyway.'
+                  : 'Examine lifelike 3D patients. Turn off for the lighter illustrated patients on an older device.'
+            }
+          >
+            <Switch checked={use3dPatients(st.patients3d)} disabled={!webgl2Supported()} onChange={(patients3d) => set({ patients3d })} label="3D patients" />
           </Row>
         </Group>
 

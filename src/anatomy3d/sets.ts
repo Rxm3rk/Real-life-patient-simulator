@@ -212,24 +212,31 @@ export function createRoom(dark: boolean) {
  * widened and blurred so it tents between the legs and hangs over the edges.
  * `fromZ`..`toZ` is the covered stretch of the bed (head end is −z).
  */
-export function buildBlanket(h: HumanModel, opts: { surfaceY: number; fromZ: number; toZ: number; width: number; parent: THREE.Object3D }) {
+export function buildBlanket(h: HumanModel, opts: { surfaceY: number; fromZ: number; toZ: number; width: number; parent: THREE.Object3D; over?: THREE.SkinnedMesh[] }) {
   const res = 0.25
   const half = opts.width / 2 + 1.2
   const nx = Math.ceil((half * 2) / res) + 1
   const nz = Math.ceil((opts.toZ - opts.fromZ) / res) + 1
   const H = new Float32Array(nx * nz).fill(opts.surfaceY + 0.05)
   // posed body heights (skinned vertex positions in the parent's frame)
-  h.root.updateMatrixWorld(true)
+  opts.parent.updateMatrixWorld(true)
   const inv = new THREE.Matrix4().copy(opts.parent.matrixWorld).invert()
   const pos = h.geometry.attributes.position
   const v = new THREE.Vector3()
   const bodyPart = h.geometry.groups[0]
   const idx = h.geometry.index!.array
   const seen = new Uint8Array(pos.count)
+  // the arms rest on top of the blanket (or are held out over it): only the trunk and legs shape it
+  const armBones = new Set(h.mesh.skeleton.bones.map((b, i) => (/^(clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky)_/.test(b.name) ? i : -1)).filter((i) => i >= 0))
+  const si = h.geometry.attributes.skinIndex
+  const sw = h.geometry.attributes.skinWeight
   for (let i = bodyPart.start; i < bodyPart.start + bodyPart.count; i++) {
     const r = idx[i]
     if (seen[r]) continue
     seen[r] = 1
+    let arm = 0
+    for (let k = 0; k < 4; k++) if (armBones.has(si.getComponent(r, k))) arm += sw.getComponent(r, k)
+    if (arm > 0.5) continue
     v.fromBufferAttribute(pos, r)
     h.mesh.applyBoneTransform(r, v)
     v.applyMatrix4(h.mesh.matrixWorld).applyMatrix4(inv)
@@ -237,6 +244,19 @@ export function buildBlanket(h: HumanModel, opts: { surfaceY: number; fromZ: num
     const gz = Math.round((v.z - opts.fromZ) / res)
     if (gx < 0 || gz < 0 || gx >= nx || gz >= nz) continue
     H[gz * nx + gx] = Math.max(H[gz * nx + gx], v.y + 0.18)
+  }
+  // clothing the blanket lies over (a gown's skirt)
+  for (const m of opts.over ?? []) {
+    const p = m.geometry.attributes.position
+    for (let r = 0; r < p.count; r++) {
+      v.fromBufferAttribute(p, r)
+      m.applyBoneTransform(r, v)
+      v.applyMatrix4(m.matrixWorld).applyMatrix4(inv)
+      const gx = Math.round((v.x + half) / res)
+      const gz = Math.round((v.z - opts.fromZ) / res)
+      if (gx < 0 || gz < 0 || gx >= nx || gz >= nz) continue
+      H[gz * nx + gx] = Math.max(H[gz * nx + gx], v.y + 0.14)
+    }
   }
   // dilate then blur: fabric bridges gaps and rounds over the shins
   const tmp = new Float32Array(H.length)
@@ -308,6 +328,7 @@ export function buildBlanket(h: HumanModel, opts: { surfaceY: number; fromZ: num
   group.add(mesh, fold)
   return {
     object: group,
+    material: m,
     dispose() {
       geo.dispose()
       fold.geometry.dispose()

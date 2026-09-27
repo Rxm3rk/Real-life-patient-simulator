@@ -14,6 +14,8 @@ export interface SettingsState {
   studentName: string
   /** Show the 9-region grid over the abdomen in practice mode */
   showRegions: boolean
+  /** Examine 3D patients: true/false by choice, null = automatic (on when a GPU can draw them) */
+  patients3d: boolean | null
   /** Seconds per OSCE station */
   osceStationSeconds: number
   onboarded: boolean
@@ -30,6 +32,7 @@ export const useSettings = create<SettingsState>()(
       haptics: true,
       studentName: '',
       showRegions: true,
+      patients3d: null,
       osceStationSeconds: 10 * 60,
       onboarded: false,
       set: (patch) => set(patch),

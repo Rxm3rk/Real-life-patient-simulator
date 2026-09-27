@@ -19,7 +19,7 @@ import {
   Activity,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { playPercussion, speak, uiTick, type Listen, type PercNote } from '../../../audio/engine'
 import { bodyDims, CM, landmarks, regionAt, type RegionId } from '../../../anatomy/bodyModel'
 import { EyeCloseup, MouthCloseup } from '../../../anatomy/FaceCloseups'
@@ -39,14 +39,19 @@ import { isClinic } from '../../../engine/setting'
 import type { CaseDef, Observation } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
+import { use3dPatients } from '../../../lib/webgl'
 import { useEncounter } from '../../../store/encounter'
 import { useSettings } from '../../../store/settings'
 import { FaceCam } from '../FaceCam'
 import { monitorLabel, VitalsMonitor } from '../VitalsMonitor'
 import type { Shot } from './camera'
 import { ActionButton, FINISH_IDS, FindingsLog, GuidePanel, PREP_IDS, RegionPad, VIEW_ACTIONS } from './panels'
+import type { PatientStageApi, StageHit } from './PatientStage3D'
 import { nearest, Stage, type Effect, type EffectKind } from './Stage'
 import { CrtTask, ListenTask, ManoeuvreCaption, PulseTask } from './tasks'
+
+// three.js and the 3D patient load only when they're used
+const PatientStage3D = lazy(() => import('./PatientStage3D').then((m) => ({ default: m.PatientStage3D })))
 
 type Tool = 'look' | 'light' | 'deep' | 'percTender' | 'percuss' | 'listen'
 
@@ -86,8 +91,12 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
   const setPulseEstimate = useEncounter((st) => st.setPulseEstimate)
   const useHint = useEncounter((st) => st.useHint)
   const showRegionsPref = useSettings((st) => st.showRegions)
+  const patients3d = useSettings((st) => st.patients3d)
   const setSettings = useSettings((st) => st.set)
   const desktop = useMediaQuery('(min-width: 1024px)')
+  const [fail3d, setFail3d] = useState(false)
+  const use3d = !fail3d && use3dPatients(patients3d)
+  const stageApi = useRef<PatientStageApi | null>(null)
 
   const [view, setView] = useState<ViewId>('bed')
   const [tool, setTool] = useState<Tool>('light')
@@ -202,7 +211,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
 
   /* ---------------------------- stage taps ---------------------------- */
 
-  const onPoint = (pt: Pt) => {
+  const onPoint = (pt: Pt, hit?: StageHit | null) => {
     if (task) return
     if (view === 'bed') {
       const chart = Math.hypot(pt[0] - 118, pt[1] - 842) < 50
@@ -214,7 +223,8 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
       return
     }
     if (view === 'abdomen') {
-      const r = regionAt(pt, lm, d)
+      // the 3D stage knows the region under your finger on the patient's own body
+      const r = hit ? hit.region : regionAt(pt, lm, d)
       if (tool === 'look') {
         run('abdo.inspect')
         return
@@ -395,9 +405,51 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
   const stageCursor = view === 'abdomen' ? (tool === 'listen' ? 'cell' : 'pointer') : view === 'bed' ? 'zoom-in' : 'pointer'
   const listenAt = task?.kind === 'listen' ? task.at : null
 
+  const stage3d = use3d && (
+    <Suspense fallback={<StageLoading />}>
+      <PatientStage3D
+        c={c}
+        view={view}
+        exposure={exposure}
+        pain={basePain}
+        reaction={{ peak: reaction.wince, key: reaction.key, says: reaction.says }}
+        herniaPhase={herniaPhase}
+        effects={listenAt ? [...effects, { id: -1, kind: 'listen', at: listenAt }] : effects}
+        showRegions={showRegions && view === 'abdomen'}
+        showLandmarks={showLandmarks}
+        regionState={learn ? regionState : undefined}
+        onPoint={view === 'hands' ? () => handView === 'dorsal' && run('hands.temp') : view === 'face' ? undefined : onPoint}
+        cursor={view === 'face' ? 'grab' : stageCursor}
+        compact={!desktop}
+        faceInset={view !== 'face' && view !== 'hands'}
+        faceLabel={desktop ? 'Watch the face' : undefined}
+        handView={handView === 'profile' ? 'dorsal' : handView}
+        flap={flap}
+        mouthOpen={view === 'face' && closeup === 'mouth' ? 0.85 : 0}
+        tongueOut={view === 'face' && closeup === 'mouth' ? 0.35 : 0}
+        lookAt={view === 'face' && closeup === 'eye' ? 'up' : 'camera'}
+        onApi={(api) => (stageApi.current = api)}
+        onUnavailable={() => setFail3d(true)}
+      >
+        {view === 'hands' && <HandViewPicker handView={handView} setHandView={setHandView} />}
+        {view === 'hands' && handView === 'profile' && (
+          <div className="absolute inset-x-3 top-3 z-20 mx-auto max-w-[420px] overflow-hidden rounded-3xl bg-surface-1/95 shadow-(--shadow-float) ring-1 ring-line backdrop-blur lg:top-4">
+            <div className="px-4 pt-3 text-[13px] font-semibold text-ink">Schamroth’s window test</div>
+            <svg viewBox="0 60 400 170" className="w-full p-2">
+              <SchamrothView a={a} clubbed={f.hands.clubbing} koilonychia={f.hands.koilonychia} />
+            </svg>
+          </div>
+        )}
+        {view === 'face' && <FaceCloseupCard c={c} f={f} closeup={closeup} onClose={() => setCloseup(null)} />}
+      </PatientStage3D>
+    </Suspense>
+  )
+
   const stage = (
     <div className="relative h-full w-full">
-      {view === 'hands' ? (
+      {stage3d ? (
+        stage3d
+      ) : view === 'hands' ? (
         <HandsStage c={c} f={f} handView={handView} setHandView={setHandView} blanch={blanch} flap={flap} onTapHand={() => run('hands.temp')} />
       ) : view === 'face' ? (
         <FaceStage c={c} pain={basePain} wince={reaction.wince} winceKey={reaction.key} closeup={closeup} f={f} onClose={() => setCloseup(null)} mouthOpen={closeup === 'mouth'} />
@@ -438,7 +490,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
             )}
           </div>
         )}
-        {view !== 'face' && (
+        {view !== 'face' && !use3d && (
           <div className="pointer-events-auto">
             <FaceCam a={a} pain={basePain} wince={reaction.wince} winceKey={reaction.key} says={reaction.says} size={desktop ? 'md' : 'sm'} label={desktop ? 'Watch the face' : undefined} />
           </div>
@@ -548,6 +600,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
       {task?.kind === 'script' && <ManoeuvreCaption key={task.action} steps={task.steps} onDone={onScriptDone} />}
       {task?.kind === 'liver' && (
         <LiverTask
+          toScene={(x, y, el) => (use3d ? (stageApi.current?.toBody(x, y) ?? null) : svgPoint(el, x, y))}
           lm={lm}
           edgeY={lm.liverEdgeY + f.abdomen.liver.edgeCm * CM}
           onDone={(detail) => {
@@ -766,6 +819,69 @@ function SCRIPTS(lm: ReturnType<typeof landmarks>): Record<string, { steps: stri
   }
 }
 
+/* ---------------------------- 3D helpers ---------------------------- */
+
+function StageLoading() {
+  return (
+    <div className="absolute inset-0 grid place-items-center bg-stage">
+      <div className="flex items-center gap-2.5 rounded-full bg-surface-1/85 px-4 py-2 text-[13px] font-medium text-muted shadow-(--shadow-lift) ring-1 ring-line backdrop-blur">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        Bringing the patient in…
+      </div>
+    </div>
+  )
+}
+
+function HandViewPicker({ handView, setHandView }: { handView: HandView | 'profile'; setHandView: (v: HandView | 'profile') => void }) {
+  return (
+    <div className="absolute bottom-3 left-1/2 z-30 -translate-x-1/2">
+      <Segmented
+        layoutId="handview3d"
+        size="sm"
+        value={handView}
+        onChange={setHandView}
+        className="shadow-(--shadow-lift)"
+        options={[
+          { value: 'dorsal', label: 'Backs' },
+          { value: 'palms', label: 'Palms' },
+          { value: 'profile', label: 'Profile' },
+          { value: 'outstretched', label: 'Arms out' },
+        ]}
+      />
+    </div>
+  )
+}
+
+function FaceCloseupCard({ c, f, closeup, onClose }: { c: CaseDef; f: ReturnType<typeof abdoFindings>; closeup: 'eye' | 'mouth' | null; onClose: () => void }) {
+  const a = c.patient.appearance
+  return (
+    <AnimatePresence>
+      {closeup && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.96 }}
+          className="absolute inset-x-3 top-14 z-30 mx-auto max-w-[320px] overflow-hidden rounded-3xl bg-surface-1 shadow-(--shadow-float) ring-1 ring-line lg:inset-x-auto lg:top-4 lg:right-4"
+        >
+          <div className="flex items-center justify-between px-4 pt-3">
+            <div className="text-[13px] font-semibold text-ink">{closeup === 'eye' ? 'Lower lid gently everted' : '“Open your mouth, please”'}</div>
+            <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="Close">
+              <X size={15} />
+            </button>
+          </div>
+          <svg viewBox={closeup === 'eye' ? '0 0 300 180' : '0 0 300 200'} className="w-full p-3">
+            {closeup === 'eye' ? (
+              <EyeCloseup a={a} sclera={f.face.sclera} conjunctiva={f.face.conjunctiva} id="eyec3" />
+            ) : (
+              <MouthCloseup a={a} mucosa={f.face.mucosa} tongue={f.face.tongue} angular={f.face.angularCheilitis} ulcers={f.face.ulcers} id="mouthc3" />
+            )}
+          </svg>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
 /* ---------------------------- Hands stage ---------------------------- */
 
 function HandsStage({
@@ -901,13 +1017,27 @@ function FaceStage({
 
 /* ---------------------------- Liver palpation ---------------------------- */
 
+/** Scene point under a screen position on the 2D stage's SVG. */
+function svgPoint(from: HTMLElement, clientX: number, clientY: number): Pt | null {
+  const svg = (from.parentElement?.querySelector('svg') ?? null) as SVGSVGElement | null
+  const ctm = svg?.getScreenCTM()
+  if (!svg || !ctm) return null
+  const p = svg.createSVGPoint()
+  p.x = clientX
+  p.y = clientY
+  const q = p.matrixTransform(ctm.inverse())
+  return [q.x, q.y]
+}
+
 function LiverTask({
+  toScene,
   lm,
   edgeY,
   onDone,
   onCancel,
   addEffect,
 }: {
+  toScene: (clientX: number, clientY: number, el: HTMLElement) => Pt | null
   lm: ReturnType<typeof landmarks>
   edgeY: number
   onDone: (detail: 'low' | 'high') => void
@@ -925,14 +1055,9 @@ function LiverTask({
         <div
           className="absolute inset-0 z-20 cursor-crosshair"
           onPointerDown={(e) => {
-            const svg = (e.currentTarget.parentElement?.querySelector('svg') ?? null) as SVGSVGElement | null
-            if (!svg) return
-            const ctm = svg.getScreenCTM()
-            if (!ctm) return
-            const p = svg.createSVGPoint()
-            p.x = e.clientX
-            p.y = e.clientY
-            const q = p.matrixTransform(ctm.inverse())
+            const pt = toScene(e.clientX, e.clientY, e.currentTarget)
+            if (!pt) return
+            const q = { x: pt[0], y: pt[1] }
             const low = q.y > Math.max(edgeY + 8, 318) && q.x < 20
             setStep('moving')
             const start: Pt = [q.x, q.y]

@@ -23,6 +23,10 @@ export interface PoseSpec {
   cough?: number
   /** Standing: turn around to show the back */
   turned?: boolean
+  /** Wrists: + flexed, − extended ("cocked back"), degrees */
+  wrists?: number
+  /** Fingers spread apart (asterixis test) */
+  spread?: boolean
 }
 
 export interface PoseTarget {
@@ -63,7 +67,7 @@ const ARMS: Record<Arms, ArmSpec> = {
   forwardPalmsUp: { upper: [0.12, -0.04, 1], fold: [0, 1, 0], flex: 4, supinate: 95 },
 }
 
-function armPose(h: HumanModel, side: 'l' | 'r', arms: Arms, bones: Record<string, THREE.Quaternion>) {
+function armPose(h: HumanModel, side: 'l' | 'r', arms: Arms, bones: Record<string, THREE.Quaternion>, wrist = 0, tilt = 0) {
   const s = side === 'l' ? 1 : -1
   const up = `upperarm_${side}`
   const lo = `lowerarm_${side}`
@@ -71,8 +75,10 @@ function armPose(h: HumanModel, side: 'l' | 'r', arms: Arms, bones: Record<strin
   const spec = ARMS[arms]
   const U = dirOf(h, up)
   const V = dirOf(h, lo)
-  const T = new THREE.Vector3(spec.upper[0] * s, spec.upper[1], spec.upper[2]).normalize()
-  const F = new THREE.Vector3(spec.fold[0] * s, spec.fold[1], spec.fold[2])
+  // `tilt` turns the arm's aim about the body's left-right axis (to keep outstretched arms level when reclining)
+  const aim = q(X, tilt)
+  const T = new THREE.Vector3(spec.upper[0] * s, spec.upper[1], spec.upper[2]).normalize().applyQuaternion(aim)
+  const F = new THREE.Vector3(spec.fold[0] * s, spec.fold[1], spec.fold[2]).applyQuaternion(aim)
 
   // 1. point the upper arm, then roll it so the elbow folds towards F
   const upperQ = new THREE.Quaternion().setFromUnitVectors(U, T)
@@ -88,15 +94,36 @@ function armPose(h: HumanModel, side: 'l' | 'r', arms: Arms, bones: Record<strin
   const foreAxis = V.clone().applyQuaternion(elbowQ)
   bones[lo] = q(foreAxis, spec.supinate * s).multiply(elbowQ)
 
-  // 3. keep the wrist roughly in line with the forearm
-  bones[hand] = new THREE.Quaternion().setFromUnitVectors(dirOf(h, hand), V).slerp(new THREE.Quaternion(), 0.3)
+  // 3. keep the wrist roughly in line with the forearm, flexed or extended as asked
+  const align = new THREE.Quaternion().setFromUnitVectors(dirOf(h, hand), V).slerp(new THREE.Quaternion(), 0.3)
+  bones[hand] = wrist ? align.multiply(q(wristAxis(h, side), wrist)) : align
+}
+
+/** The wrist's flexion axis in rest space: turning about it by + moves the fingers towards the palm. */
+export function wristAxis(h: HumanModel, side: 'l' | 'r') {
+  const F = h.rest[`middle_01_${side}`].head.clone().sub(h.rest[`hand_${side}`].head).normalize()
+  const T = h.rest[`thumb_01_${side}`].head.clone().sub(h.rest[`hand_${side}`].head)
+  T.addScaledVector(F, -T.dot(F)).normalize()
+  // out of the palm: thumb × fingers for a right hand, mirrored for the left
+  const N = side === 'r' ? new THREE.Vector3().crossVectors(T, F) : new THREE.Vector3().crossVectors(F, T)
+  return new THREE.Vector3().crossVectors(F, N.normalize()).normalize()
 }
 
 export function buildPose(h: HumanModel, spec: PoseSpec): PoseTarget {
   const bones: Record<string, THREE.Quaternion> = {}
   const arms = spec.arms ?? (spec.posture === 'supine' ? 'relaxed' : 'sides')
-  armPose(h, 'l', arms, bones)
-  armPose(h, 'r', arms, bones)
+  // arms held out in front stay level with the floor when the patient reclines
+  const tilt = spec.posture === 'recline45' && (arms === 'forward' || arms === 'forwardPalmsUp') ? 45 : 0
+  armPose(h, 'l', arms, bones, spec.wrists, tilt)
+  armPose(h, 'r', arms, bones, spec.wrists, tilt)
+  if (spec.spread)
+    for (const side of ['l', 'r'] as const) {
+      // fan the fingers out from the middle finger, about the palm normal
+      const F = dirOf(h, `middle_01_${side}`)
+      const axis = new THREE.Vector3().crossVectors(wristAxis(h, side), F).normalize()
+      const s = side === 'l' ? 1 : -1
+      for (const [finger, deg] of [['index', -9], ['ring', 8], ['pinky', 16]] as const) bones[`${finger}_01_${side}`] = q(axis, deg * s)
+    }
 
   // legs: close the A-pose stance a little; relaxed feet
   for (const side of ['l', 'r'] as const) {
@@ -154,17 +181,29 @@ export function buildPose(h: HumanModel, spec: PoseSpec): PoseTarget {
   return { bones, rootQ, rootP }
 }
 
-/** Blends the skeleton towards a target pose with critically damped easing. */
+/**
+ * Blends the skeleton towards a target pose with critically damped easing.
+ * Quick gestures (a cough, the flap of asterixis) ride on top as additive
+ * rotations that the scene sets every frame, so they never disturb the blend.
+ */
 export class Poser {
   private target: PoseTarget | null = null
   private readonly restQ: Record<string, THREE.Quaternion> = {}
+  private readonly cur: Record<string, THREE.Quaternion> = {}
+  /** Extra rotations (about rest-space axes) applied on top of the blended pose */
+  readonly additive = new Map<string, THREE.Quaternion>()
   private speed = 5
+  /** True while the last update still moved something */
+  moving = false
 
   private readonly h: HumanModel
 
   constructor(h: HumanModel) {
     this.h = h
-    for (const [n, b] of Object.entries(h.bones)) this.restQ[n] = b.quaternion.clone()
+    for (const [n, b] of Object.entries(h.bones)) {
+      this.restQ[n] = b.quaternion.clone()
+      this.cur[n] = b.quaternion.clone()
+    }
   }
 
   /** Set a new target; `instant` snaps (first frame of a scene). */
@@ -172,6 +211,11 @@ export class Poser {
     this.target = t
     this.speed = opts.speed ?? 5
     if (opts.instant) this.update(10)
+  }
+
+  /** The blended (pre-gesture) rotation of a bone. */
+  current(name: string) {
+    return this.cur[name]
   }
 
   /** Advance the blend; returns true while still moving. */
@@ -182,17 +226,30 @@ export class Poser {
     let moving = false
     for (const [n, b] of Object.entries(this.h.bones)) {
       const goal = t.bones[n] ?? this.restQ[n]
-      if (b.quaternion.angleTo(goal) > 1e-4) {
-        b.quaternion.slerp(goal, k)
+      const c = this.cur[n]
+      if (c.angleTo(goal) > 2e-3) {
+        c.slerp(goal, k)
         moving = true
-      }
+      } else c.copy(goal)
+      const add = this.additive.get(n)
+      if (add) b.quaternion.copy(add).multiply(c)
+      else b.quaternion.copy(c)
     }
     const root = this.h.root
-    if (root.quaternion.angleTo(t.rootQ) > 1e-4 || root.position.distanceTo(t.rootP) > 1e-4) {
+    if (root.quaternion.angleTo(t.rootQ) > 2e-3 || root.position.distanceTo(t.rootP) > 2e-3) {
       root.quaternion.slerp(t.rootQ, k)
       root.position.lerp(t.rootP, k)
       moving = true
+    } else {
+      root.quaternion.copy(t.rootQ)
+      root.position.copy(t.rootP)
     }
+    this.moving = moving
     return moving
   }
+}
+
+/** A rotation about a rest-space axis, for additive gestures. */
+export function axisRot(axis: 'x' | 'y' | 'z', deg: number) {
+  return q(axis === 'x' ? X : axis === 'y' ? Y : Z, deg)
 }

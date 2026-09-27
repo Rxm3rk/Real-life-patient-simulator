@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { Appearance } from '../anatomy/types'
 import regionsAUrl from '../assets/human/regionsA.png?url'
 import regionsBUrl from '../assets/human/regionsB.png?url'
+import { SIGN_ALBEDO, SIGN_DISPLACE, SIGN_EMISSIVE, SIGN_FRAG_HEADER, SIGN_NORMAL, SIGN_VERT_HEADER, type SignUniforms } from './signs'
 import { invalidateStages } from './stage'
 
 /**
@@ -96,6 +97,8 @@ uniform float uCyanosis;
 uniform float uSweat;
 uniform float uMottle;
 uniform float uDark;
+uniform vec2 uCoverOn;
+varying vec2 vCover;
 varying float vAO;
 varying float vFlush;
 varying float vLids;
@@ -141,6 +144,7 @@ vec3 sh_perturb( vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDirection 
 `
 
 const ALBEDO = /* glsl */ `
+  if ( dot( step( 0.999, vCover ), uCoverOn ) > 0.5 ) discard; // under the briefs or gown
   vec2 regUv = vec2( vMapUv.x, 1.0 - vMapUv.y );
   vec4 regA = texture2D( uRegA, regUv );
   vec4 regB = texture2D( uRegB, regUv );
@@ -154,8 +158,9 @@ const ALBEDO = /* glsl */ `
   skin = mix( skin, skin * vec3( 1.1, 0.82, 0.8 ), flushAmt * ( 1.0 - uDark * 0.6 ) );
   // eyelids a touch darker and cooler
   skin = mix( skin, skin * vec3( 0.84, 0.78, 0.82 ), vLids * 0.5 );
-  // palms and soles are paler, most obviously in darker skin
-  skin = mix( skin, mix( skin, vec3( 0.62, 0.44, 0.36 ), 0.55 ) * ( 1.0 + uDark * 0.5 ), regB.a * ( 0.25 + uDark * 0.75 ) );
+  // palms and soles: a touch pinker in fair skin, much lighter (a warm pinkish brown) in dark skin
+  vec3 palmCol = mix( skin * vec3( 1.03, 0.93, 0.9 ), vec3( 0.55, 0.3, 0.2 ), uDark * 0.85 );
+  skin = mix( skin, palmCol, regB.a * ( 0.4 + uDark * 0.6 ) );
   // areolae, lips and nail beds
   skin = mix( skin, skin * vec3( 0.66, 0.5, 0.46 ), regB.g * 0.85 );
   vec3 lip = mix( skin * vec3( 0.86, 0.52, 0.52 ), skin * vec3( 0.78, 0.6, 0.64 ), uDark );
@@ -189,8 +194,9 @@ const ROUGH = /* glsl */ `
   roughnessFactor = mix( roughnessFactor, 0.34, regB.r );          // lips
   roughnessFactor = mix( roughnessFactor, 0.24, regB.b );          // nails
   roughnessFactor = mix( roughnessFactor, roughnessFactor * 0.82, vFlush * 0.4 ); // oilier nose/cheeks
-  roughnessFactor = mix( roughnessFactor, 0.28, uSweat * 0.8 );
+  roughnessFactor = mix( roughnessFactor, 0.36, uSweat * 0.6 );
   roughnessFactor = mix( roughnessFactor, 0.36, ( 1.0 - uLegHair ) * step( vObj.y, 5.5 ) * vHair ); // shiny hairless shins
+  roughnessFactor = mix( roughnessFactor, 0.3, sgGloss );          // moist ulcer beds, shiny scars
 `
 
 const PORES = /* glsl */ `
@@ -201,7 +207,7 @@ const PORES = /* glsl */ `
   }
 `
 
-export function createSkinMaterial(look: SkinLook) {
+export function createSkinMaterial(look: SkinLook, signs: SignUniforms) {
   const [regA, regB] = regions()
   const tone = new THREE.Color(look.tone)
   const lum = 0.299 * tone.r + 0.587 * tone.g + 0.114 * tone.b
@@ -221,6 +227,8 @@ export function createSkinMaterial(look: SkinLook) {
     uSweat: { value: look.sweat },
     uMottle: { value: look.mottle },
     uDark: { value: THREE.MathUtils.clamp((0.62 - lum) / 0.45, 0, 1) },
+    /** (briefs, gown top) worn: hide the skin well inside them */
+    uCoverOn: { value: new THREE.Vector2() },
   }
   // a 1×1 white map switches on the UV varyings; the shader below replaces its sampling
   white ??= Object.assign(new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1), { needsUpdate: true })
@@ -232,12 +240,13 @@ export function createSkinMaterial(look: SkinLook) {
     sheen: 0.3,
     sheenRoughness: 0.5,
     sheenColor: new THREE.Color('#ffb9a6'),
-    clearcoat: 0.04 + look.sweat * 0.3,
-    clearcoatRoughness: 0.4 - look.sweat * 0.25,
+    // sweat: a fine sheen rather than a wet look
+    clearcoat: 0.04 + look.sweat * 0.14,
+    clearcoatRoughness: 0.4 - look.sweat * 0.12,
     specularIntensity: 0.55,
   })
   m.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, uniforms)
+    Object.assign(shader.uniforms, uniforms, signs)
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
@@ -246,22 +255,28 @@ attribute float aAO;
 attribute float aFlush;
 attribute float aLids;
 attribute float aHair;
+attribute vec2 aCover;
 varying float vAO;
 varying float vFlush;
 varying float vLids;
 varying float vHair;
-varying vec3 vObj;`,
+varying vec2 vCover;
+varying vec3 vObj;
+${SIGN_VERT_HEADER}`,
       )
+      .replace('#include <morphnormal_vertex>', `#include <morphnormal_vertex>\n${SIGN_NORMAL}`)
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
-vAO = aAO; vFlush = aFlush; vLids = aLids; vHair = aHair; vObj = position;`,
+vAO = aAO; vFlush = aFlush; vLids = aLids; vHair = aHair; vCover = aCover; vObj = position;
+${SIGN_DISPLACE}`,
       )
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${HEADER}`)
-      .replace('#include <map_fragment>', ALBEDO)
+      .replace('#include <common>', `#include <common>\n${HEADER}\n${SIGN_FRAG_HEADER}`)
+      .replace('#include <map_fragment>', ALBEDO.replace('diffuseColor.rgb = skin;', `${SIGN_ALBEDO}\n  diffuseColor.rgb = skin;`))
       .replace('#include <roughnessmap_fragment>', ROUGH)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>\n${PORES}`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${SIGN_EMISSIVE}`)
       .replace(
         '#include <aomap_fragment>',
         `#include <aomap_fragment>
@@ -280,6 +295,6 @@ vAO = aAO; vFlush = aFlush; vLids = aLids; vHair = aHair; vObj = position;`,
         ),
       )
   }
-  m.customProgramCacheKey = () => 'bedside-skin-v1'
+  m.customProgramCacheKey = () => 'bedside-skin-v4'
   return { material: m, uniforms }
 }

@@ -167,7 +167,8 @@ function palmSoleAt(px, py, pz, nx, ny, nz, handW) {
   // soles face down; palms face the thigh/inwards and slightly down in the A-pose
   const sole = py < -7.85 ? smooth(-0.35, -0.75, ny) : 0
   const inward = -Math.sign(px) * nx
-  const palm = handW > 0.5 ? smooth(0.1, 0.55, inward * 0.75 - ny * 0.45 - nz * 0.1) : 0
+  // fades in across the wrist crease rather than stopping at a hard line
+  const palm = smooth(0.1, 0.55, inward * 0.75 - ny * 0.45 - nz * 0.1) * smooth(0.3, 0.85, handW)
   return Math.max(sole, palm)
 }
 

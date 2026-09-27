@@ -75,8 +75,12 @@ export function shotFor(scene: PatientScene, name: ShotName): Shot {
       return { target: ankle.clone().setX(0).add(v(0, -0.2, 0.6)), dir: v(0, 0.5, 1), dist: 9, fov: 30 }
     case 'back':
       return { target: mid(face, ankle, 0.52), dir: v(0.08, 0.1, -1), dist: 36, fov: 32 }
-    case 'hands':
-      return { target: mid(navel, face, 0.25).add(forward.clone().multiplyScalar(4)), dir: forward, dist: 12, fov: 32 }
+    case 'hands': {
+      // both hands, seen from where the examiner stands (the patient's right), a little above
+      const hands = mid(scene.boneWorld('middle_01_l'), scene.boneWorld('middle_01_r'))
+      const side = scene.getPose().wrists ? v(-1, 0.4, 0.35) : v(-0.45, 0.85, 0.55)
+      return { target: hands, dir: side, dist: 12, fov: 30 }
+    }
     default:
       return shotFor(scene, 'overview')
   }

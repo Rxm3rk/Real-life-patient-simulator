@@ -17,6 +17,15 @@ export interface StageOptions {
 /** Return true while animating, 'idle' for gentle ambient motion (rendered at ~30 fps). */
 export type FrameFn = (dt: number, t: number) => boolean | 'idle' | void
 
+/** A second view drawn into part of the same canvas (picture in picture). */
+export interface Viewport {
+  camera: THREE.PerspectiveCamera
+  /** Where to draw it, in CSS pixels from the canvas's top-left; null skips it this frame */
+  rect(): { x: number; y: number; w: number; h: number } | null
+  /** Update the camera just before drawing */
+  before?(): void
+}
+
 const liveStages = new Set<Stage3D>()
 /** Re-render every live canvas (e.g. when a texture finishes loading). */
 export function invalidateStages() {
@@ -30,7 +39,10 @@ export class Stage3D {
   readonly controls: OrbitControls | null
   readonly key: THREE.DirectionalLight
   readonly rim: THREE.DirectionalLight
+  private readonly maxDpr: number
   private readonly frameFns = new Set<FrameFn>()
+  private readonly viewports = new Set<Viewport>()
+  private readonly afterFns = new Set<() => void>()
   private raf = 0
   private last = 0
   private lastRender = 0
@@ -44,7 +56,8 @@ export class Stage3D {
   constructor(canvas: HTMLCanvasElement, opts: StageOptions = {}) {
     this.canvas = canvas
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false })
-    this.renderer.setPixelRatio(Math.min(opts.maxDpr ?? 2, window.devicePixelRatio || 1))
+    this.maxDpr = opts.maxDpr ?? 2
+    this.renderer.setPixelRatio(Math.min(this.maxDpr, window.devicePixelRatio || 1))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     this.renderer.toneMapping = THREE.NeutralToneMapping
     this.renderer.toneMappingExposure = 1.02
@@ -119,9 +132,26 @@ export class Stage3D {
     return () => this.frameFns.delete(fn)
   }
 
+  /** Draw an extra view into part of the canvas after each render. */
+  addViewport(v: Viewport) {
+    this.viewports.add(v)
+    this.invalidate()
+    return () => {
+      this.viewports.delete(v)
+      this.invalidate()
+    }
+  }
+
+  /** Called after each rendered frame (e.g. to move HTML labels with the camera). */
+  onAfterRender(fn: () => void) {
+    this.afterFns.add(fn)
+    return () => this.afterFns.delete(fn)
+  }
+
   private loop(now: number) {
     if (!this.alive) return
-    const dt = Math.min(0.05, (now - (this.last || now)) / 1000)
+    // cap long gaps (a background tab) but keep animations in real time on a slow device
+    const dt = Math.min(0.12, (now - (this.last || now)) / 1000)
     this.last = now
     let busy = false
     let idle = false
@@ -132,11 +162,58 @@ export class Stage3D {
     }
     if (this.controls?.update()) busy = true
     if (busy || this.dirty || (idle && now - this.lastRender > 32)) {
+      if (busy) this.adapt(now)
       this.renderer.render(this.scene, this.camera)
+      if (this.viewports.size) this.renderViewports()
       this.dirty = false
       this.lastRender = now
+      for (const fn of this.afterFns) fn()
     }
     this.raf = requestAnimationFrame(this.loop)
+  }
+
+  /**
+   * Adaptive resolution: if continuous animation runs well below 60 fps (an older
+   * phone), render fewer pixels; step back up when there's headroom again.
+   */
+  private frameTimes: number[] = []
+  private lastBusy = 0
+  private dprScale = 1
+  private adapt(now: number) {
+    if (this.lastBusy && now - this.lastBusy < 250) this.frameTimes.push(now - this.lastBusy)
+    this.lastBusy = now
+    if (this.frameTimes.length < 40) return
+    const avg = this.frameTimes.reduce((a, b) => a + b, 0) / this.frameTimes.length
+    this.frameTimes = []
+    const next = avg > 30 ? Math.max(0.5, this.dprScale - 0.2) : avg < 18 ? Math.min(1, this.dprScale + 0.1) : this.dprScale
+    if (next !== this.dprScale) {
+      this.dprScale = next
+      this.renderer.setPixelRatio(Math.max(0.75, Math.min(this.maxDpr, window.devicePixelRatio || 1) * next))
+      this.resize()
+    }
+  }
+
+  private renderViewports() {
+    const r = this.renderer
+    const W = this.canvas.clientWidth
+    const H = this.canvas.clientHeight
+    // the shadow map from the main render is still valid
+    r.shadowMap.autoUpdate = false
+    r.setScissorTest(true)
+    for (const vp of this.viewports) {
+      const rect = vp.rect()
+      if (!rect || rect.w < 2 || rect.h < 2) continue
+      vp.before?.()
+      vp.camera.aspect = rect.w / rect.h
+      vp.camera.updateProjectionMatrix()
+      const y = H - rect.y - rect.h
+      r.setViewport(rect.x, y, rect.w, rect.h)
+      r.setScissor(rect.x, y, rect.w, rect.h)
+      r.render(this.scene, vp.camera)
+    }
+    r.setScissorTest(false)
+    r.setViewport(0, 0, W, H)
+    r.shadowMap.autoUpdate = true
   }
 
   dispose() {

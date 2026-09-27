@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { Appearance } from '../anatomy/types'
 import { eyeMaterial } from './eyes'
 import type { PartName } from './human'
+import type { SignUniforms } from './signs'
 import { createSkinMaterial, skinLook, type SkinLook } from './skin'
 
 /** Base skin albedo by Fitzpatrick-style tone (sRGB). */
@@ -22,9 +23,9 @@ export interface PatientMaterials {
   look: SkinLook
 }
 
-export function createMaterials(a: Appearance): PatientMaterials {
+export function createMaterials(a: Appearance, signs: SignUniforms): PatientMaterials {
   const look = skinLook(a, SKIN_TONE[a.skinTone])
-  const { material: skin, uniforms } = createSkinMaterial(look)
+  const { material: skin, uniforms } = createSkinMaterial(look, signs)
   const tongue = new THREE.MeshPhysicalMaterial({ name: 'tongue', color: '#c2585c', roughness: 0.38, clearcoat: 0.35, clearcoatRoughness: 0.2 })
   const teeth = new THREE.MeshPhysicalMaterial({ name: 'teeth', color: '#eee6d4', roughness: 0.28, clearcoat: 0.4 })
   const lashes = new THREE.MeshStandardMaterial({ name: 'lashes', color: '#1b1411', roughness: 0.7, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false })
