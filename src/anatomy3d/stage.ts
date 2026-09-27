@@ -8,7 +8,8 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
  * on-demand render loop that sleeps when nothing moves.
  */
 export interface StageOptions {
-  background?: THREE.ColorRepresentation
+  /** Scene colour, or null for a transparent canvas (portraits) */
+  background?: THREE.ColorRepresentation | null
   /** Max device pixel ratio (phones render at up to 2×) */
   maxDpr?: number
   controls?: boolean
@@ -55,7 +56,9 @@ export class Stage3D {
 
   constructor(canvas: HTMLCanvasElement, opts: StageOptions = {}) {
     this.canvas = canvas
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false })
+    const transparent = opts.background === null
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: transparent, powerPreference: 'high-performance', preserveDrawingBuffer: false })
+    if (transparent) this.renderer.setClearColor(0x000000, 0)
     this.maxDpr = opts.maxDpr ?? 2
     this.renderer.setPixelRatio(Math.min(this.maxDpr, window.devicePixelRatio || 1))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -69,7 +72,7 @@ export class Stage3D {
     pmrem.dispose()
     this.scene.environment = this.env
     this.scene.environmentIntensity = 0.68
-    this.scene.background = new THREE.Color(opts.background ?? '#0b1220')
+    this.scene.background = transparent ? null : new THREE.Color(opts.background ?? '#0b1220')
 
     // Key light from above-front-left of the patient, soft shadows
     this.key = new THREE.DirectionalLight('#fff4ea', 1.85)

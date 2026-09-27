@@ -1,7 +1,7 @@
 import { ArrowLeft, BookOpenCheck, Check, ClipboardList, Dumbbell, GraduationCap, Play, Share2, Stethoscope, Timer } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { Face } from '../../anatomy/Face'
+import { PatientAvatar } from '../../components/PatientAvatar'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/primitives'
 import { CASE_META, loadCase } from '../../content/cases'
@@ -128,11 +128,7 @@ export default function CaseBriefing({ id }: { id: string }) {
           {/* Patient card */}
           {c && (
             <div className="mt-5 flex items-center gap-4 rounded-3xl bg-surface-1 p-4 ring-1 ring-line shadow-(--shadow-soft) sm:p-5">
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-b from-[#dfe7ee] to-[#c6d2dc] ring-1 ring-line dark:from-[#233147] dark:to-[#141d2c]">
-                <svg viewBox="-62 -22 124 140" className="h-full w-full">
-                  <Face a={c.patient.appearance} pose={{ pain: (c.vitals.pain ?? 0) / 10 }} id="brief-face" bust noLines />
-                </svg>
-              </div>
+              <PatientAvatar a={c.patient.appearance} caseId={c.id} pain={(c.vitals.pain ?? 0) / 10} id="brief-face" className="h-20 w-20 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="text-[17px] font-semibold text-ink">{c.patient.name}</div>

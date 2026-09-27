@@ -1,6 +1,6 @@
 import { ArrowRight, BookOpen, Lightbulb, ListChecks, Mic, MicOff, Search, SendHorizontal, Volume2, VolumeX } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { speak } from '../../../audio/engine'
 import { Button } from '../../../components/ui/Button'
 import { Badge, ProgressBar } from '../../../components/ui/primitives'
@@ -11,12 +11,17 @@ import { suggest } from '../../../engine/matcher'
 import { isClinic } from '../../../engine/setting'
 import type { CaseDef, ChatTurn } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
+import { use3dPatients } from '../../../lib/webgl'
+import { PatientAvatar } from '../../../components/PatientAvatar'
 import { useSpeechRecognition } from '../../../lib/speech'
 import { cn } from '../../../lib/utils'
 import { useEncounter } from '../../../store/encounter'
 import { useSettings } from '../../../store/settings'
 import { FaceCam } from '../FaceCam'
 import { ClinicObs, monitorLabel, VitalsMonitor } from '../VitalsMonitor'
+
+// three.js and the 3D patient load only when they're used
+const PatientTalk3D = lazy(() => import('./PatientTalk3D'))
 
 const SOCRATES: [string, string][] = [
   ['S', 'pain.site'],
@@ -34,8 +39,13 @@ export default function HistoryPhase({ c, onNext }: { c: CaseDef; onNext?: () =>
   const ask = useEncounter((st) => st.ask)
   const askIntent = useEncounter((st) => st.askIntent)
   const voice = useSettings((st) => st.patientVoice)
+  const patients3d = useSettings((st) => st.patients3d)
   const setSettings = useSettings((st) => st.set)
   const desktop = useMediaQuery('(min-width: 1024px)')
+  const [fail3d, setFail3d] = useState(false)
+  const use3d = !fail3d && use3dPatients(patients3d)
+  // lips keep moving for a moment after a reply appears (as if speaking it)
+  const [talking, setTalking] = useState(false)
   const [input, setInput] = useState('')
   const [pending, setPending] = useState<string[]>([])
   const [bankOpen, setBankOpen] = useState(false)
@@ -57,12 +67,18 @@ export default function HistoryPhase({ c, onNext }: { c: CaseDef; onNext?: () =>
     }
     setTyping(true)
     const delay = Math.min(1400, 450 + next.text.length * 9)
+    let talkEnd = 0
     const id = window.setTimeout(() => {
       setTyping(false)
       setRevealed((r) => r + 1)
       speak(next.text, c.patient.sex, c.patient.age)
+      setTalking(true)
+      talkEnd = window.setTimeout(() => setTalking(false), Math.min(6000, 700 + next.text.length * 45))
     }, delay)
-    return () => window.clearTimeout(id)
+    return () => {
+      window.clearTimeout(id)
+      window.clearTimeout(talkEnd)
+    }
   }, [revealed, s.chat, c.patient.sex, c.patient.age])
 
   useEffect(() => {
@@ -100,7 +116,13 @@ export default function HistoryPhase({ c, onNext }: { c: CaseDef; onNext?: () =>
       {desktop && (
         <aside className="flex w-[320px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-line p-5 scrollbar-thin xl:w-[360px]">
           <div className="flex flex-col items-center rounded-3xl bg-surface-1 p-5 ring-1 ring-line shadow-(--shadow-soft)">
-            <FaceCam a={c.patient.appearance} pain={pain} wince={0} winceKey={0} size="lg" speaking={typing} />
+            {use3d ? (
+              <Suspense fallback={<PatientAvatar a={c.patient.appearance} caseId={c.id} id="hx-3d" className="h-[250px] w-full rounded-2xl" />}>
+                <PatientTalk3D c={c} pain={pain} speaking={talking} onUnavailable={() => setFail3d(true)} className="h-[250px] w-full rounded-2xl bg-gradient-to-b from-[#dfe7ee] to-[#c6d2dc] dark:from-[#233147] dark:to-[#141d2c]" />
+              </Suspense>
+            ) : (
+              <FaceCam a={c.patient.appearance} pain={pain} wince={0} winceKey={0} size="lg" speaking={typing} />
+            )}
             <div className="mt-3 text-center">
               <div className="text-[17px] font-semibold text-ink">{c.patient.name}</div>
               <div className="text-[13px] text-muted">
@@ -120,7 +142,11 @@ export default function HistoryPhase({ c, onNext }: { c: CaseDef; onNext?: () =>
       <section className="flex min-w-0 flex-1 flex-col">
         {!desktop && (
           <div className="flex items-center gap-3 border-b border-line px-4 py-2.5">
-            <FaceCam a={c.patient.appearance} pain={pain} wince={0} winceKey={0} size="sm" speaking={typing} />
+            {use3d ? (
+              <PatientAvatar a={c.patient.appearance} caseId={c.id} id="hx-sm" className={cn('h-16 w-16 shrink-0 transition', talking && 'ring-2 ring-accent')} />
+            ) : (
+              <FaceCam a={c.patient.appearance} pain={pain} wince={0} winceKey={0} size="sm" speaking={typing} />
+            )}
             <div className="min-w-0 flex-1">
               <div className="text-[14px] font-semibold text-ink">{c.patient.title}</div>
               <div className="font-mono text-[11.5px] text-muted tabular">

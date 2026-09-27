@@ -148,12 +148,26 @@ export class PatientScene {
   private matrixEpoch = 0
   private syncedEpoch = -1
 
-  constructor(canvas: HTMLCanvasElement, opts: { appearance: Appearance; set: SetKind; background: string; dark: boolean }) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    opts: {
+      appearance: Appearance
+      set: SetKind
+      /** Scene colour, or null for a transparent canvas */
+      background: string | null
+      dark: boolean
+      /** Just the patient: no room or furniture (portraits) */
+      bare?: boolean
+      /** Orbit and zoom with the pointer (default on) */
+      controls?: boolean
+      maxDpr?: number
+    },
+  ) {
     this.appearance = opts.appearance
-    this.stage = new Stage3D(canvas, { background: opts.background })
-    this.stage.scene.add(createRoom(opts.dark))
+    this.stage = new Stage3D(canvas, { background: opts.background, controls: opts.controls, maxDpr: opts.maxDpr })
+    if (!opts.bare) this.stage.scene.add(createRoom(opts.dark))
     this.set = createSet(opts.set)
-    this.stage.scene.add(this.set.group)
+    if (!opts.bare) this.stage.scene.add(this.set.group)
     this.stage.scene.add(this.anchor)
     this.stage.camera.position.set(-20, 18, 10)
     this.ready = this.load()
@@ -318,6 +332,12 @@ export class PatientScene {
   cough() {
     this.coughT = 0
     this.stage.invalidate()
+  }
+
+  /** Keep the eyes open (a still portrait). */
+  holdBlink() {
+    this.nextBlink = Infinity
+    this.blink = 0
   }
 
   /** A wince that peaks quickly and fades over a second or two. */
@@ -546,8 +566,10 @@ export class PatientScene {
       cam.position.copy(to)
       if (s.fov) cam.fov = s.fov
       cam.updateProjectionMatrix()
-      controls?.target.copy(s.target)
-      controls?.update()
+      if (controls) {
+        controls.target.copy(s.target)
+        controls.update()
+      } else cam.lookAt(s.target)
       this.camTween = null
     } else {
       this.camTween = { from: cam.position.clone(), fromT: controls.target.clone(), to, toT: s.target.clone(), t: 0, fovFrom: cam.fov, fovTo: s.fov ?? cam.fov, follow }

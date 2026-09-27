@@ -2,7 +2,7 @@ import { ClipboardCheck, FlaskConical, MessagesSquare, Stethoscope, Trophy, X, B
 import { motion } from 'motion/react'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { unlockAudio } from '../../audio/engine'
-import { Face } from '../../anatomy/Face'
+import { PatientAvatar } from '../../components/PatientAvatar'
 import { Button } from '../../components/ui/Button'
 import { Sheet } from '../../components/ui/Sheet'
 import { toast } from '../../components/ui/Toast'
@@ -97,11 +97,7 @@ export default function SimScreen() {
             <X size={20} />
           </button>
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="hidden h-9 w-9 shrink-0 overflow-hidden rounded-xl bg-gradient-to-b from-[#dfe7ee] to-[#c6d2dc] ring-1 ring-line sm:block dark:from-[#233147] dark:to-[#141d2c]">
-              <svg viewBox="-50 -8 100 110" className="h-full w-full">
-                <Face a={c.patient.appearance} pose={{ pain: (c.vitals.pain ?? 0) / 12 }} id="hdr-face" noLines />
-              </svg>
-            </div>
+            <PatientAvatar a={c.patient.appearance} caseId={c.id} pain={(c.vitals.pain ?? 0) / 12} id="hdr-face" className="hidden h-9 w-9 shrink-0 rounded-xl sm:block" />
             <div className="min-w-0 leading-tight">
               <div className="truncate text-[14px] font-semibold text-ink">{c.patient.name}</div>
               <div className="truncate text-[11.5px] text-muted">

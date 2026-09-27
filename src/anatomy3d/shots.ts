@@ -6,7 +6,7 @@ import type { PatientScene, Shot } from './patientScene'
  * shape. Lying patients are seen from their right side (where the examiner
  * stands); standing and sitting patients from the front.
  */
-export type ShotName = 'overview' | 'face' | 'neck' | 'chest' | 'abdomen' | 'groin' | 'legs' | 'feet' | 'hands' | 'back' | 'thyroidBehind'
+export type ShotName = 'overview' | 'face' | 'neck' | 'chest' | 'abdomen' | 'groin' | 'legs' | 'feet' | 'hands' | 'back' | 'thyroidBehind' | 'portrait' | 'talk'
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z)
 
@@ -51,6 +51,10 @@ export function shotFor(scene: PatientScene, name: ShotName): Shot {
 
   // reclined, sitting or standing: the patient faces the examiner
   const forward = reclined ? v(0, 0.55, 0.85) : sitting ? v(-1, 0.12, 0).normalize() : chair ? v(0, 0.12, 1).normalize() : v(0, 0.08, 1)
+  // head and shoulders, turned a little: an avatar; and the patient you're talking to, chest up
+  const headUp = scene.boneWorld('head').clone().sub(scene.boneWorld('neck_01')).normalize()
+  if (name === 'portrait') return { target: face.clone().addScaledVector(headUp, -0.3), dir: forward.clone().normalize().add(v(0.2, 0.06, 0)), dist: 8.6, fov: 22 }
+  if (name === 'talk') return { target: face.clone().addScaledVector(headUp, -1.45), dir: forward.clone().normalize().add(v(sitting ? 0 : 0.18, 0.05, sitting ? 0.18 : 0)), dist: 13.5, fov: 24 }
   switch (name) {
     case 'overview':
       return sitting || reclined

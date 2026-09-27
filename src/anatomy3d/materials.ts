@@ -28,7 +28,17 @@ export function createMaterials(a: Appearance, signs: SignUniforms): PatientMate
   const { material: skin, uniforms } = createSkinMaterial(look, signs)
   const tongue = new THREE.MeshPhysicalMaterial({ name: 'tongue', color: '#c2585c', roughness: 0.38, clearcoat: 0.35, clearcoatRoughness: 0.2 })
   const teeth = new THREE.MeshPhysicalMaterial({ name: 'teeth', color: '#eee6d4', roughness: 0.28, clearcoat: 0.4 })
-  const lashes = new THREE.MeshStandardMaterial({ name: 'lashes', color: '#1b1411', roughness: 0.7, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false })
+  // men's lashes are finer and less dark than women's (which read as mascara on a man)
+  const male = a.sex === 'male'
+  const lashes = new THREE.MeshStandardMaterial({
+    name: 'lashes',
+    color: male ? new THREE.Color(look.hair).multiplyScalar(0.55) : '#1b1411',
+    roughness: 0.7,
+    transparent: true,
+    opacity: male ? 0.5 : 0.85,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  })
   const hidden = new THREE.MeshBasicMaterial({ visible: false })
   const eye = eyeMaterial(a.eyeColor ?? 'brown', a.jaundice ?? 0)
   return { parts: { body: skin, tongue, teeth, lashes, hairCap: hidden, tights: hidden.clone(), skirt: hidden.clone() }, eye, skin: uniforms, look }

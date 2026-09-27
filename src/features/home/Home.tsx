@@ -111,7 +111,7 @@ export default function Home() {
                 onClick={() => navigate(`/case/${c.id}`)}
                 className="group flex items-center gap-3 rounded-2xl bg-bg/60 p-3 text-left ring-1 ring-line transition hover:ring-accent/40"
               >
-                <PatientAvatar a={defs[c.id]?.patient.appearance} id={`hero-${c.id}`} className="h-14 w-14 shrink-0" pain={(defs[c.id]?.vitals.pain ?? 2) / 12} />
+                <PatientAvatar a={defs[c.id]?.patient.appearance} caseId={c.id} id={`hero-${c.id}`} className="h-14 w-14 shrink-0" pain={(defs[c.id]?.vitals.pain ?? 2) / 12} />
                 <div className="min-w-0">
                   <div className="truncate text-[13.5px] font-semibold text-ink">{c.patientLabel}</div>
                   <div className="truncate text-[12px] text-muted">{c.presenting}</div>
@@ -148,7 +148,7 @@ export default function Home() {
                 onClick={() => navigate(`/case/${c.id}`)}
                 className="group flex items-center gap-3.5 rounded-2xl bg-surface-1 p-3.5 text-left ring-1 ring-line transition hover:ring-accent/40"
               >
-                <PatientAvatar a={defs[c.id]?.patient.appearance} id={`ward-${c.id}`} className="h-16 w-16 shrink-0" pain={(defs[c.id]?.vitals.pain ?? 2) / 12} />
+                <PatientAvatar a={defs[c.id]?.patient.appearance} caseId={c.id} id={`ward-${c.id}`} className="h-16 w-16 shrink-0" pain={(defs[c.id]?.vitals.pain ?? 2) / 12} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14.5px] font-semibold text-ink">{c.presenting}</div>
                   <div className="mt-0.5 text-[12.5px] text-muted">

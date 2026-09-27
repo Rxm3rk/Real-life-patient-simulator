@@ -32,3 +32,15 @@ MH_DATA=../makehuman/makehuman/data MPFB_DATA=../mpfb2/src/mpfb/data node script
 The first bake computes per-vertex ambient occlusion by ray tracing, which takes about 5 minutes. The result is cached in `.cache/`, so later bakes take a few seconds.
 
 The mapping from a patient's appearance to MakeHuman's macro settings lives in `src/anatomy3d/macro.ts`. The bake and the app share it, so a patient always loads the body baked for them. An appearance that hasn't been baked falls back to the nearest baked body.
+
+## Portraits
+
+Each case's patient also has a pre-rendered 3D portrait (`src/assets/portraits/<case>.webp`), used for avatars on the home screen, the ward and in the header. Re-render them after changing a patient's appearance or the skin, hair or lighting. With the dev server running:
+
+```bash
+npm run dev &
+node scripts/human/portraits.mjs            # every case
+node scripts/human/portraits.mjs lipoma mng # just these
+```
+
+The script opens `/#/lab/portrait?case=<id>` in Chromium through Playwright and saves a transparent 192 × 192 WebP. Set `CHROMIUM` to a Chromium binary if it isn't at `/opt/pw-browsers/chromium`.
