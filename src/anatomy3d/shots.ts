@@ -91,3 +91,13 @@ export function shotFor(scene: PatientScene, name: ShotName): Shot {
       return shotFor(scene, 'overview')
   }
 }
+
+/** Look at a lump from low across the skin (a dome seen straight on hardly shows), from the examiner's side. */
+export function lumpShot(scene: PatientScene, rest: THREE.Vector3, fromBehind = false): Shot {
+  const s = scene.surfaceAt(rest)
+  const side = new THREE.Vector3(-1, 0.1, 0.35).applyAxisAngle(v(0, 1, 0), fromBehind ? Math.PI : 0)
+  // remove the part of `side` along the normal, then tilt up from the skin by about 30°
+  side.addScaledVector(s.normal, -side.dot(s.normal)).normalize()
+  const dir = side.multiplyScalar(0.87).addScaledVector(s.normal, 0.5).normalize()
+  return { target: s.point, dir, dist: 7.5, fov: 30 }
+}

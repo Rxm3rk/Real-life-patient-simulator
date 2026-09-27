@@ -137,6 +137,9 @@ export const SIGN_DISPLACE = /* glsl */ `
 `
 
 export const SIGN_FRAG_HEADER = /* glsl */ `
+uniform vec4 uBulgeC[${MAX_BULGES}];
+uniform vec4 uBulgeP[${MAX_BULGES}];
+uniform int uBulgeN;
 uniform vec4 uPatchC[${MAX_PATCHES}];
 uniform vec4 uPatchK[${MAX_PATCHES}];
 uniform int uPatchN;
@@ -174,6 +177,19 @@ export const SIGN_ALBEDO = /* glsl */ `
   vec3 sgGlow = vec3( 0.0 );
   // raised relief (scars, veins), turned into a normal perturbation later
   float sgRelief = 0.0;
+  // swellings: a soft shadow where the dome meets the skin, a touch of sheen over the top (it's how a lump reads)
+  for ( int i = 0; i < ${MAX_BULGES}; i++ ) {
+    if ( i >= uBulgeN ) break;
+    float hgt = uBulgeP[i].x;
+    if ( hgt <= 0.0 ) continue;
+    vec3 d = vObj - uBulgeC[i].xyz;
+    d.x /= max( uBulgeP[i].y, 0.05 );
+    d.y /= max( uBulgeP[i].z, 0.05 );
+    float rr = sqrt( dot( d, d ) ) / uBulgeC[i].w;
+    float k = clamp( hgt / 0.08, 0.0, 1.0 );
+    skin *= 1.0 - 0.2 * k * exp( -pow( ( rr - 1.2 ) / 0.32, 2.0 ) );
+    sgGloss = max( sgGloss, 0.25 * k * exp( -rr * rr * 3.0 ) );
+  }
   // screen-space footprint of a pixel, taken outside any branch (derivatives need uniform control flow)
   float sgPx = max( length( fwidth( vObj ) ), 1e-4 );
   for ( int i = 0; i < ${MAX_PATCHES}; i++ ) {
@@ -225,9 +241,10 @@ export const SIGN_ALBEDO = /* glsl */ `
       skin = mix( skin, skin * vec3( 0.95, 0.82, 0.92 ), s * smoothstep( 1.0, 0.4, d ) * 0.7 );
     } else if ( kind < 9.5 ) {          // peau d'orange: oedematous skin pitted at the hair follicles
       float m = smoothstep( 1.0, 0.45, d + wob * 0.4 ) * str;
-      float pits = smoothstep( 0.62, 0.86, sg_n( vObj * 150.0 ) );
-      skin = mix( skin, skin * vec3( 1.04, 0.9, 0.82 ), m * 0.45 );
-      skin = mix( skin, skin * 0.74, pits * m * 0.6 );
+      float pits = smoothstep( 0.58, 0.82, sg_n( vObj * 70.0 ) );
+      skin = mix( skin, skin * vec3( 1.05, 0.88, 0.8 ), m * 0.5 );
+      skin = mix( skin, skin * 0.7, pits * m * 0.65 );
+      sgRelief = max( sgRelief, ( 1.0 - pits ) * m * 0.5 );
     } else if ( kind < 10.5 ) {         // venous eczema: red-brown, rough and scaly
       float m = smoothstep( 1.05, 0.35, d + wob ) * str;
       float scale = smoothstep( 0.55, 0.75, sg_n( vObj * 70.0 ) );
@@ -316,7 +333,7 @@ export const SIGN_ALBEDO = /* glsl */ `
 
 /** Raised veins and scars: tilt the normal by the slope of their relief. */
 export const SIGN_NORMALS = /* glsl */ `
-  if ( uVeinN > 0 || uSegN > 0 ) normal = sh_perturb( - vViewPosition, normal, vec2( dFdx( sgRelief ), dFdy( sgRelief ) ) * 0.05, faceDirection );
+  if ( uVeinN > 0 || uSegN > 0 || uPatchN > 0 ) normal = sh_perturb( - vViewPosition, normal, vec2( dFdx( sgRelief ), dFdy( sgRelief ) ) * 0.05, faceDirection );
 `
 
 /** Glow from the grid and touch rings (after the emissive map, so it reads in shadow too). */

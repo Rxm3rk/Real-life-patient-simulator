@@ -41,6 +41,8 @@ export interface Anatomy {
   front(x: number, y: number): number
   /** The front of the body at (x, y), lifted `lift` off the skin */
   onFront(x: number, y: number, lift?: number): THREE.Vector3
+  /** The back of the body at (x, y) (arms left out), lifted `lift` off the skin */
+  onBack(x: number, y: number, lift?: number): THREE.Vector3
 }
 
 /**
@@ -49,12 +51,13 @@ export interface Anatomy {
  * hernias, the region grid) are placed with it, so they land where you'd see
  * them even over a distended abdomen.
  */
-function frontMap(h: HumanModel, base: HumanBase) {
+function frontMap(h: HumanModel, base: HumanBase, side: 1 | -1 = 1) {
   const res = 0.04
   const x0 = -3.2
   const y0 = 0
   const nx = Math.round(6.4 / res) + 1
   const ny = Math.round(19 / res) + 1
+  // for the back, work in −z so "largest" means furthest back
   const Z = new Float32Array(nx * ny).fill(-Infinity)
   const part = base.meta.parts.find((p) => p.name === 'body')!
   const P = h.positions
@@ -92,7 +95,7 @@ function frontMap(h: HumanModel, base: HumanBase) {
         const w1 = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / den
         const w2 = 1 - w0 - w1
         if (w0 < -1e-6 || w1 < -1e-6 || w2 < -1e-6) continue
-        const z = P[a + 2] * w0 + P[b + 2] * w1 + P[c + 2] * w2
+        const z = (P[a + 2] * w0 + P[b + 2] * w1 + P[c + 2] * w2) * side
         if (z > Z[y * nx + x]) Z[y * nx + x] = z
       }
   }
@@ -111,8 +114,8 @@ function frontMap(h: HumanModel, base: HumanBase) {
     const all = [z00, z10, z01, z11]
     if (all.every((z) => z === -Infinity)) return NaN
     // near an edge of the body use the cells that are on it
-    if (all.some((z) => z === -Infinity)) return Math.max(...all)
-    return (z00 * (1 - fx) + z10 * fx) * (1 - fy) + (z01 * (1 - fx) + z11 * fx) * fy
+    if (all.some((z) => z === -Infinity)) return Math.max(...all) * side
+    return ((z00 * (1 - fx) + z10 * fx) * (1 - fy) + (z01 * (1 - fx) + z11 * fx) * fy) * side
   }
 }
 
@@ -141,6 +144,11 @@ export function anatomyOf(h: HumanModel, base: HumanBase): Anatomy {
   const onFront = (x: number, y: number, lift = 0) => {
     const z = front(x, y)
     return Number.isFinite(z) ? new THREE.Vector3(x, y, z + lift) : onSkin(new THREE.Vector3(x, y, 1))
+  }
+  const backZ = frontMap(h, base, -1)
+  const onBack = (x: number, y: number, lift = 0) => {
+    const z = backZ(x, y)
+    return Number.isFinite(z) ? new THREE.Vector3(x, y, z - lift) : onSkin(new THREE.Vector3(x, y, -1))
   }
   const xiphoid = P('xiphoid')
   const navel = P('navel')
@@ -193,6 +201,7 @@ export function anatomyOf(h: HumanModel, base: HumanBase): Anatomy {
     onSkin,
     front,
     onFront,
+    onBack,
   }
 }
 

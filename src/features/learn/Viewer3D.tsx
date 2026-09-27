@@ -32,6 +32,7 @@ export default function Viewer3D({
   className,
   label,
   onUnavailable,
+  onScene,
 }: {
   appearance: Appearance
   set?: SetKind
@@ -42,6 +43,8 @@ export default function Viewer3D({
   className?: string
   label: string
   onUnavailable?: () => void
+  /** The scene once it's ready (null when it goes away), for buttons that act on the patient */
+  onScene?: (scene: PatientScene | null) => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sceneRef = useRef<PatientScene | null>(null)
@@ -103,7 +106,11 @@ export default function Viewer3D({
     setupRef.current(scene, first.current)
     first.current = false
     scene.stage.invalidate()
+    onScene?.(scene)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setupKey, ready])
+
+  useEffect(() => () => onScene?.(null), []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     sceneRef.current?.stage.invalidate()

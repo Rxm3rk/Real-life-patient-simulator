@@ -3,7 +3,7 @@ import type { PatientScene, Shot } from '../../../anatomy3d/patientScene'
 import { legColour, legSigns } from '../../../anatomy3d/legs'
 import type { PoseSpec } from '../../../anatomy3d/poses'
 import type { SetKind } from '../../../anatomy3d/sets'
-import { shotFor } from '../../../anatomy3d/shots'
+import { lumpShot, shotFor } from '../../../anatomy3d/shots'
 import { breastLumpAt, breastSigns, lumpPlace, lumpSigns, neckSigns, type LumpPlace } from '../../../anatomy3d/stationSigns'
 import { isClinic } from '../../../engine/setting'
 import type { CaseDef, LegsVisual, LumpVisual } from '../../../engine/types'
@@ -344,13 +344,8 @@ function lump3d(x: SceneCtx, spec: SceneSpec): Station3D {
         drape: false,
         blanketFrom: null,
       },
-      // close in on the lump from above and to one side, so its outline shows against the skin
-      shot: (scene) => {
-        const s = scene.surfaceAt(placeOf(scene, l).at)
-        const side = new THREE.Vector3(-0.55, 0.15, 0.6).applyAxisAngle(v3(0, 1, 0), back ? Math.PI : 0)
-        const dir = s.normal.clone().multiplyScalar(0.8).add(side).normalize()
-        return { target: s.point, dir, dist: 6.5, fov: 30 }
-      },
+      // close in on the lump low across the skin, so its outline stands out against what's behind it
+      shot: (scene) => lumpShot(scene, placeOf(scene, l).at, back),
       expression: { lookAt: 'camera' },
     },
     zones: spec.zones.map((zone) => ({ zone, rest: (scene: PatientScene) => placeOf(scene, l).at, r: Math.max(0.3, Math.max(l.w, l.h) * 0.09) })),

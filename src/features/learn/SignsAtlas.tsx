@@ -1,13 +1,19 @@
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, Search } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Page, PageHeader } from '../../components/layout/AppShell'
 import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/primitives'
+import { Badge, Segmented } from '../../components/ui/primitives'
 import { Sheet } from '../../components/ui/Sheet'
 import { navigate } from '../../lib/router'
 import { cn } from '../../lib/utils'
+import { use3dPatients } from '../../lib/webgl'
+import { useSettings } from '../../store/settings'
+import { SIGNS_IN_3D } from './sign3dIds'
 import { SIGN_BY_ID, SIGN_SYSTEMS, SIGNS, type SignDef, type SignSystem } from './signs'
+
+// three.js and the 3D patient load only when they're used
+const Sign3D = lazy(() => import('./Sign3D'))
 
 /** Renders children only once scrolled near the viewport (the illustrations are heavy SVG). */
 function LazyRender({ children, className }: { children: ReactNode; className?: string }) {
@@ -58,6 +64,11 @@ export default function SignsAtlas({ id }: { id?: string }) {
   )
   const open = id ? SIGN_BY_ID[id] : undefined
   const idx = open ? SIGNS.indexOf(open) : -1
+  const patients3d = useSettings((st) => st.patients3d)
+  const [fail3d, setFail3d] = useState(false)
+  const [view, setView] = useState<'3d' | 'drawing'>('3d')
+  const can3d = !!open && SIGNS_IN_3D.has(open.id) && !fail3d && use3dPatients(patients3d)
+  const show3d = can3d && view === '3d'
 
   return (
     <Page wide>
@@ -121,9 +132,29 @@ export default function SignsAtlas({ id }: { id?: string }) {
       <Sheet open={!!open} onClose={() => navigate('/learn/signs', { replace: true })} title={open?.name ?? ''} description={open?.system} size="lg">
         {open && (
           <div className="space-y-4">
-            <div className="aspect-[16/10] w-full overflow-hidden rounded-2xl bg-stage ring-1 ring-line">
-              <Illustration sign={open} id={`sgd-${open.id}`} />
-            </div>
+            {can3d && (
+              <Segmented
+                layoutId="sign-view"
+                size="sm"
+                value={view}
+                onChange={setView}
+                options={[
+                  { value: '3d', label: 'On a patient (3D)' },
+                  { value: 'drawing', label: 'Illustration' },
+                ]}
+              />
+            )}
+            {show3d ? (
+              <div className="overflow-hidden rounded-2xl ring-1 ring-line">
+                <Suspense fallback={<div className="aspect-[16/10] w-full animate-pulse bg-surface-2/40" />}>
+                  <Sign3D id={open.id} className="aspect-[16/10] w-full" onUnavailable={() => setFail3d(true)} />
+                </Suspense>
+              </div>
+            ) : (
+              <div className="aspect-[16/10] w-full overflow-hidden rounded-2xl bg-stage ring-1 ring-line">
+                <Illustration sign={open} id={`sgd-${open.id}`} />
+              </div>
+            )}
             <Block title="What you see" icon={<Eye size={14} />}>
               {open.what}
             </Block>

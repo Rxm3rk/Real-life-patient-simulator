@@ -312,6 +312,6 @@ ${SIGN_DISPLACE}`,
         ),
       )
   }
-  m.customProgramCacheKey = () => 'bedside-skin-v7'
+  m.customProgramCacheKey = () => 'bedside-skin-v8'
   return { material: m, uniforms }
 }

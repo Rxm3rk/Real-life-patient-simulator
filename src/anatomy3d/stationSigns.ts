@@ -173,7 +173,8 @@ export function lumpPlace(l: LumpVisual, A: Anatomy, h: HumanModel, upNow?: (res
       break
     }
     case 'upper-back':
-      at = A.onSkin(r.spine_03.head.clone().add(v3(0.85 * s, 0.25, -1.6)))
+      // over the scapula, a hand's breadth from the spine
+      at = A.onBack(0.8 * s, r.spine_03.head.y + 0.3)
       break
     case 'shoulder':
       at = A.onSkin(r[`upperarm_${sfx}`].head.clone().add(v3(0.25 * s, 0.6, 0.1)))
@@ -203,7 +204,7 @@ export function lumpSigns(l: LumpVisual, place: LumpPlace, torch: boolean): Stat
       [-0.4, -0.25],
     ])
       out.bulges.push({ id: `lump-lobe-${dx}`, at: at.clone().add(v3(dx * radius, dy * radius, 0)), r: radius * 0.55, h: h * 0.55 })
-  if (l.punctum) out.patches.push({ at, r: 0.045, kind: 'punctum' })
+  if (l.punctum) out.patches.push({ at, r: 0.065, kind: 'punctum' })
   if (l.erythema) out.patches.push({ at, r: radius * 1.4, kind: 'tint', color: '#ff9c8a', strength: l.erythema })
   // a pen torch against the side of the lump: a fluid-filled lump glows red, a solid one only shows the torch spot
   if (torch) out.patches.push(l.transilluminates ? { at, r: radius * 1.1, kind: 'glow', color: '#ff6a3a', strength: 0.9 } : { at: at.clone().add(v3(radius * 0.9, 0, 0)), r: 0.07, kind: 'glow', color: '#fff2d8', strength: 0.9 })

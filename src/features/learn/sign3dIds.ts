@@ -1,0 +1,21 @@
+/** Signs the atlas can also show on a 3D patient (the config lives in Sign3D, loaded with three.js). */
+export const SIGNS_IN_3D = new Set([
+  'jaundice',
+  'pallor',
+  'exophthalmos',
+  'goitre',
+  'thyroglossal',
+  'caput',
+  'cullen',
+  'distension',
+  'stoma',
+  'inguinal',
+  'femoral',
+  'tethering',
+  'peau',
+  'varicose',
+  'venous-ulcer',
+  'arterial-ulcer',
+  'lipoma',
+  'epidermoid',
+])

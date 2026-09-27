@@ -161,7 +161,7 @@ export function attachedItems(opts: { stoma?: Stoma; lines?: Lines; A: Anatomy; 
   if (s) {
     // in an iliac fossa, over the rectus sheath: from the umbilicus a third of the way to the ASIS, a little low
     const asis = s.side === 'right' ? A.asisR : A.asisL
-    const at0 = A.navel.clone().lerp(asis, 0.42).add(v3(0, -0.12, 0))
+    const at0 = A.navel.clone().lerp(asis, 0.4).add(v3(0, 0.02, 0))
     const at = A.onFront(at0.x, at0.y)
     const n = surface(at).normal
     onBones.push(['pelvis', stomaObject(s, at, n)])
