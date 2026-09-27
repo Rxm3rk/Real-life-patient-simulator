@@ -165,11 +165,18 @@ export function PatientStage3D(props: PatientStage3DProps) {
   const female = a.sex === 'female'
   const lm2 = useMemo(() => landmarks(a, bodyDims(a)), [a])
 
-  // frame the shot for this canvas shape: portrait screens need to stand further back
+  // frame the shot for this canvas shape
   const fit = (s: Shot3): Shot3 => {
     const canvas = canvasRef.current
     const aspect = canvas && canvas.clientHeight ? canvas.clientWidth / canvas.clientHeight : 1.4
-    const k = aspect < 1.1 ? Math.min(2.1, 1.25 / Math.max(0.45, aspect)) : 1
+    const lying = sceneRef.current?.getPose().posture === 'supine'
+    if (aspect < 1.15 && lying) {
+      // a square or tall screen (a phone): look from the foot end, so the patient runs head-up down the screen (as on a chart)
+      const dir = new THREE.Vector3(s.dir.x * 0.3, s.dir.y, Math.max(0.5, s.dir.z) * 1.1)
+      return { ...s, dir, dist: s.dist * Math.min(1.6, 1.05 / Math.max(0.5, aspect)) }
+    }
+    // portrait screens need to stand further back
+    const k = aspect < 1.15 ? Math.min(2.1, 1.25 / Math.max(0.45, aspect)) : 1
     return { ...s, dist: s.dist * k }
   }
   const shotOf = (scene: PatientScene) => {
