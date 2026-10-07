@@ -24,6 +24,7 @@ The home page follows the general-surgery session schedule: six days, two sessio
 - **Topic guides.** Each topic has key points, the history and the Macleod's examination for it (with page references), tables, investigations and management, and about 25 questions the doctors ask, with a hide-answers mode and stars.
 - **Case cards.** A one-page summary of any patient for the ten minutes before a session: vital signs, what you find, the diagnosis and differentials, investigations with their results, management, how to present the case, pearls and the viva. A quiz mode hides the answers until you tap.
 - **Ask.** When a doctor asks you something, type it into the search bar on Today or on the Ask page. It searches every question, guide point and case as you type, offline. It understands abbreviations (UGIB, GORD, DRE), British and American spellings and small typos, and can be limited to one topic or today's sessions. Press `/` on a laptop to jump to it.
+- **Ask Claude.** In the claude.ai version of the app, press Enter (or tap **Ask Claude**) and Claude answers the question on your own Claude account, with no API key. The best matching notes from the app go with the question, so the answer agrees with what you are revising. You can go deeper, get a one-liner, or ask follow-ups. Elsewhere (GitHub Pages, a saved file) the button does not appear.
 
 ### 46 patients on the ward
 
