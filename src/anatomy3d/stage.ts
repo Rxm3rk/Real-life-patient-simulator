@@ -7,6 +7,17 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
  * downloads), a shadow-casting key light, orbit/pinch camera controls and an
  * on-demand render loop that sleeps when nothing moves.
  */
+/** Touch-first or low-memory devices, where the GPU and memory are tight. */
+export function isLiteDevice(): boolean {
+  try {
+    const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false
+    const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+    return coarse || (mem !== undefined && mem <= 4)
+  } catch {
+    return false
+  }
+}
+
 export interface StageOptions {
   /** Scene colour, or null for a transparent canvas (portraits) */
   background?: THREE.ColorRepresentation | null
@@ -41,6 +52,8 @@ export class Stage3D {
   readonly key: THREE.DirectionalLight
   readonly rim: THREE.DirectionalLight
   private readonly maxDpr: number
+  /** Running on a phone, tablet or low-memory machine: no shadows or multisampling */
+  readonly lite: boolean
   private readonly frameFns = new Set<FrameFn>()
   private readonly viewports = new Set<Viewport>()
   private readonly afterFns = new Set<() => void>()
@@ -57,15 +70,19 @@ export class Stage3D {
   constructor(canvas: HTMLCanvasElement, opts: StageOptions = {}) {
     this.canvas = canvas
     const transparent = opts.background === null
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: transparent, powerPreference: 'high-performance', preserveDrawingBuffer: false })
+    // phones, tablets and low-memory machines get a lighter renderer: no shadow maps (half the
+    // shader programs to compile), no multisampling, fewer pixels
+    this.lite = isLiteDevice()
+    const dense = (window.devicePixelRatio || 1) >= 2
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !this.lite && !dense, alpha: transparent, powerPreference: this.lite ? 'default' : 'high-performance', preserveDrawingBuffer: false })
     if (transparent) this.renderer.setClearColor(0x000000, 0)
     // checking each shader for errors makes the page wait for every compile (slow on Windows); development only
     this.renderer.debug.checkShaderErrors = import.meta.env.DEV
-    this.maxDpr = opts.maxDpr ?? 2
+    this.maxDpr = Math.min(opts.maxDpr ?? 2, this.lite ? 1.5 : 2)
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     this.renderer.toneMapping = THREE.NeutralToneMapping
     this.renderer.toneMappingExposure = 1.02
-    this.renderer.shadowMap.enabled = true
+    this.renderer.shadowMap.enabled = !this.lite
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
     // the shadow map is redrawn when something moves, not on every idle breath
     this.renderer.shadowMap.autoUpdate = false
@@ -123,7 +140,7 @@ export class Stage3D {
    * or five million every frame), scaled down further if frames run slow.
    */
   private pixelRatio(w: number, h: number) {
-    const budget = 2.1e6
+    const budget = this.lite ? 1.1e6 : 2.1e6
     const fit = Math.sqrt(budget / Math.max(1, w * h))
     return Math.max(0.75, Math.min(this.maxDpr, window.devicePixelRatio || 1, fit) * this.dprScale)
   }

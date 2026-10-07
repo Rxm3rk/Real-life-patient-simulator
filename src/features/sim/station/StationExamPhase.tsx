@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowRight, Layers, Lightbulb, ListChecks, MapPin, X } from 'lucide-react'
+import { ArrowRight, Box, Layers, Lightbulb, ListChecks, MapPin, X } from 'lucide-react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { speak, uiTick, type DopplerKind, type Listen } from '../../../audio/engine'
 import type { Pt } from '../../../anatomy/geometry'
@@ -15,7 +15,7 @@ import { stationActions, stationFor, type StationAction, type StationCue } from 
 import type { CaseDef, LegSide, Observation, PulseGrade } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
-import { use3dPatients } from '../../../lib/webgl'
+import { exam3dAvailable, exam3dFailed } from '../../../lib/exam3d'
 import { useEncounter } from '../../../store/encounter'
 import { useSettings } from '../../../store/settings'
 import { ActionButton, FindingStrip, FindingsLog, GuidePanel } from '../exam/panels'
@@ -135,9 +135,11 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
   const desktop = useMediaQuery('(min-width: 1024px)')
   const learn = s.mode === 'learn'
   const acute = !isClinic(c.setting)
-  const patients3d = useSettings((st) => st.patients3d)
+  const exam3d = useSettings((st) => st.exam3d)
+  const setSettings = useSettings((st) => st.set)
   const [fail3d, setFail3d] = useState(false)
-  const use3d = !fail3d && has3dStation(c.exam) && use3dPatients(patients3d)
+  // the illustrated patient unless the student chose 3D (heavy on phones and older laptops)
+  const use3d = !fail3d && exam3d && has3dStation(c.exam) && exam3dAvailable()
 
   const [view, setView] = useState(def.views[0].id)
   const [cue, setCue] = useState<CueState>({ kind: null, key: 0 })
@@ -494,7 +496,10 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
             reaction={{ peak: reaction.wince, key: reaction.key, says: reaction.says }}
             compact={!desktop}
             faceLabel={desktop ? 'Watch the face' : undefined}
-            onUnavailable={() => setFail3d(true)}
+            onUnavailable={(reason) => {
+              exam3dFailed(reason === 'slow' ? 'slow' : /lost/i.test(reason) ? 'lost' : 'error')
+              setFail3d(true)
+            }}
           />
         </Suspense>
       ) : (
@@ -533,6 +538,17 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
       </div>
 
       <div className="absolute right-2.5 bottom-3 z-20 flex flex-col gap-1.5 sm:right-3">
+        {has3dStation(c.exam) && exam3dAvailable() && (
+          <UtilButton
+            on={use3d}
+            onClick={() => {
+              setFail3d(false)
+              setSettings({ exam3d: !use3d })
+            }}
+            label={use3d ? 'Use the illustrated patient' : 'Try the 3D patient (heavier on the device)'}
+            icon={<Box size={16} />}
+          />
+        )}
         {s.mode !== 'osce' && !learn && <UtilButton on={showZones} onClick={() => setShowZones((v) => !v)} label="Landmarks" icon={<MapPin size={16} />} />}
         {c.exam === 'scrotal' && s.mode !== 'osce' && (
           <UtilButton on={!!extra.anatomy} onClick={() => setExtra({ anatomy: !extra.anatomy })} label="Anatomy view" icon={<Layers size={16} />} />

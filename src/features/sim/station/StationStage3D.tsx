@@ -24,7 +24,7 @@ export default function StationStage3D(props: {
   reaction: { peak: number; key: number; says?: string }
   compact: boolean
   faceLabel?: string
-  onUnavailable: () => void
+  onUnavailable: (reason: string) => void
   children?: ReactNode
 }) {
   const { x, spec } = props

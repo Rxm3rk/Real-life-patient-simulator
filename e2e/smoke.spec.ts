@@ -43,6 +43,24 @@ test('groin station: stand, inspect and find the hernia', async ({ page }) => {
   await expect(page.getByText(/oval swelling about 4 × 3 cm in the right groin/).first()).toBeVisible()
 })
 
+test('the examination opens on the light illustrated patient, and recovers from a 3D crash', async ({ page }) => {
+  await fresh(page, '/case/appendicitis')
+  await tap(page, /Practice/)
+  await tap(page, /See the patient/)
+  await page.getByRole('button', { name: /^Examine$/ }).first().click()
+  await expect(page.getByRole('button', { name: /^Hand hygiene/ }).last()).toBeVisible()
+  await expect(page.getByRole('img', { name: /Drag to look around/ })).toHaveCount(0)
+  // a 3D examination that never finished loading (the page died) switches 3D off next time
+  await page.goto('/#/')
+  await page.evaluate(() => {
+    localStorage.setItem('bedside.settings', JSON.stringify({ state: { exam3d: true }, version: 1 }))
+    localStorage.setItem('bedside.exam3d.loading', String(Date.now()))
+  })
+  await page.reload()
+  await expect(page.getByText('Switched to the illustrated patient')).toBeVisible()
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('bedside.settings') ?? '{}').state.exam3d)).toBe(false)
+})
+
 test('learn hub and signs atlas', async ({ page }) => {
   await fresh(page, '/learn')
   await expect(page.getByRole('heading', { name: /Learn the routines/ })).toBeVisible()

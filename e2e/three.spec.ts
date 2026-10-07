@@ -14,8 +14,12 @@ async function fresh3d(page: Page, hash: string) {
   await page.evaluate(() => {
     localStorage.clear()
     localStorage.setItem('bedside.force3d', '1')
+    // the 3D examination is opt-in
+    localStorage.setItem('bedside.settings', JSON.stringify({ state: { exam3d: true }, version: 1 }))
   })
   await page.goto(`/#${hash}`)
+  // start the app afresh so it reads the stored preference
+  await page.reload()
   return errors
 }
 

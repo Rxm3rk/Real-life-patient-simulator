@@ -16,6 +16,8 @@ export interface SettingsState {
   showRegions: boolean
   /** Examine 3D patients: true/false by choice, null = automatic (on when a GPU can draw them) */
   patients3d: boolean | null
+  /** Examine on the 3D patient (heavy on the graphics chip) — off unless chosen; the illustrated patient otherwise */
+  exam3d: boolean
   /** Seconds per OSCE station */
   osceStationSeconds: number
   onboarded: boolean
@@ -33,6 +35,7 @@ export const useSettings = create<SettingsState>()(
       studentName: '',
       showRegions: true,
       patients3d: null,
+      exam3d: false,
       osceStationSeconds: 10 * 60,
       onboarded: false,
       set: (patch) => set(patch),

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import * as THREE from 'three'
+import { markExam3dLoading } from '../../../lib/exam3d'
 import type { HerniaPhase } from '../../../anatomy/Body'
 import { bodyDims, landmarks, REGION_ORDER, REGION_SHORT, type RegionId } from '../../../anatomy/bodyModel'
 import type { Pt } from '../../../anatomy/geometry'
@@ -103,6 +104,17 @@ export interface PatientStage3DProps {
   children?: ReactNode
 }
 
+/** Longer than this to show the patient means the device is struggling: use the illustrated patient */
+const LOAD_TIMEOUT_MS = 20_000
+/** The developer override for software GPUs (tests): slow by design, so never time out */
+function forced3d() {
+  try {
+    return localStorage.getItem('bedside.force3d') === '1'
+  } catch {
+    return false
+  }
+}
+
 const SHOT_OF: Record<View3D, ShotName> = { bed: 'overview', hands: 'hands', face: 'face', neck: 'neck', chest: 'chest', abdomen: 'abdomen', groin: 'groin', legs: 'legs' }
 /** Body-model units per decimetre (1 cm ≈ 4.35 units) */
 const UNITS_PER_DM = 43.5
@@ -201,6 +213,12 @@ export function PatientStage3D(props: PatientStage3DProps) {
     sceneRef.current = scene
     if (import.meta.env.DEV) (window as unknown as { __stage3d?: PatientScene }).__stage3d = scene
     let alive = true
+    let loaded = false
+    // a mark left behind if the page dies while loading; and a device that takes too long falls back
+    markExam3dLoading(true)
+    const slow = window.setTimeout(() => {
+      if (alive && !loaded && !forced3d()) propsRef.current.onUnavailable?.('slow')
+    }, LOAD_TIMEOUT_MS)
     const lost = (e: Event) => {
       e.preventDefault()
       propsRef.current.onUnavailable?.('WebGL context lost')
@@ -236,6 +254,9 @@ export function PatientStage3D(props: PatientStage3DProps) {
       .then(() => {
         if (!alive) return
         scene.shot(shotOf(scene), true)
+        loaded = true
+        window.clearTimeout(slow)
+        markExam3dLoading(false)
         setReady(true)
         propsRef.current.onApi?.({
           toBody(clientX, clientY) {
@@ -271,6 +292,8 @@ export function PatientStage3D(props: PatientStage3DProps) {
 
     return () => {
       alive = false
+      window.clearTimeout(slow)
+      if (!loaded) markExam3dLoading(false)
       offAfter()
       mo.disconnect()
       mq?.removeEventListener('change', paint)

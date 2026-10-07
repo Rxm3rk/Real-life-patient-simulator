@@ -18,6 +18,7 @@ import {
   BedDouble,
   Activity,
   X,
+  Box,
 } from 'lucide-react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { playPercussion, speak, uiTick, type Listen, type PercNote } from '../../../audio/engine'
@@ -39,7 +40,7 @@ import { isClinic } from '../../../engine/setting'
 import type { CaseDef, Observation } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
-import { use3dPatients } from '../../../lib/webgl'
+import { exam3dAvailable, exam3dFailed } from '../../../lib/exam3d'
 import { useEncounter } from '../../../store/encounter'
 import { useSettings } from '../../../store/settings'
 import { FaceCam } from '../FaceCam'
@@ -99,11 +100,12 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
   const setPulseEstimate = useEncounter((st) => st.setPulseEstimate)
   const useHint = useEncounter((st) => st.useHint)
   const showRegionsPref = useSettings((st) => st.showRegions)
-  const patients3d = useSettings((st) => st.patients3d)
+  const exam3d = useSettings((st) => st.exam3d)
   const setSettings = useSettings((st) => st.set)
   const desktop = useMediaQuery('(min-width: 1024px)')
   const [fail3d, setFail3d] = useState(false)
-  const use3d = !fail3d && use3dPatients(patients3d)
+  // the illustrated patient unless the student chose 3D (heavy on phones and older laptops)
+  const use3d = !fail3d && exam3d && exam3dAvailable()
   const stageApi = useRef<PatientStageApi | null>(null)
 
   const [view, setView] = useState<ViewId>('bed')
@@ -462,7 +464,10 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
         tongueOut={view === 'face' && closeup === 'mouth' ? 0.35 : 0}
         lookAt={view === 'face' && closeup === 'eye' ? 'up' : 'camera'}
         onApi={(api) => (stageApi.current = api)}
-        onUnavailable={() => setFail3d(true)}
+        onUnavailable={(reason) => {
+          exam3dFailed(reason === 'slow' ? 'slow' : /lost/i.test(reason) ? 'lost' : 'error')
+          setFail3d(true)
+        }}
       >
         {view === 'hands' && <HandViewPicker handView={handView} setHandView={setHandView} />}
         {view === 'hands' && handView === 'profile' && (
@@ -554,6 +559,17 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
 
       {/* stage utilities */}
       <div className="absolute right-2.5 bottom-20 z-20 flex flex-col gap-1.5 sm:right-3">
+        {exam3dAvailable() && (
+          <UtilButton
+            on={use3d}
+            onClick={() => {
+              setFail3d(false)
+              setSettings({ exam3d: !use3d })
+            }}
+            label={use3d ? 'Use the illustrated patient' : 'Try the 3D patient (heavier on the device)'}
+            icon={<Box size={16} />}
+          />
+        )}
         {view === 'abdomen' && s.mode === 'practice' && (
           <UtilButton on={showRegionsPref} onClick={() => setSettings({ showRegions: !showRegionsPref })} label="Regions" icon={<Grid3x3 size={16} />} />
         )}

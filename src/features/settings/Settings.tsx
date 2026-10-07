@@ -151,10 +151,20 @@ export default function Settings() {
                 ? 'This browser can’t show 3D graphics, so patients are illustrated.'
                 : webglTier() === 'software'
                   ? 'This device has no graphics acceleration, so 3D patients would be slow. Turn on to try them anyway.'
-                  : 'Examine lifelike 3D patients. Turn off for the lighter illustrated patients on an older device.'
+                  : 'Lifelike 3D patients when you take a history on a large screen and in the atlases. Turn off on an older device.'
             }
           >
             <Switch checked={use3dPatients(st.patients3d)} disabled={!webgl2Supported()} onChange={(patients3d) => set({ patients3d })} label="3D patients" />
+          </Row>
+          <Row
+            label="3D patient in examinations"
+            hint={
+              !webgl2Supported()
+                ? 'This browser can’t show 3D graphics.'
+                : 'Examine the 3D patient instead of the illustrated one. It is much heavier on the graphics chip — if your device struggles, it switches back by itself.'
+            }
+          >
+            <Switch checked={st.exam3d && webgl2Supported()} disabled={!webgl2Supported()} onChange={(exam3d) => set({ exam3d })} label="3D patient in examinations" />
           </Row>
         </Group>
 
