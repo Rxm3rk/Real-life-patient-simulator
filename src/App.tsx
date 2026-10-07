@@ -1,12 +1,14 @@
 import { MotionConfig } from 'motion/react'
-import { lazy, Suspense, useEffect, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useRef, type ReactNode } from 'react'
 import { AppShell } from './components/layout/AppShell'
 import { Toaster } from './components/ui/Toast'
-import { matchRoute, useLocation } from './lib/router'
+import { matchRoute, navigate, useLocation } from './lib/router'
 import { useApplyTheme } from './store/settings'
 
 const Home = lazy(() => import('./features/home/Home'))
 const Ward = lazy(() => import('./features/ward/Ward'))
+const Ask = lazy(() => import('./features/ask/Ask'))
+const TopicPage = lazy(() => import('./features/curriculum/TopicPage'))
 const CaseBriefing = lazy(() => import('./features/briefing/CaseBriefing'))
 const SimScreen = lazy(() => import('./features/sim/SimScreen'))
 const Debrief = lazy(() => import('./features/debrief/Debrief'))
@@ -27,6 +29,9 @@ interface RouteDef {
 
 const routes: RouteDef[] = [
   { pattern: '/', render: () => <Home /> },
+  { pattern: '/ask', render: () => <Ask /> },
+  { pattern: '/topic/:id', render: (p) => <TopicPage id={p.id} key={p.id} /> },
+  { pattern: '/topic/:id/case/:caseId', render: (p) => <TopicPage id={p.id} caseId={p.caseId} key={p.id} /> },
   { pattern: '/ward', render: () => <Ward /> },
   { pattern: '/case/:id', render: (p) => <CaseBriefing id={p.id} key={p.id} /> },
   { pattern: '/sim', render: () => <SimScreen />, bare: true },
@@ -55,9 +60,13 @@ function Fallback() {
 export default function App() {
   useApplyTheme()
   const { path } = useLocation()
+  const prev = useRef(path)
 
   useEffect(() => {
-    window.scrollTo({ top: 0 })
+    // a case card opening over its topic page keeps the reader's place
+    const topic = (p: string) => p.match(/^\/topic\/[^/]+/)?.[0]
+    if (!topic(path) || topic(path) !== topic(prev.current)) window.scrollTo({ top: 0 })
+    prev.current = path
   }, [path])
 
   let content: ReactNode = null
@@ -71,6 +80,21 @@ export default function App() {
     }
   }
   if (!content) content = <div className="p-10 text-ink">Page not found.</div>
+
+  useEffect(() => {
+    if (bare) return
+    // "/" jumps to Ask from anywhere, as in most search-first apps
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return
+      const t = e.target as HTMLElement | null
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return
+      e.preventDefault()
+      if (path === '/ask') document.querySelector<HTMLInputElement>('input[type="search"]')?.focus()
+      else navigate('/ask')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [bare, path])
 
   return (
     <MotionConfig reducedMotion="user">

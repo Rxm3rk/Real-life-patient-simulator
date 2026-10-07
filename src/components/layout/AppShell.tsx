@@ -1,4 +1,4 @@
-import { BedDouble, BookOpenText, Home, LineChart, Settings, Timer } from 'lucide-react'
+import { BedDouble, BookOpenText, CalendarDays, LineChart, Search, Settings, Timer } from 'lucide-react'
 import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { Link, useLocation } from '../../lib/router'
@@ -6,19 +6,21 @@ import { cn } from '../../lib/utils'
 import { Wordmark } from './Logo'
 
 export const NAV = [
-  { to: '/', label: 'Home', icon: Home, match: (p: string) => p === '/' },
+  { to: '/', label: 'Today', icon: CalendarDays, match: (p: string) => p === '/' || p.startsWith('/topic') },
+  { to: '/ask', label: 'Ask', icon: Search, match: (p: string) => p.startsWith('/ask') },
   { to: '/ward', label: 'Ward', icon: BedDouble, match: (p: string) => p.startsWith('/ward') || p.startsWith('/case') },
   { to: '/osce', label: 'OSCE', icon: Timer, match: (p: string) => p.startsWith('/osce') },
   { to: '/learn', label: 'Learn', icon: BookOpenText, match: (p: string) => p.startsWith('/learn') },
-  { to: '/progress', label: 'Progress', icon: LineChart, match: (p: string) => p.startsWith('/progress') || p.startsWith('/attempt') },
 ] as const
+
+const progressActive = (p: string) => p.startsWith('/progress') || p.startsWith('/debrief')
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { path } = useLocation()
   return (
     <div className="min-h-dvh bg-bg">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-line bg-bg-elevated/70 px-4 py-5 backdrop-blur-xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-line bg-bg-elevated px-4 py-5 lg:flex">
         <Link to="/" className="px-2">
           <Wordmark />
         </Link>
@@ -51,6 +53,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="mt-auto">
           <Link
+            to="/progress"
+            className={cn(
+              'flex h-11 items-center gap-3 rounded-xl px-3 text-[14.5px] font-medium transition-colors',
+              progressActive(path) ? 'bg-surface-1 text-ink ring-1 ring-line' : 'text-muted hover:bg-surface-2/70 hover:text-ink',
+            )}
+          >
+            <LineChart size={19} className="text-faint" />
+            Progress
+          </Link>
+          <Link
             to="/settings"
             className={cn(
               'flex h-11 items-center gap-3 rounded-xl px-3 text-[14.5px] font-medium transition-colors',
@@ -67,18 +79,27 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-40 border-b border-line bg-bg/80 backdrop-blur-xl safe-top lg:hidden">
+      <header className="sticky top-0 z-40 border-b border-line bg-bg safe-top lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <Link to="/">
             <Wordmark />
           </Link>
-          <Link
-            to="/settings"
-            aria-label="Settings"
-            className="grid h-10 w-10 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"
-          >
-            <Settings size={20} />
-          </Link>
+          <div className="flex items-center">
+            <Link
+              to="/progress"
+              aria-label="Progress"
+              className={cn('grid h-10 w-10 place-items-center rounded-full transition hover:bg-surface-2 hover:text-ink', progressActive(path) ? 'text-accent' : 'text-muted')}
+            >
+              <LineChart size={20} />
+            </Link>
+            <Link
+              to="/settings"
+              aria-label="Settings"
+              className="grid h-10 w-10 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"
+            >
+              <Settings size={20} />
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -87,7 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile bottom tab bar */}
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/85 backdrop-blur-xl safe-bottom lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg safe-bottom lg:hidden"
       >
         <div className="mx-auto grid h-16 max-w-lg grid-cols-5">
           {NAV.map((item) => {

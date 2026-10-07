@@ -1,14 +1,15 @@
-import { ChevronRight, Filter, Search, Shuffle } from 'lucide-react'
-import { motion } from 'motion/react'
+import { ChevronRight, Search, Shuffle } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Page, PageHeader } from '../../components/layout/AppShell'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/primitives'
-import { CASES } from '../../content/cases'
+import { CASE_META, CASES } from '../../content/cases'
+import { sessionOf, sessionsOn, TOPICS, type TopicId } from '../../content/curriculum'
 import type { CaseMeta, ExamKind } from '../../engine/types'
 import { Link, navigate } from '../../lib/router'
 import { cn, timeAgo } from '../../lib/utils'
 import { useProgress } from '../../store/progress'
+import { useStudy } from '../../store/study'
 
 export const EXAM_LABEL: Record<ExamKind, string> = {
   abdominal: 'Abdomen',
@@ -21,21 +22,32 @@ export const EXAM_LABEL: Record<ExamKind, string> = {
   scrotal: 'Scrotum',
 }
 
-const FILTERS: { id: 'all' | ExamKind; label: string }[] = [
-  { id: 'all', label: 'All patients' },
-  { id: 'abdominal', label: 'Abdomen' },
-  { id: 'groin', label: 'Hernia' },
-  { id: 'lump', label: 'Lumps' },
-  { id: 'thyroid', label: 'Neck' },
-  { id: 'breast', label: 'Breast' },
-  { id: 'arterial', label: 'Vascular' },
-  { id: 'scrotal', label: 'Scrotal' },
+type Filter = 'all' | 'today' | TopicId | 'other'
+
+interface Group {
+  key: TopicId | 'other'
+  title: string
+  sub: string
+  ids: string[]
+}
+
+const IN_SCHEDULE = new Set(TOPICS.flatMap((t) => t.cases))
+
+const GROUPS: Group[] = [
+  ...TOPICS.map((t) => {
+    const s = sessionOf(t.id)
+    return { key: t.id, title: t.title, sub: `Day ${s.day} · Session ${s.slot === 'am' ? 1 : 2}`, ids: t.cases.filter((id) => CASE_META[id]) }
+  }),
+  { key: 'other', title: 'Beyond your schedule', sub: 'Vascular, scrotal and lump stations — kept for OSCE practice', ids: CASES.filter((c) => !IN_SCHEDULE.has(c.id)).map((c) => c.id) },
 ]
+
+const BED = Object.fromEntries(CASES.map((c, i) => [c.id, i + 1]))
 
 export default function Ward() {
   const [q, setQ] = useState('')
-  const [filter, setFilter] = useState<'all' | ExamKind>('all')
+  const [filter, setFilter] = useState<Filter>('all')
   const attempts = useProgress((s) => s.attempts)
+  const day = useStudy((s) => s.day)
 
   const best = useMemo(() => {
     const m: Record<string, { pct: number; at: number }> = {}
@@ -43,24 +55,35 @@ export default function Ward() {
     return m
   }, [attempts])
 
-  const list = CASES.filter((c) => {
-    if (filter !== 'all' && c.exam !== filter && !(filter === 'arterial' && c.exam === 'venous')) return false
+  const groups = useMemo(() => {
     const t = q.trim().toLowerCase()
-    return !t || c.presenting.toLowerCase().includes(t) || c.specialty.toLowerCase().includes(t) || c.tags.some((x) => x.includes(t))
-  })
+    const today = new Set<string>(sessionsOn(day).map((s) => s.topic))
+    const match = (c: CaseMeta) =>
+      !t || c.presenting.toLowerCase().includes(t) || c.specialty.toLowerCase().includes(t) || c.patientLabel.toLowerCase().includes(t) || c.tags.some((x) => x.includes(t))
+    return GROUPS.filter((g) => filter === 'all' || g.key === filter || (filter === 'today' && today.has(g.key)))
+      .map((g) => ({ ...g, ids: g.ids.filter((id) => match(CASE_META[id])) }))
+      .filter((g) => g.ids.length)
+  }, [q, filter, day])
 
   const random = () => {
-    const pool = list.length ? list : CASES
-    const pick = pool[Math.floor(Math.random() * pool.length)]
-    navigate(`/case/${pick.id}`)
+    const pool = groups.flatMap((g) => g.ids)
+    const ids = pool.length ? pool : CASES.map((c) => c.id)
+    navigate(`/case/${ids[Math.floor(Math.random() * ids.length)]}`)
   }
+
+  const chips: { id: Filter; label: string }[] = [
+    { id: 'all', label: 'All patients' },
+    { id: 'today', label: `Day ${day}` },
+    ...TOPICS.map((t) => ({ id: t.id as Filter, label: t.short })),
+    { id: 'other', label: 'Beyond schedule' },
+  ]
 
   return (
     <Page wide>
       <PageHeader
         eyebrow="Surgical admissions"
         title="The ward"
-        subtitle="Every patient is a real clinical scenario. The diagnosis stays hidden until you’ve worked it out."
+        subtitle="Patients grouped by your clinical sessions. The diagnosis stays hidden until you’ve worked it out."
         actions={
           <Button variant="secondary" onClick={random} leading={<Shuffle size={16} />}>
             Random patient
@@ -68,18 +91,23 @@ export default function Ward() {
         }
       />
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-11 flex-1 items-center gap-2 rounded-xl bg-surface-1 px-3 ring-1 ring-line focus-within:ring-accent/60">
+      <div className="mb-5 flex flex-col gap-3">
+        <div className="flex h-11 items-center gap-2 rounded-xl bg-surface-1 px-3 ring-1 ring-line focus-within:ring-accent/60">
           <Search size={16} className="text-faint" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search presenting complaints…" className="flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-faint" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            type="search"
+            placeholder="Search presenting complaints…"
+            className="flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-faint sm:text-[15px]"
+          />
         </div>
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          <Filter size={16} className="mt-2.5 mr-1 hidden shrink-0 text-faint sm:block" />
-          {FILTERS.map((f) => (
+        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 no-scrollbar sm:mx-0 sm:flex-wrap sm:px-0">
+          {chips.map((f) => (
             <button
               key={f.id}
               onClick={() => setFilter(f.id)}
-              className={cn('h-9 shrink-0 rounded-full px-3.5 text-[13px] font-medium ring-1 transition', filter === f.id ? 'bg-ink text-bg ring-ink' : 'bg-surface-1 text-muted ring-line hover:text-ink')}
+              className={cn('h-9 shrink-0 rounded-full px-3.5 text-[13px] font-medium ring-1 transition-colors', filter === f.id ? 'bg-ink text-bg ring-ink' : 'bg-surface-1 text-muted ring-line hover:text-ink')}
             >
               {f.label}
             </button>
@@ -87,24 +115,32 @@ export default function Ward() {
         </div>
       </div>
 
-      {/* Ward board */}
-      <div className="overflow-hidden rounded-3xl bg-surface-1 ring-1 ring-line shadow-(--shadow-soft)">
-        <div className="hidden grid-cols-[72px_1.4fr_1fr_1fr_120px_32px] gap-4 border-b border-line bg-surface-2/60 px-5 py-2.5 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase md:grid">
-          <span>Bed</span>
-          <span>Presenting complaint</span>
-          <span>Patient</span>
-          <span>Station</span>
-          <span>Best</span>
-          <span />
-        </div>
-        <ul>
-          {list.map((c, i) => (
-            <motion.li key={c.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.025, 0.3) }}>
-              <BedRow c={c} bed={i + 1} best={best[c.id]} />
-            </motion.li>
-          ))}
-        </ul>
-        {!list.length && <div className="px-5 py-12 text-center text-sm text-muted">No patients match that search.</div>}
+      <div className="space-y-6">
+        {groups.map((g) => (
+          <section key={g.key}>
+            <div className="mb-2 flex items-end justify-between gap-3 px-1">
+              <div className="min-w-0">
+                <div className="text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">{g.sub}</div>
+                <h2 className="truncate text-[17px] font-semibold text-ink">{g.title}</h2>
+              </div>
+              {g.key !== 'other' && (
+                <Link to={`/topic/${g.key}`} className="inline-flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-accent hover:underline">
+                  Guide <ChevronRight size={14} />
+                </Link>
+              )}
+            </div>
+            <div className="overflow-hidden rounded-3xl bg-surface-1 shadow-(--shadow-soft) ring-1 ring-line">
+              <ul>
+                {g.ids.map((id) => (
+                  <li key={id}>
+                    <BedRow c={CASE_META[id]} bed={BED[id]} best={best[id]} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        ))}
+        {!groups.length && <div className="rounded-3xl bg-surface-1 px-5 py-12 text-center text-sm text-muted ring-1 ring-line">No patients match that search.</div>}
       </div>
     </Page>
   )
