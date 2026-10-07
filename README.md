@@ -8,15 +8,35 @@ The patients are lifelike 3D people you can turn, zoom and examine by touch. It 
 
 ## What's inside
 
-### 29 patients on the ward
+### Today: your clinical sessions
+
+The home page follows the general-surgery session schedule: six days, two sessions a day, twelve topics. Pick the day you are on and both sessions appear with their key points and patients.
+
+| Day | Session 1 (8:30–10:30) | Session 2 (11:00–1:00) |
+| --- | --- | --- |
+| 1 | Bariatric surgery | Complicated hernia |
+| 2 | Acute abdomen | Abdominal distension |
+| 3 | Breast lump & nipple discharge | Dysphagia and heartburn |
+| 4 | Right hypochondrial pain & jaundice | Gastrointestinal bleeding |
+| 5 | Pre- & post-operative care | Epigastric pain |
+| 6 | Neck lump | Painful perianal conditions |
+
+- **Topic guides.** Each topic has key points, the history and the Macleod's examination for it (with page references), tables, investigations and management, and about 25 questions the doctors ask, with a hide-answers mode and stars.
+- **Case cards.** A one-page summary of any patient for the ten minutes before a session: vital signs, what you find, the diagnosis and differentials, investigations with their results, management, how to present the case, pearls and the viva. A quiz mode hides the answers until you tap.
+- **Ask.** When a doctor asks you something, type it into the search bar on Today or on the Ask page. It searches every question, guide point and case as you type, offline. It understands abbreviations (UGIB, GORD, DRE), British and American spellings and small typos, and can be limited to one topic or today's sessions. Press `/` on a laptop to jump to it.
+
+### 46 patients on the ward
+
+The ward is grouped by session topic. Stations outside the schedule (vascular, scrotal, lumps) are kept in their own section for OSCE practice.
 
 | Examination | Cases |
 | --- | --- |
-| Abdomen | Appendicitis, acute cholecystitis, small-bowel obstruction from a femoral hernia, perforated duodenal ulcer, acute pancreatitis, diverticulitis, ascending cholangitis, ruptured AAA, mesenteric ischaemia, pancreatic cancer, caecal cancer, chronic liver disease (OSCE), ileostomy (OSCE) |
+| Abdomen | Appendicitis, acute cholecystitis, small-bowel obstruction from a femoral hernia, strangulated inguinal hernia, perforated duodenal ulcer, bleeding duodenal ulcer, variceal bleed, diverticular bleed, acute pancreatitis, diverticulitis, ascending cholangitis, hydatid cyst of the liver, ruptured AAA, mesenteric ischaemia, sigmoid volvulus, pancreatic cancer, caecal cancer, gastric cancer, oesophageal cancer, achalasia, leak after sleeve gastrectomy, bariatric assessment, anastomotic leak after bowel surgery, chronic liver disease (OSCE), ileostomy (OSCE) |
 | Groin | Indirect inguinal hernia, irreducible femoral hernia, direct inguinal hernia |
+| Perianal & rectal | Perianal abscess, anal fissure, thrombosed haemorrhoids |
 | Lump | Lipoma, epidermoid cyst |
-| Thyroid & neck | Graves' disease, multinodular goitre, thyroglossal cyst |
-| Breast | Fibroadenoma, breast carcinoma |
+| Thyroid & neck | Graves' disease, multinodular goitre, thyroglossal cyst, papillary thyroid carcinoma |
+| Breast | Fibroadenoma, breast carcinoma, intraductal papilloma |
 | Peripheral arterial | Chronic limb-threatening ischaemia, intermittent claudication |
 | Varicose veins | Venous ulcer with varicose veins |
 | Scrotum | Testicular torsion, hydrocele, testicular tumour |
@@ -50,11 +70,11 @@ Every patient is a full 3D person built from their case: sex, age, build, skin t
 - **You talk to them in 3D.** During history taking on a laptop, or a tablet held sideways, you talk to the patient in 3D.
 - **Every case has a portrait**, a pre-rendered 3D image used as the patient's avatar.
 
-The scrotal examination keeps its illustrated close-up. The 3D patients need WebGL 2 and are loaded only when you first see one. A device without graphics acceleration defaults to the lighter illustrated patients. You can switch between the two under **Settings → 3D patients**.
+The scrotal and perianal examinations keep their illustrated close-ups. The perianal one is drawn on the lithotomy clock face (12 o'clock anterior) used to document findings. The 3D patients need WebGL 2 and are loaded only when you first see one. A device without graphics acceleration defaults to the lighter illustrated patients. You can switch between the two under **Settings → 3D patients**.
 
 ### Learn
 
-- **Routines.** The Macleod's sequence for all eight examinations, with the reasoning behind each step.
+- **Routines.** The Macleod's sequence for all nine examinations, with the reasoning behind each step.
 - **Drills.** Put the steps in order, one chunk at a time, one section at a time, or the whole routine.
 - **Signs atlas.** 26 signs, with what each one means and how to elicit it. 18 of them can be shown on a 3D patient you can turn round, with buttons to make the patient cough, swallow, stick out their tongue or raise their arms. The rest are illustrated.
 - **Scar atlas.** The classic abdominal incisions on a 3D torso, with an explore mode and a quiz.
@@ -75,7 +95,7 @@ The progress page charts your recent scores, your average in each marking domain
 
 The examination routines follow the sequences taught in **Macleod's Clinical Examination (14th edition)**, supplemented by current UK guidance. That guidance includes NICE (NG12 suspected cancer, CG188 gallstones, NG104 pancreatitis, NG147 diverticular disease, NG156 abdominal aortic aneurysm, CG147 peripheral arterial disease, CG168 varicose veins, NG145 thyroid disease, NG101 breast cancer), British Thyroid Association guidance, the HerniaSurge international guidelines, European Association of Urology guidance on the acute scrotum and testicular cancer, and the European Society for Vascular Surgery / Global Vascular Guidelines on CLTI.
 
-No textbook text or figures are reproduced. The repository deliberately ignores `*.pdf` so that a copy of the book can never be committed by accident.
+No textbook text or figures are reproduced in the app: the guides paraphrase the examination sequences and cite page numbers. `.gitignore` excludes `*.pdf`, but that does not stop a file uploaded through GitHub's website.
 
 ## Share it with friends
 
