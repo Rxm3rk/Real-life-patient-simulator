@@ -15,7 +15,7 @@ export interface StageOptions {
   controls?: boolean
 }
 
-/** Return true while animating, 'idle' for gentle ambient motion (rendered at ~30 fps). */
+/** Return true while animating, 'idle' for gentle ambient motion (rendered at ~20 fps). */
 export type FrameFn = (dt: number, t: number) => boolean | 'idle' | void
 
 /** A second view drawn into part of the same canvas (picture in picture). */
@@ -59,13 +59,16 @@ export class Stage3D {
     const transparent = opts.background === null
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: transparent, powerPreference: 'high-performance', preserveDrawingBuffer: false })
     if (transparent) this.renderer.setClearColor(0x000000, 0)
+    // checking each shader for errors makes the page wait for every compile (slow on Windows); development only
+    this.renderer.debug.checkShaderErrors = import.meta.env.DEV
     this.maxDpr = opts.maxDpr ?? 2
-    this.renderer.setPixelRatio(Math.min(this.maxDpr, window.devicePixelRatio || 1))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     this.renderer.toneMapping = THREE.NeutralToneMapping
     this.renderer.toneMappingExposure = 1.02
     this.renderer.shadowMap.enabled = true
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    // the shadow map is redrawn when something moves, not on every idle breath
+    this.renderer.shadowMap.autoUpdate = false
 
     const pmrem = new THREE.PMREMGenerator(this.renderer)
     this.env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
@@ -114,9 +117,22 @@ export class Stage3D {
     liveStages.add(this)
   }
 
+  /**
+   * Pixels per CSS pixel: the screen's density, but never more than about two
+   * million pixels in all (a high-density laptop screen would otherwise draw four
+   * or five million every frame), scaled down further if frames run slow.
+   */
+  private pixelRatio(w: number, h: number) {
+    const budget = 2.1e6
+    const fit = Math.sqrt(budget / Math.max(1, w * h))
+    return Math.max(0.75, Math.min(this.maxDpr, window.devicePixelRatio || 1, fit) * this.dprScale)
+  }
+
   resize() {
     const w = this.canvas.clientWidth || 1
     const h = this.canvas.clientHeight || 1
+    const dpr = this.pixelRatio(w, h)
+    if (dpr !== this.renderer.getPixelRatio()) this.renderer.setPixelRatio(dpr)
     this.renderer.setSize(w, h, false)
     this.camera.aspect = w / h
     this.camera.updateProjectionMatrix()
@@ -164,8 +180,10 @@ export class Stage3D {
       else if (r === 'idle') idle = true
     }
     if (this.controls?.update()) busy = true
-    if (busy || this.dirty || (idle && now - this.lastRender > 32)) {
+    if (busy || this.dirty || (idle && now - this.lastRender > 50)) {
       if (busy) this.adapt(now)
+      // shadows follow every real movement, and only every third idle frame
+      this.renderer.shadowMap.needsUpdate = busy || this.dirty || this.idleFrames++ % 3 === 0
       this.renderer.render(this.scene, this.camera)
       if (this.viewports.size) this.renderViewports()
       this.dirty = false
@@ -182,6 +200,7 @@ export class Stage3D {
   private frameTimes: number[] = []
   private lastBusy = 0
   private dprScale = 1
+  private idleFrames = 0
   private adapt(now: number) {
     if (this.lastBusy && now - this.lastBusy < 250) this.frameTimes.push(now - this.lastBusy)
     this.lastBusy = now
@@ -191,7 +210,6 @@ export class Stage3D {
     const next = avg > 30 ? Math.max(0.5, this.dprScale - 0.2) : avg < 18 ? Math.min(1, this.dprScale + 0.1) : this.dprScale
     if (next !== this.dprScale) {
       this.dprScale = next
-      this.renderer.setPixelRatio(Math.max(0.75, Math.min(this.maxDpr, window.devicePixelRatio || 1) * next))
       this.resize()
     }
   }
@@ -201,7 +219,7 @@ export class Stage3D {
     const W = this.canvas.clientWidth
     const H = this.canvas.clientHeight
     // the shadow map from the main render is still valid
-    r.shadowMap.autoUpdate = false
+    r.shadowMap.needsUpdate = false
     r.setScissorTest(true)
     for (const vp of this.viewports) {
       const rect = vp.rect()
@@ -216,7 +234,23 @@ export class Stage3D {
     }
     r.setScissorTest(false)
     r.setViewport(0, 0, W, H)
-    r.shadowMap.autoUpdate = true
+  }
+
+  /**
+   * Compile every shader the scene uses now, off the main thread where the browser
+   * allows, then draw one frame to build the shadow variants. Done before the scene
+   * is shown, so no later change of view or prop stalls the page on a compile.
+   */
+  async compileAll() {
+    try {
+      await this.renderer.compileAsync(this.scene, this.camera)
+    } catch {
+      /* compiles on first use instead */
+    }
+    if (!this.alive) return
+    this.renderer.shadowMap.needsUpdate = true
+    this.renderer.render(this.scene, this.camera)
+    this.invalidate()
   }
 
   dispose() {

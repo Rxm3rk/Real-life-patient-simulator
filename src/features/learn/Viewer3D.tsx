@@ -68,7 +68,11 @@ export default function Viewer3D({
     }
     sceneRef.current = scene
     let alive = true
-    scene.ready.then(() => alive && setReady(true)).catch(() => onUnavailable?.())
+    scene.ready
+      // all garments too: each sign dresses the patient differently
+      .then(() => scene.precompile())
+      .then(() => alive && setReady(true))
+      .catch(() => onUnavailable?.())
     const paint = () => scene.setBackground(cssVar('--stage', '#0b1220'))
     const mo = new MutationObserver(paint)
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })

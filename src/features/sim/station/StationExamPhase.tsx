@@ -475,7 +475,7 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
         <Suspense
           fallback={
             <div className="absolute inset-0 grid place-items-center bg-stage">
-              <div className="flex items-center gap-2.5 rounded-full bg-surface-1/85 px-4 py-2 text-[13px] font-medium text-muted shadow-(--shadow-lift) ring-1 ring-line backdrop-blur">
+              <div className="flex items-center gap-2.5 rounded-full bg-surface-1/85 px-4 py-2 text-[13px] font-medium text-muted shadow-(--shadow-lift) ring-1 ring-line">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
                 Bringing the patient in…
               </div>
@@ -517,7 +517,7 @@ export default function StationExamPhase({ c, onNext }: { c: CaseDef; onNext?: (
                 <VitalsMonitor v={c.vitals} compact label={monitorLabel(c.setting)} className={cn('w-[230px]', !desktop && 'w-[200px]')} />
               </div>
             ) : (
-              <button onClick={() => setMonitorOpen(true)} className="flex items-center gap-2 rounded-xl bg-mon-bg/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold tabular ring-1 ring-white/10 backdrop-blur">
+              <button onClick={() => setMonitorOpen(true)} className="flex items-center gap-2 rounded-xl bg-mon-bg/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold tabular ring-1 ring-white/10">
                 <span className="text-mon-hr">♥ {c.vitals.hr}</span>
                 <span className="text-mon-bp">
                   {c.vitals.sbp}/{c.vitals.dbp}

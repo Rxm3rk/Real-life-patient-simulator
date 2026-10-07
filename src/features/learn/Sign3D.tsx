@@ -256,7 +256,7 @@ export default function Sign3D({ id, className, onUnavailable }: { id: string; c
           {spec.action.label}
         </button>
       )}
-      <div className="pointer-events-none absolute right-3 bottom-3 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">Drag to turn · pinch to zoom</div>
+      <div className="pointer-events-none absolute right-3 bottom-3 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-medium text-white">Drag to turn · pinch to zoom</div>
     </div>
   )
 }

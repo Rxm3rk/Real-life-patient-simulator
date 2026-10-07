@@ -261,7 +261,19 @@ export function createRoom(dark: boolean) {
  * widened and blurred so it tents between the legs and hangs over the edges.
  * `fromZ`..`toZ` is the covered stretch of the bed (head end is −z).
  */
-export function buildBlanket(h: HumanModel, opts: { surfaceY: number; fromZ: number; toZ: number; width: number; parent: THREE.Object3D; over?: THREE.SkinnedMesh[] }) {
+/**
+ * The blanket's fabric. A scene keeps one for its lifetime and passes it to every
+ * blanket it lays, so the shader is compiled once; it is always transparent, so
+ * fading a new blanket in is just its opacity (no second, opaque shader).
+ */
+export function blanketMaterial() {
+  return fabricNoise(new THREE.MeshStandardMaterial({ color: '#dce7f0', roughness: 0.95, side: THREE.DoubleSide, transparent: true }), 26, 0.12)
+}
+
+export function buildBlanket(
+  h: HumanModel,
+  opts: { surfaceY: number; fromZ: number; toZ: number; width: number; parent: THREE.Object3D; over?: THREE.SkinnedMesh[]; material?: THREE.MeshStandardMaterial },
+) {
   const res = 0.25
   const half = opts.width / 2 + 1.2
   const nx = Math.ceil((half * 2) / res) + 1
@@ -362,7 +374,8 @@ export function buildBlanket(h: HumanModel, opts: { surfaceY: number; fromZ: num
     gp.setXYZ(i, xOut, y, z)
   }
   geo.computeVertexNormals()
-  const m = fabricNoise(new THREE.MeshStandardMaterial({ color: '#dce7f0', roughness: 0.95, side: THREE.DoubleSide }), 26, 0.12)
+  const own = !opts.material
+  const m = opts.material ?? blanketMaterial()
   const mesh = new THREE.Mesh(geo, m)
   mesh.name = 'blanket'
   mesh.castShadow = true
@@ -381,7 +394,7 @@ export function buildBlanket(h: HumanModel, opts: { surfaceY: number; fromZ: num
     dispose() {
       geo.dispose()
       fold.geometry.dispose()
-      m.dispose()
+      if (own) m.dispose()
     },
   }
 }

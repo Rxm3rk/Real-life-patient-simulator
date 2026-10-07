@@ -104,7 +104,7 @@ export default function SimScreen() {
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-bg">
       {/* Header */}
-      <header ref={headerRef} className="relative z-30 shrink-0 border-b border-line bg-bg/85 backdrop-blur-xl safe-top">
+      <header ref={headerRef} className="relative z-30 shrink-0 border-b border-line bg-bg safe-top">
         <div className="flex h-14 items-center gap-2 px-2 sm:gap-3 sm:px-4">
           <button
             onClick={() => setConfirmExit(true)}

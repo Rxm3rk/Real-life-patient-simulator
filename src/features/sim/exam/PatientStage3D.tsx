@@ -230,6 +230,11 @@ export function PatientStage3D(props: PatientStage3DProps) {
         // the drip, catheter bag, vomit bowl… around the bed
         scene.setBedside({ ...c.bedside, drip: !!(c.bedside?.drip || a.lines?.drip) })
         p.onReadyScene?.(scene, warp)
+        // every shader compiled behind the loading screen, so no tap later stalls
+        return scene.precompile()
+      })
+      .then(() => {
+        if (!alive) return
         scene.shot(shotOf(scene), true)
         setReady(true)
         propsRef.current.onApi?.({
@@ -579,7 +584,7 @@ export function PatientStage3D(props: PatientStage3DProps) {
       />
       {!ready && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <div className="flex items-center gap-2.5 rounded-full bg-surface-1/85 px-4 py-2 text-[13px] font-medium text-muted shadow-(--shadow-lift) ring-1 ring-line backdrop-blur">
+          <div className="flex items-center gap-2.5 rounded-full bg-surface-1/85 px-4 py-2 text-[13px] font-medium text-muted shadow-(--shadow-lift) ring-1 ring-line">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
             Bringing the patient in…
           </div>
@@ -601,7 +606,7 @@ export function PatientStage3D(props: PatientStage3DProps) {
             {l.kind === 'landmark' || l.kind === 'zone' ? (
               <div className="flex -translate-x-[5px] -translate-y-[5px] items-center gap-1.5">
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#fbbf3c] ring-2 ring-white" />
-                {l.text && <span className="rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-sm">{l.text}</span>}
+                {l.text && <span className="rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] font-semibold whitespace-nowrap text-white">{l.text}</span>}
               </div>
             ) : l.kind === 'hot' ? (
               <div className="relative -translate-x-1/2 -translate-y-1/2">

@@ -34,8 +34,9 @@ export default function PatientTalk3D({ c, pain, speaking, className, onUnavaila
         scene.setPose({ posture: 'sitChair', arms: 'sides' }, true)
         scene.setClothing({ gownTop: true, gownSkirt: true, briefs: true })
         scene.shot(shotFor(scene, 'talk'), true)
-        setReady(true)
+        return scene.precompile({ props: false })
       })
+      .then(() => alive && setReady(true))
       .catch(() => onUnavailable?.())
     return () => {
       alive = false

@@ -185,7 +185,7 @@ export default function HistoryPhase({ c, onNext }: { c: CaseDef; onNext?: () =>
         </div>
 
         {/* Composer */}
-        <div className="border-t border-line bg-bg/90 px-3 pt-2.5 pb-3 backdrop-blur-xl safe-bottom sm:px-6">
+        <div className="border-t border-line bg-bg/90 px-3 pt-2.5 pb-3 safe-bottom sm:px-6">
           <div className="mx-auto max-w-2xl">
             <AnimatePresence initial={false}>
               {(pending.length > 0 || live.length > 0) && (

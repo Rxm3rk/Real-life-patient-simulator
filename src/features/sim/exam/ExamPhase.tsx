@@ -466,7 +466,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
       >
         {view === 'hands' && <HandViewPicker handView={handView} setHandView={setHandView} />}
         {view === 'hands' && handView === 'profile' && (
-          <div className="absolute inset-x-3 top-3 z-20 mx-auto max-w-[420px] overflow-hidden rounded-3xl bg-surface-1/95 shadow-(--shadow-float) ring-1 ring-line backdrop-blur lg:top-4">
+          <div className="absolute inset-x-3 top-3 z-20 mx-auto max-w-[420px] overflow-hidden rounded-3xl bg-surface-1/95 shadow-(--shadow-float) ring-1 ring-line lg:top-4">
             <div className="px-4 pt-3 text-[13px] font-semibold text-ink">Schamroth’s window test</div>
             <svg viewBox="0 60 400 170" className="w-full p-2">
               <SchamrothView a={a} clubbed={f.hands.clubbing} koilonychia={f.hands.koilonychia} />
@@ -506,7 +506,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
       {/* overlays: vitals & face */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-2.5 sm:p-3">
         {isClinic(c.setting) ? (
-          <div className="pointer-events-auto rounded-xl bg-surface-1/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold text-ink tabular ring-1 ring-line backdrop-blur" title="Observations taken at check-in">
+          <div className="pointer-events-auto rounded-xl bg-surface-1/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold text-ink tabular ring-1 ring-line" title="Observations taken at check-in">
             <span className="mr-1.5 font-sans text-[10px] font-semibold tracking-[0.12em] text-faint uppercase">Obs</span>
             HR {c.vitals.hr} · BP {c.vitals.sbp}/{c.vitals.dbp} · SpO₂ {c.vitals.spo2}%
           </div>
@@ -515,7 +515,7 @@ export default function ExamPhase({ c, onNext }: { c: CaseDef; onNext?: () => vo
             {monitorOpen || desktop ? (
               <VitalsMonitor v={c.vitals} compact label={monitorLabel(c.setting)} className={cn('w-[230px]', !desktop && 'w-[200px]')} />
             ) : (
-              <div className="flex items-center gap-2 rounded-xl bg-mon-bg/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold tabular ring-1 ring-white/10 backdrop-blur">
+              <div className="flex items-center gap-2 rounded-xl bg-mon-bg/90 px-2.5 py-1.5 font-mono text-[11.5px] font-semibold tabular ring-1 ring-white/10">
                 <span className="text-mon-hr">♥ {c.vitals.hr}</span>
                 <span className="text-mon-bp">{c.vitals.sbp}/{c.vitals.dbp}</span>
                 <span className="text-mon-spo2">{c.vitals.spo2}%</span>
@@ -847,7 +847,7 @@ function SCRIPTS(lm: ReturnType<typeof landmarks>): Record<string, { steps: stri
 function StageLoading() {
   return (
     <div className="absolute inset-0 grid place-items-center bg-stage">
-      <div className="flex items-center gap-2.5 rounded-full bg-surface-1/85 px-4 py-2 text-[13px] font-medium text-muted shadow-(--shadow-lift) ring-1 ring-line backdrop-blur">
+      <div className="flex items-center gap-2.5 rounded-full bg-surface-1/85 px-4 py-2 text-[13px] font-medium text-muted shadow-(--shadow-lift) ring-1 ring-line">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         Bringing the patient in…
       </div>
@@ -1071,7 +1071,7 @@ function LiverTask({
   const [caption, setCaption] = useState('Where will you start? Tap the abdomen.')
   return (
     <>
-      <div className="pointer-events-none absolute top-3 left-1/2 z-30 w-max max-w-[92%] -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-center text-[13px] font-medium text-white backdrop-blur">
+      <div className="pointer-events-none absolute top-3 left-1/2 z-30 w-max max-w-[92%] -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-center text-[13px] font-medium text-white">
         {caption}
       </div>
       {step === 'choose' && (

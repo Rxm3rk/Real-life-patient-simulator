@@ -80,7 +80,7 @@ export default function ScarAtlas() {
               <ScarTorso3D shown={shown} explore={mode === 'explore'} onPick={setSel} onUnavailable={() => setFail3d(true)} className="aspect-[5/6] w-full" />
             </Suspense>
             {mode === 'explore' && (
-              <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/55 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur">
+              <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/55 px-3 py-1.5 text-[12px] font-medium text-white">
                 Tap a marker, drag to turn the patient
               </div>
             )}
@@ -103,7 +103,7 @@ export default function ScarAtlas() {
                 })}
             </svg>
             {mode === 'explore' && (
-              <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/55 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur">
+              <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/55 px-3 py-1.5 text-[12px] font-medium text-white">
                 Tap a marker or pick from the list
               </div>
             )}

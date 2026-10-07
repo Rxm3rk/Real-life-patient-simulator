@@ -12,7 +12,7 @@ import { axisRot, buildPose, Poser, wristAxis, type PoseSpec } from './poses'
 import type { BedsideItems } from '../anatomy/Scene'
 import { attachedItems, bedsideProps, type Attached, type Bedside } from './bedside'
 import { createExaminerHand, createObsChart, createStethoscope, type ExaminerHand, type Stethoscope } from './props'
-import { buildBlanket, createRoom, createSet, type ExamSet, type SetKind } from './sets'
+import { blanketMaterial, buildBlanket, createRoom, createSet, type ExamSet, type SetKind } from './sets'
 import { appearanceSigns, applyGrid, applyVeins, herniaBulges, herniaSize, SignLayer, type LiveBulge, type Patch, type Segment, type Vein } from './signs'
 import { Stage3D } from './stage'
 
@@ -555,10 +555,10 @@ export class PatientScene {
       width: this.set.kind === 'bed' ? 8.6 : 6.4,
       parent: this.stage.scene,
       over: skirt?.visible ? [skirt] : [],
+      material: this.blanketMaterial(),
     })
     this.stage.scene.add(this.blanket.object)
     this.blanketFade = fade ? 0 : 1
-    this.blanket.material.transparent = fade
     this.blanket.material.opacity = this.blanketFade
     this.stage.invalidate()
   }
@@ -867,8 +867,6 @@ export class PatientScene {
     if (this.blanket && this.blanketFade < 1) {
       this.blanketFade = Math.min(1, this.blanketFade + dt / 0.35)
       this.blanket.material.opacity = this.blanketFade
-      if (this.blanketFade >= 1) this.blanket.material.transparent = false
-      this.blanket.material.needsUpdate = this.blanketFade >= 1
       busy = true
     }
 
@@ -1010,6 +1008,46 @@ export class PatientScene {
     return busy ? true : 'idle'
   }
 
+  /* ------------------------------------------------------------ shaders */
+
+  private blanketMat: THREE.MeshStandardMaterial | null = null
+  private blanketMaterial() {
+    return (this.blanketMat ??= blanketMaterial())
+  }
+
+  /**
+   * Compile every shader this patient can need before they are shown: clothes they
+   * aren't wearing yet, the examiner's hand, the stethoscope, the obs chart and the
+   * blanket. A compile blocks the page (for long on Windows), so they all happen
+   * behind the loading screen rather than on the first tap or change of view.
+   */
+  async precompile(opts: { props?: boolean } = {}) {
+    await this.ready
+    if (this.disposed || !this.human) return
+    if (opts.props === false) return this.stage.compileAll()
+    const revealed: THREE.Object3D[] = []
+    const reveal = (o?: THREE.Object3D | null) =>
+      o?.traverse((x) => {
+        if (!x.visible) {
+          x.visible = true
+          revealed.push(x)
+        }
+      })
+    if (this.clothes) for (const m of Object.values(this.clothes.meshes)) reveal(m)
+    reveal(this.hand?.object)
+    reveal(this.steth?.object)
+    reveal(this.chart?.object)
+    const scrap = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), this.blanketMaterial())
+    scrap.castShadow = scrap.receiveShadow = true
+    scrap.position.set(0, -50, 0)
+    this.stage.scene.add(scrap)
+    await this.stage.compileAll()
+    scrap.removeFromParent()
+    scrap.geometry.dispose()
+    for (const o of revealed) o.visible = false
+    this.stage.invalidate()
+  }
+
   dispose() {
     this.disposed = true
     this.attached?.dispose()
@@ -1018,6 +1056,7 @@ export class PatientScene {
     this.steth?.dispose()
     this.chart?.dispose()
     this.blanket?.dispose()
+    this.blanketMat?.dispose()
     this.hair?.dispose()
     this.clothes?.dispose()
     this.human?.dispose()

@@ -354,7 +354,7 @@ export function ManoeuvreCaption({ steps, onDone }: { steps: string[]; onDone: (
       key={step}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="pointer-events-none absolute top-3 left-1/2 z-30 w-max max-w-[90%] -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-center text-[13px] font-medium text-white backdrop-blur"
+      className="pointer-events-none absolute top-3 left-1/2 z-30 w-max max-w-[90%] -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-center text-[13px] font-medium text-white"
     >
       {step}
     </motion.div>

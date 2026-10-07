@@ -249,10 +249,10 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Floating panels. No backdrop blur: over the live 3D canvas it would be redone
+   every frame, which is costly on laptop and phone GPUs. */
 @utility glass {
-  background: var(--overlay);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  background: color-mix(in oklab, var(--surface-1) 94%, transparent);
 }
 
 @utility touch-none-select {
