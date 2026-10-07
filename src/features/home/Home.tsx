@@ -12,7 +12,9 @@ import { useEncounter } from '../../store/encounter'
 import { useProgress } from '../../store/progress'
 import { useSettings } from '../../store/settings'
 import { useStudy } from '../../store/study'
+import { useClaude } from '../../lib/claude'
 import { Result } from '../ask/Ask'
+import { ClaudeAnswer } from '../ask/ClaudeAnswer'
 import { search } from '../ask/search'
 import { useSearchIndex } from '../ask/useSearchIndex'
 
@@ -32,6 +34,8 @@ export default function Home() {
   const activeMeta = active && !active.finishedAt ? CASE_META[active.caseId] : null
   const [q, setQ] = useState('')
   const sessions = sessionsOn(day)
+  const claude = useClaude()
+  const [askClaude, setAskClaude] = useState(0)
 
   return (
     <Page wide>
@@ -43,10 +47,15 @@ export default function Home() {
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] text-ink sm:text-[34px]">General surgery · Day {day}</h1>
       </header>
 
-      <QuickSearch q={q} setQ={setQ} />
+      <QuickSearch
+        q={q}
+        setQ={setQ}
+        claude={!!claude}
+        onEnter={() => (claude ? setAskClaude((n) => n + 1) : navigate(`/ask?q=${encodeURIComponent(q.trim())}`))}
+      />
 
       {q.trim() ? (
-        <InlineResults q={q} />
+        <InlineResults q={q} askClaude={askClaude} />
       ) : (
         <>
           {activeMeta && (
@@ -83,7 +92,7 @@ export default function Home() {
   )
 }
 
-function QuickSearch({ q, setQ }: { q: string; setQ: (q: string) => void }) {
+function QuickSearch({ q, setQ, claude, onEnter }: { q: string; setQ: (q: string) => void; claude: boolean; onEnter: () => void }) {
   const input = useRef<HTMLInputElement>(null)
   return (
     <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 -mx-4 mt-4 bg-bg px-4 py-2 sm:-mx-6 sm:px-6 lg:top-0 lg:-mx-10 lg:px-10">
@@ -95,7 +104,10 @@ function QuickSearch({ q, setQ }: { q: string; setQ: (q: string) => void }) {
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setQ('')
-            if (e.key === 'Enter' && q.trim()) navigate(`/ask?q=${encodeURIComponent(q.trim())}`)
+            if (e.key === 'Enter' && q.trim()) {
+              e.currentTarget.blur()
+              onEnter()
+            }
           }}
           type="search"
           inputMode="search"
@@ -103,7 +115,7 @@ function QuickSearch({ q, setQ }: { q: string; setQ: (q: string) => void }) {
           autoComplete="off"
           spellCheck={false}
           aria-label="Search questions, topics and cases"
-          placeholder="The doctor asks… type it here"
+          placeholder={claude ? 'The doctor asks… type it, Enter asks Claude' : 'The doctor asks… type it here'}
           className="h-14 w-full rounded-2xl bg-surface-1 pr-12 pl-12 text-[16px] text-ink shadow-(--shadow-soft) ring-1 ring-line outline-none placeholder:text-faint focus:ring-2 focus:ring-accent"
         />
         {q && (
@@ -123,12 +135,13 @@ function QuickSearch({ q, setQ }: { q: string; setQ: (q: string) => void }) {
   )
 }
 
-function InlineResults({ q }: { q: string }) {
+function InlineResults({ q, askClaude }: { q: string; askClaude: number }) {
   const idx = useSearchIndex()
   const hits = useMemo(() => (idx ? search(idx, q, { limit: 12 }) : []), [idx, q])
   if (!idx) return null
   return (
     <div className="space-y-2.5 pt-2">
+      <ClaudeAnswer q={q} hits={hits} trigger={askClaude} />
       {hits.length === 0 ? (
         <div className="py-12 text-center">
           <div className="text-[15px] font-medium text-ink">Nothing found for “{q}”.</div>

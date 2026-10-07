@@ -6,6 +6,8 @@ import { sessionsOn, TOPIC_BY_ID, TOPICS, type TopicId } from '../../content/cur
 import { Link, navigate, useLocation } from '../../lib/router'
 import { cn } from '../../lib/utils'
 import { useStudy } from '../../store/study'
+import { useClaude } from '../../lib/claude'
+import { ClaudeAnswer } from './ClaudeAnswer'
 import { search, type Hit } from './search'
 import { useSearchIndex } from './useSearchIndex'
 
@@ -31,6 +33,8 @@ export default function Ask() {
   const idx = useSearchIndex()
   const { day, recent, addRecent, clearRecent } = useStudy()
   const input = useRef<HTMLInputElement>(null)
+  const claude = useClaude()
+  const [askClaude, setAskClaude] = useState(0)
 
   const topics = useMemo(() => {
     if (scope === 'all') return undefined
@@ -79,6 +83,8 @@ export default function Ask() {
               if (e.key === 'Enter') {
                 addRecent(q)
                 input.current?.blur()
+                // Enter asks Claude where the app can (claude.ai)
+                if (q.trim()) setAskClaude((n) => n + 1)
               }
               if (e.key === 'Escape') setQ('')
             }}
@@ -88,7 +94,7 @@ export default function Ask() {
             autoComplete="off"
             spellCheck={false}
             aria-label="Search questions, topics and cases"
-            placeholder="Ask anything — e.g. causes of dysphagia"
+            placeholder={claude ? 'Ask anything — Enter asks Claude' : 'Ask anything — e.g. causes of dysphagia'}
             className="h-14 w-full rounded-2xl bg-surface-1 pr-12 pl-12 text-[16px] text-ink shadow-(--shadow-soft) ring-1 ring-line outline-none placeholder:text-faint focus:ring-2 focus:ring-accent"
           />
           {q && (
@@ -120,12 +126,13 @@ export default function Ask() {
         </div>
       </div>
 
+      {q.trim() && idx && <ClaudeAnswer q={q} hits={hits} trigger={askClaude} className="mb-3" />}
       {!q.trim() ? (
-        <Suggestions recent={recent} onPick={setQ} onClear={clearRecent} />
+        <Suggestions recent={recent} onPick={setQ} onClear={clearRecent} claude={!!claude} />
       ) : !idx ? null : hits.length === 0 ? (
         <div className="py-16 text-center">
-          <div className="text-[15px] font-medium text-ink">Nothing found for “{q}”.</div>
-          <p className="mt-1 text-[13.5px] text-muted">Try fewer words, another spelling, or search everything.</p>
+          <div className="text-[15px] font-medium text-ink">Nothing in your notes for “{q}”.</div>
+          <p className="mt-1 text-[13.5px] text-muted">{claude ? 'Ask Claude above, or try other words.' : 'Try fewer words, another spelling, or search everything.'}</p>
           {scope !== 'all' && (
             <button onClick={() => setScope('all')} className="mt-4 text-[13.5px] font-medium text-accent hover:underline">
               Search everything
@@ -146,7 +153,7 @@ export default function Ask() {
   )
 }
 
-function Suggestions({ recent, onPick, onClear }: { recent: string[]; onPick: (q: string) => void; onClear: () => void }) {
+function Suggestions({ recent, onPick, onClear, claude }: { recent: string[]; onPick: (q: string) => void; onClear: () => void; claude: boolean }) {
   return (
     <div className="space-y-6 pt-2">
       {recent.length > 0 && (
@@ -180,6 +187,7 @@ function Suggestions({ recent, onPick, onClear }: { recent: string[]; onPick: (q
       </section>
       <p className="text-[13px] leading-relaxed text-muted">
         Searches every ward-round question and answer, every point of the twelve session guides and the cases — offline, as you type. Abbreviations work (UGIB, GORD, Mx, DRE), and so do British or American spellings.
+        {claude && ' For anything the notes don’t cover, press Enter or tap Ask Claude: Claude answers on your own Claude account, using the matching notes.'}
       </p>
     </div>
   )
