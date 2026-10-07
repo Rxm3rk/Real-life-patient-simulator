@@ -1,4 +1,4 @@
-import { Activity, Droplets, Footprints, HeartPulse, type LucideIcon, Scan, Shirt, Target, UserRound } from 'lucide-react'
+import { Activity, CircleDot, Droplets, Footprints, HeartPulse, type LucideIcon, Scan, Shirt, Target, UserRound } from 'lucide-react'
 import { protocolFor } from '../../engine/protocols'
 import { STATIONS } from '../../engine/stations'
 import type { ExamKind } from '../../engine/types'
@@ -21,6 +21,7 @@ export const ROUTINES: RoutineMeta[] = [
   { kind: 'arterial', title: 'Peripheral arterial examination', short: 'Arterial', icon: HeartPulse, blurb: 'Inspect between the toes, temperature, capillary refill, pulses top to bottom, Buerger’s, ABPI.', minutes: 8 },
   { kind: 'venous', title: 'Varicose vein examination', short: 'Venous', icon: Droplets, blurb: 'Standing: front and back, skin changes, SFJ, cough and tap, Doppler, tourniquet, pulses.', minutes: 6 },
   { kind: 'scrotal', title: 'Scrotal & testicular examination', short: 'Scrotum', icon: Footprints, blurb: 'Chaperone and gloves; normal side first; can I get above it, is it separate, does it transilluminate?', minutes: 5 },
+  { kind: 'perianal', title: 'Perianal & rectal examination', short: 'Perianal', icon: CircleDot, blurb: 'Chaperone, left lateral, part and inspect, palpate, then DRE: tone, the whole wall, prostate or cervix, the glove; proctoscopy last.', minutes: 5 },
 ]
 
 export const ROUTINE_BY_KIND = Object.fromEntries(ROUTINES.map((r) => [r.kind, r])) as Record<ExamKind, RoutineMeta>

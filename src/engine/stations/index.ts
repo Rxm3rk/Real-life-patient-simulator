@@ -2,6 +2,7 @@ import type { CaseDef, ExamKind, Observation } from '../types'
 import { BREAST } from './breast'
 import { GROIN } from './groin'
 import { LUMP } from './lump'
+import { PERIANAL } from './perianal'
 import { SCROTAL } from './scrotal'
 import { THYROID } from './thyroid'
 import type { StationAction, StationDef } from './types'
@@ -17,6 +18,7 @@ export const STATIONS: Partial<Record<ExamKind, StationDef>> = {
   arterial: ARTERIAL,
   venous: VENOUS,
   scrotal: SCROTAL,
+  perianal: PERIANAL,
 }
 
 export function stationFor(kind: ExamKind): StationDef | undefined {

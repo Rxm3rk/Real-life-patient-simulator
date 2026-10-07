@@ -1,0 +1,178 @@
+import type { CaseDef } from '../../engine/types'
+import { FBC, LFT, UE } from './helpers'
+
+const c: CaseDef = {
+  id: 'achalasia',
+  title: 'Achalasia',
+  presenting: 'Difficulty swallowing food and drink for two years',
+  specialty: 'Upper GI',
+  exam: 'abdominal',
+  difficulty: 2,
+  setting: 'Outpatient clinic',
+  stem: 'Upper GI clinic. Chloe Marsh, 34, has had trouble swallowing for two years. Take a history, examine her, request investigations and explain the likely diagnosis and treatment.',
+  components: ['history', 'exam', 'investigations', 'diagnosis', 'viva'],
+  tags: ['dysphagia', 'regurgitation', 'motility'],
+  patient: {
+    name: 'Chloe Marsh',
+    title: 'Ms Marsh',
+    age: 34,
+    sex: 'female',
+    dob: '19/12/1991',
+    occupation: 'a primary school teacher',
+    appearance: { sex: 'female', age: 34, skinTone: 2, habitus: 'thin', hair: 'bob', hairColor: 'auburn', eyeColor: 'green' },
+    persona: { mood: 'calm', style: 'normal' },
+  },
+  vitals: { hr: 72, rhythm: 'regular', sbp: 112, dbp: 70, rr: 14, spo2: 99, temp: 36.6, avpu: 'A', pain: 0 },
+  history: {
+    opening: 'Food and drink feel like they get stuck in my chest. It’s been going on for about two years and I’ve had enough.',
+    answers: {
+      'gi.dysphagia': 'Yes, every meal.',
+      'gi.dysphagia_type': { text: 'Both — food and drinks, right from the beginning. Cold drinks are the worst. It’s got slowly worse, not suddenly.', cue: 'taps her lower chest' },
+      'gi.dysphagia_level': 'Low down in my chest. I have to drink lots of water and stand up straight to get things down.',
+      'gi.regurgitation': 'Yes — I bring up undigested food, sometimes hours after eating. I’ve woken up with food on the pillow and coughing.',
+      'gi.odynophagia': 'Not painful to swallow, but I get chest pains sometimes.',
+      'ros.chest_pain': 'Sometimes a cramping pain behind the breastbone, especially after eating.',
+      'ros.cough': 'A cough at night. I had a chest infection in the spring.',
+      'gi.weight': 'About five kilos over the past year.',
+      'gi.reflux': 'My GP said it was reflux, but the tablets didn’t help at all.',
+      'gi.vomiting': 'It’s not like being sick — it just comes back up without any effort.',
+      'gi.melaena': 'No.',
+      'gi.appetite': 'Good — I’m hungry; it’s just hard to eat.',
+      'sys.fatigue': 'No.',
+      'sh.travel': 'I lived in Brazil for a year, but that was over ten years ago.',
+      'pmh.conditions': 'Nothing else.',
+      'dh.meds': 'I tried omeprazole for three months. Nothing now.',
+      'dh.allergies': 'None.',
+      'sh.smoking': 'Never.',
+      'sh.alcohol': 'Rarely.',
+      'comm.questions': 'Is it something serious? Can it be fixed?',
+    },
+    key: [
+      'comm.open',
+      'gi.dysphagia',
+      'gi.dysphagia_type',
+      'gi.dysphagia_level',
+      'gi.regurgitation',
+      'ros.chest_pain',
+      'ros.cough',
+      'gi.weight',
+      'gi.reflux',
+      'dh.meds',
+      'sh.smoking',
+    ],
+    critical: ['gi.dysphagia_type', 'gi.regurgitation'],
+    ideas: 'I thought it might be anxiety — that’s what someone told me.',
+    concerns: 'That I’ll choke, or that it’s cancer.',
+    expectations: 'I want to eat a normal meal with my family.',
+    social: { smoking: 'Never.', alcohol: 'Rarely.', travel: 'Lived in Brazil over ten years ago.' },
+  },
+  abdo: {
+    general: { endOfBed: 'Ms Marsh is a slim young woman who looks well. There is a large bottle of water beside her.' },
+    hands: { temperature: 'warm', crt: 1.5 },
+    neck: { virchow: false, nodes: 'No lymphadenopathy, no goitre.' },
+    abdomen: { shape: 'flat', bowelSounds: 'normal' },
+    completion: { obs: 'BMI 18.9 (weight 52 kg).', 'cvs-resp': 'Chest clear today.' },
+  },
+  investigations: {
+    ogd: {
+      report: 'Dilated oesophagus containing retained food and fluid. The lower oesophageal sphincter is tight but the scope passes into the stomach with gentle pressure (a ‘pop’). No mucosal lesion or tumour at the cardia on retroflexion. Biopsies of the GOJ normal.',
+      interpretation: 'Consistent with achalasia; no tumour (pseudoachalasia excluded).',
+      abnormal: true,
+    },
+    'contrast-swallow': {
+      report: 'Dilated, aperistaltic oesophagus with a column of retained barium and smooth tapering at the GOJ (‘bird’s beak’). Slow emptying.',
+      interpretation: 'Classic for achalasia.',
+      abnormal: true,
+    },
+    manometry: {
+      report: 'Absent peristalsis with pan-oesophageal pressurisation; incomplete relaxation of the lower oesophageal sphincter (raised integrated relaxation pressure, 28 mmHg).',
+      interpretation: 'Type II achalasia (Chicago classification) — the diagnostic test; type II responds best to treatment.',
+      abnormal: true,
+    },
+    fbc: { values: FBC(126, 6.2, 3.8, 268, 88, 'female'), interpretation: 'Normal.' },
+    ue: { values: UE(139, 4.1, 3.9, 64, '> 90', 'female') },
+    lft: { values: LFT(9, 18, 74, 16, 38) },
+    'cxr-erect': { report: 'Widened mediastinum with an air–fluid level behind the heart; absent gastric bubble.', interpretation: 'Dilated, food-filled oesophagus.', abnormal: true },
+  },
+  investigationRubric: {
+    essential: [
+      { id: 'ogd', why: 'First test: exclude cancer at the cardia (pseudoachalasia), which can mimic achalasia.' },
+      { id: 'manometry', why: 'High-resolution manometry is the gold standard for diagnosis and subtype.' },
+      { id: 'contrast-swallow', why: 'Bird’s-beak appearance and a dilated, aperistaltic oesophagus.' },
+    ],
+    helpful: [
+      { id: 'fbc', why: 'Baseline.' },
+      { id: 'cxr-erect', why: 'May show a fluid level and absent gastric bubble; aspiration.' },
+      { id: 'ct-cap', why: 'Only if pseudoachalasia is suspected (older, rapid weight loss).' },
+    ],
+  },
+  diagnosis: {
+    correct: 'achalasia',
+    differentials: ['oesophageal-cancer', 'peptic-stricture', 'gord', 'pharyngeal-pouch'],
+  },
+  management: {
+    essential: [
+      { id: 'heller', why: '!Disrupt the lower oesophageal sphincter: laparoscopic Heller myotomy with a partial fundoplication, POEM, or pneumatic balloon dilatation — choice depends on subtype, age and local expertise.' },
+      { id: 'reassure', why: 'Explain that it is a benign nerve disorder of the oesophagus that is very treatable.' },
+      { id: 'dietitian', why: 'Weight loss — eat slowly, soft food, drink with meals, sit upright after eating.' },
+    ],
+    helpful: [
+      { id: 'mdt', why: 'Upper GI MDT/clinic decision on the best procedure.' },
+      { id: 'consent', why: 'Discuss risks: perforation, reflux after treatment.' },
+    ],
+    avoid: [
+      { id: 'oesophagectomy', why: 'Reserved for end-stage (sigmoid) oesophagus after failed treatment.' },
+      { id: 'ppi-oral', why: 'PPIs do not treat achalasia (her symptoms are not reflux).' },
+    ],
+  },
+  viva: [
+    {
+      id: 'patho',
+      q: 'What is the pathophysiology of achalasia?',
+      answer: 'Loss of inhibitory neurons in the myenteric (Auerbach’s) plexus of the oesophagus, so the lower oesophageal sphincter fails to relax and peristalsis is lost. Food stagnates and the oesophagus dilates. Chagas disease (Trypanosoma cruzi) causes an identical picture.',
+      topic: 'Pathology',
+    },
+    {
+      id: 'pattern',
+      q: 'What distinguishes motility dysphagia from mechanical (obstructive) dysphagia?',
+      options: ['Liquids and solids affected from the start, often intermittent', 'Solids only, rapidly progressive', 'Only pain on swallowing', 'Only liquids'],
+      correct: 0,
+      answer: 'Motility disorders such as achalasia affect liquids and solids from the outset, often intermittently, with regurgitation of undigested food. A mechanical stricture or tumour starts with solids and progresses to liquids.',
+      topic: 'History',
+    },
+    {
+      id: 'pseudo',
+      q: 'What is pseudoachalasia and how do you exclude it?',
+      answer: 'A tumour at the cardia (or infiltrating the GOJ) that mimics achalasia. Suspect it in older patients with a short history and marked weight loss. Exclude it with OGD including retroflexion, ± CT or EUS.',
+      topic: 'Differentials',
+    },
+    {
+      id: 'risk',
+      q: 'What long-term risk does achalasia carry?',
+      answer: 'A higher risk of squamous cell carcinoma of the oesophagus (stasis and chronic irritation) and aspiration pneumonia. After myotomy, reflux is common, hence the partial fundoplication.',
+      topic: 'Complications',
+    },
+  ],
+  teaching: {
+    summary:
+      'Achalasia in a 34-year-old woman: two years of slowly progressive dysphagia to solids and liquids from the start, regurgitation of undigested food at night, retrosternal cramps, nocturnal cough and modest weight loss; OGD excludes a tumour, the swallow shows a bird’s beak and manometry confirms type II achalasia.',
+    keyFindings: [
+      'Dysphagia to liquids and solids from the outset; cold drinks worst',
+      'Regurgitation of undigested food hours later; food on the pillow; nocturnal cough',
+      'Retrosternal chest pain; 5 kg weight loss; no response to PPIs',
+      'Contrast swallow: dilated aperistaltic oesophagus with a bird’s beak',
+      'Manometry: incomplete LOS relaxation, absent peristalsis (type II)',
+    ],
+    pearls: [
+      'Always ask: solids, liquids or both — and from when?',
+      'OGD comes first in all dysphagia, to exclude cancer.',
+      'Manometry makes the diagnosis.',
+      '‘Reflux’ that doesn’t respond to a PPI deserves another look.',
+    ],
+    presentation:
+      'Ms Marsh is a 34-year-old teacher with two years of slowly progressive dysphagia to both solids and liquids from the start, felt in the lower chest, with regurgitation of undigested food hours after eating, food on her pillow at night, a nocturnal cough and a recent chest infection, retrosternal cramps and 5 kilograms of weight loss. Her symptoms did not respond to omeprazole. She is a non-smoker with no other history. Examination is unremarkable apart from a low-normal BMI. OGD shows a dilated oesophagus with retained food and a tight sphincter but no tumour; the contrast swallow shows a bird’s-beak appearance and manometry confirms type II achalasia. I would explain the diagnosis and refer her for definitive treatment — laparoscopic Heller myotomy with partial fundoplication, POEM or pneumatic dilatation.',
+    references: ['Macleod’s Clinical Examination, 14th ed. — Ch. 6: dysphagia', 'British Society of Gastroenterology guidelines on oesophageal manometry and achalasia'],
+  },
+}
+
+export default c

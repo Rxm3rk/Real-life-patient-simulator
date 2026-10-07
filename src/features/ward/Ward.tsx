@@ -20,6 +20,7 @@ export const EXAM_LABEL: Record<ExamKind, string> = {
   arterial: 'Arterial',
   venous: 'Venous',
   scrotal: 'Scrotum',
+  perianal: 'Perianal & PR',
 }
 
 type Filter = 'all' | 'today' | TopicId | 'other'

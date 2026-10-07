@@ -6,7 +6,7 @@ export type Mode = 'learn' | 'practice' | 'osce'
 export type Component = 'history' | 'exam' | 'investigations' | 'diagnosis' | 'viva'
 export type Phase = 'history' | 'exam' | 'investigations' | 'diagnosis' | 'viva' | 'debrief'
 
-export type ExamKind = 'abdominal' | 'groin' | 'lump' | 'thyroid' | 'breast' | 'arterial' | 'venous' | 'scrotal'
+export type ExamKind = 'abdominal' | 'groin' | 'lump' | 'thyroid' | 'breast' | 'arterial' | 'venous' | 'scrotal' | 'perianal'
 
 export type Specialty =
   | 'Emergency general surgery'
@@ -381,7 +381,25 @@ export interface ScrotalVisual {
   highRiding?: boolean
 }
 
+export interface PerianalVisual {
+  kind: 'normal' | 'fissure' | 'abscess' | 'thrombosed-piles' | 'fistula'
+  /** Clock position(s) in the lithotomy position: 12 = anterior, 6 = posterior, 3 = patient's left */
+  clock?: number | number[]
+  /** Distance from the anal verge, cm */
+  distCm?: number
+  sizeCm?: number
+  /** Chronic fissure with a sentinel skin tag */
+  sentinel?: boolean
+  /** Painful sphincter spasm: a finger or proctoscope should not be forced */
+  spasm?: boolean
+  /** Internal haemorrhoids seen at proctoscopy */
+  internalPiles?: boolean
+  /** Skin tags at these clock positions */
+  tags?: number[]
+}
+
 export interface StationVisual {
+  perianal?: PerianalVisual
   legs?: LegsVisual
   lump?: LumpVisual
   neck?: NeckVisual

@@ -137,6 +137,10 @@ export const INVESTIGATIONS: InvDef[] = [
     tat: 120,
     normal: () => ({ values: [v('TSH', '1.8', 'mU/L', '0.3–4.2'), v('Free T4', '15.2', 'pmol/L', '12–22'), v('Free T3', '4.6', 'pmol/L', '3.1–6.8')], interpretation: 'Euthyroid.' }),
   },
+  { id: 'haematinics', name: 'Haematinics (ferritin, B12, folate)', short: 'Haematinics', cat: 'Bloods', tat: 1440, normal: () => ({ values: [v('Ferritin', '96', 'µg/L', '30–300'), v('Vitamin B12', '410', 'ng/L', '190–900'), v('Folate', '7.8', 'µg/L', '> 3.9')], interpretation: 'Normal iron stores, B12 and folate.' }) },
+  { id: 'hydatid-serology', name: 'Echinococcus (hydatid) serology', short: 'Hydatid serology', cat: 'Bloods', tat: 4320, normal: () => ({ report: 'Echinococcus IgG negative.', interpretation: 'Negative.' }) },
+  { id: 'drain-fluid', name: 'Drain fluid analysis (appearance, amylase, bilirubin)', short: 'Drain fluid', cat: 'Bedside', tat: 60, normal: () => ({ report: 'Small volume of serous fluid.', interpretation: 'Normal drain fluid.' }) },
+  { id: 'sleep-study', name: 'STOP-BANG and overnight oximetry / sleep study', short: 'Sleep study', cat: 'Bedside', tat: 10080, normal: () => ({ report: 'STOP-BANG 1. Overnight oximetry: no significant desaturations.', interpretation: 'No obstructive sleep apnoea.' }) },
   { id: 'troponin', name: 'High-sensitivity troponin', short: 'Troponin', cat: 'Bloods', tat: 60, normal: () => ({ values: [v('hs-Troponin T', '6', 'ng/L', '< 14')], interpretation: 'Normal.' }) },
   { id: 'ca199', name: 'CA 19-9', cat: 'Bloods', tat: 1440, normal: () => ({ values: [v('CA 19-9', '14', 'U/mL', '< 37')], interpretation: 'Normal.' }) },
   { id: 'cea', name: 'Carcinoembryonic antigen (CEA)', short: 'CEA', cat: 'Bloods', tat: 1440, normal: () => ({ values: [v('CEA', '2.1', 'µg/L', '< 5')], interpretation: 'Normal.' }) },
@@ -168,6 +172,10 @@ export const INVESTIGATIONS: InvDef[] = [
   { id: 'cta', name: 'CT angiogram (aorta / mesenteric)', short: 'CT angiogram', cat: 'Imaging', tat: 90, normal: () => ({ report: 'Normal-calibre aorta. Patent coeliac, SMA and IMA. No aneurysm or dissection.', interpretation: 'Normal CTA.' }) },
   { id: 'ct-kub', name: 'CT KUB (non-contrast)', short: 'CT KUB', cat: 'Imaging', tat: 120, normal: () => ({ report: 'No urinary tract calculi. No hydronephrosis.', interpretation: 'Normal CT KUB.' }) },
   { id: 'ct-cap', name: 'CT chest, abdomen & pelvis (staging)', short: 'CT CAP', cat: 'Imaging', tat: 1440, normal: () => ({ report: 'No evidence of metastatic disease.', interpretation: 'Normal staging CT.' }) },
+  { id: 'contrast-swallow', name: 'Contrast (barium / water-soluble) swallow', short: 'Contrast swallow', cat: 'Imaging', tat: 240, normal: () => ({ report: 'Normal oesophageal transit and calibre. No leak, stricture or hold-up.', interpretation: 'Normal swallow.' }) },
+  { id: 'ctpa', name: 'CT pulmonary angiogram', short: 'CTPA', cat: 'Imaging', tat: 120, normal: () => ({ report: 'No pulmonary embolus. Lungs clear.', interpretation: 'No PE.' }) },
+  { id: 'pet-ct', name: 'PET-CT (staging)', short: 'PET-CT', cat: 'Imaging', tat: 4320, normal: () => ({ report: 'No FDG-avid disease.', interpretation: 'No distant metastases.' }) },
+  { id: 'mri-pelvis', name: 'MRI pelvis (fistula protocol)', short: 'MRI pelvis', cat: 'Imaging', tat: 2880, normal: () => ({ report: 'No perianal collection or fistula track.', interpretation: 'Normal.' }) },
   { id: 'mrcp', name: 'MRCP', cat: 'Imaging', tat: 1440, normal: () => ({ report: 'Normal-calibre biliary tree. No filling defect in the common bile duct.', interpretation: 'Normal MRCP.' }) },
 
   /* Endoscopy & tissue */
@@ -175,6 +183,9 @@ export const INVESTIGATIONS: InvDef[] = [
   { id: 'colonoscopy', name: 'Colonoscopy', cat: 'Endoscopy & tissue', tat: 2880, normal: () => ({ report: 'Complete colonoscopy to the caecum. Normal mucosa.', interpretation: 'Normal colonoscopy.' }) },
   { id: 'flexi', name: 'Flexible sigmoidoscopy', short: 'Flexi sig', cat: 'Endoscopy & tissue', tat: 1440, normal: () => ({ report: 'Normal to the splenic flexure.', interpretation: 'Normal.' }) },
   { id: 'ercp', name: 'ERCP', cat: 'Endoscopy & tissue', tat: 1440, normal: () => ({ report: 'Normal cholangiogram.', interpretation: 'Normal.' }) },
+  { id: 'manometry', name: 'High-resolution oesophageal manometry', short: 'Manometry', cat: 'Endoscopy & tissue', tat: 4320, normal: () => ({ report: 'Normal peristalsis; the lower oesophageal sphincter relaxes normally.', interpretation: 'Normal manometry.' }) },
+  { id: 'eus', name: 'Endoscopic ultrasound (EUS)', short: 'EUS', cat: 'Endoscopy & tissue', tat: 4320, normal: () => ({ report: 'No wall thickening or regional nodes.', interpretation: 'Normal EUS.' }) },
+  { id: 'proctoscopy', name: 'Proctoscopy', cat: 'Bedside', tat: 10, normal: () => ({ report: 'Normal anal canal; no haemorrhoids, fissure or prolapse.', interpretation: 'Normal proctoscopy.' }) },
   { id: 'fna', name: 'Fine-needle aspiration (cytology)', short: 'FNA', cat: 'Endoscopy & tissue', tat: 4320, normal: () => ({ report: 'Benign cytology.', interpretation: 'Benign.' }) },
   { id: 'core', name: 'Image-guided core biopsy', short: 'Core biopsy', cat: 'Endoscopy & tissue', tat: 4320, normal: () => ({ report: 'Benign tissue.', interpretation: 'Benign (B2).' }) },
 ]

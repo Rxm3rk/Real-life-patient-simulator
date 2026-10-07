@@ -33,7 +33,7 @@ const SPECIALTIES: ('All' | Specialty)[] = [
   'Skin & soft tissue',
 ]
 
-export const EXAMINER_KINDS: ExamKind[] = ['abdominal', 'groin', 'lump', 'thyroid', 'breast', 'arterial', 'venous', 'scrotal']
+export const EXAMINER_KINDS: ExamKind[] = ['abdominal', 'groin', 'lump', 'thyroid', 'breast', 'arterial', 'venous', 'scrotal', 'perianal']
 
 export default function OsceHome() {
   const { query } = useLocation()

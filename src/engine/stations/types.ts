@@ -29,6 +29,10 @@ export type StationCue =
   | 'pemberton'
   | 'expose'
   | 'turn'
+  | 'part'
+  | 'strain'
+  | 'finger'
+  | 'proctoscope'
 
 export interface StationView {
   id: string
@@ -36,7 +40,7 @@ export interface StationView {
   /** Camera target in body units (for body views) */
   shot?: { cx: number; cy: number; w: number; h: number }
   /** Special close-up component instead of the body */
-  closeup?: 'hands' | 'neck' | 'scrotum' | 'buerger'
+  closeup?: 'hands' | 'neck' | 'scrotum' | 'buerger' | 'perianal'
 }
 
 export interface StationAction {

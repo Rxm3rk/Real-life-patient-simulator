@@ -10,9 +10,12 @@ async function tap(page: Page, name: RegExp) {
   await page.getByRole('button', { name }).last().click()
 }
 
-test('home shows the ward and navigation', async ({ page }) => {
+test('today shows the session day and navigation', async ({ page }) => {
   await fresh(page)
-  await expect(page.getByText('Your patients are waiting on the surgical ward.')).toBeVisible()
+  await expect(page.getByRole('heading', { name: /General surgery · Day 1/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Bariatric surgery' }).first()).toBeVisible()
+  await page.getByRole('radio', { name: /Day 4/ }).click()
+  await expect(page.getByRole('heading', { name: 'Gastrointestinal bleeding' }).first()).toBeVisible()
   await page.getByRole('link', { name: /Ward/ }).first().click()
   await expect(page).toHaveURL(/#\/ward/)
 })
@@ -78,7 +81,7 @@ test('theme follows the system until the user picks one', async ({ page }) => {
 
 test('no page scrolls sideways', async ({ page }) => {
   await fresh(page, '/')
-  for (const route of ['/', '/ward', '/osce', '/learn', '/learn/routine/abdominal', '/learn/signs', '/progress', '/settings', '/case/appendicitis']) {
+  for (const route of ['/', '/ask?q=charcot', '/topic/complicated-hernia', '/topic/perianal/case/anal-fissure', '/ward', '/osce', '/learn', '/learn/routine/abdominal', '/learn/signs', '/progress', '/settings', '/case/appendicitis']) {
     await page.goto(`/#${route}`)
     await page.waitForTimeout(300)
     const [client, scroll] = await page.evaluate(() => [document.documentElement.clientWidth, document.documentElement.scrollWidth])

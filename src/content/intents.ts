@@ -217,6 +217,16 @@ export const INTENTS: Intent[] = [
     def: 'No, my weight’s been steady.',
   },
   { id: 'gi.dysphagia', cat: 'Gastrointestinal', q: 'Any difficulty swallowing?', ex: ['any difficulty swallowing', 'does food get stuck', 'trouble swallowing', 'any problems swallowing'], def: (x) => no('gi.dysphagia' + x.c.id) },
+  {
+    id: 'gi.dysphagia_type',
+    cat: 'Gastrointestinal',
+    q: 'Is it solids, liquids or both — and is it getting worse?',
+    ex: ['is it solids or liquids', 'solids or liquids', 'can you swallow liquids', 'is the swallowing getting worse', 'is it progressive', 'what foods get stuck', 'both solids and liquids'],
+    def: 'I don’t have any trouble swallowing.',
+  },
+  { id: 'gi.dysphagia_level', cat: 'Gastrointestinal', q: 'Where does the food seem to stick?', ex: ['where does it stick', 'where does the food stick', 'point to where it sticks', 'does it stick in your throat or chest'], def: 'Nothing sticks.' },
+  { id: 'gi.regurgitation', cat: 'Gastrointestinal', q: 'Do you bring food back up undigested?', ex: ['does food come back up', 'do you regurgitate', 'bring up undigested food', 'regurgitation', 'food on the pillow at night'], def: (x) => no('gi.regurgitation' + x.c.id) },
+  { id: 'gi.odynophagia', cat: 'Gastrointestinal', q: 'Is it painful to swallow?', ex: ['is it painful to swallow', 'does swallowing hurt', 'pain when you swallow', 'odynophagia'], def: (x) => no('gi.odynophagia' + x.c.id) },
   { id: 'gi.reflux', cat: 'Gastrointestinal', q: 'Do you get indigestion or heartburn?', ex: ['any indigestion', 'do you get heartburn', 'acid reflux', 'burning in your chest after food', 'dyspepsia'], def: 'Only very occasionally, after a big meal.' },
   {
     id: 'gi.bowels_last',
@@ -297,6 +307,7 @@ export const INTENTS: Intent[] = [
   { id: 'ros.ankles', cat: 'Systems review', q: 'Any swelling of your ankles?', ex: ['any ankle swelling', 'swollen legs', 'swollen feet'], def: 'No.' },
   { id: 'ros.headache', cat: 'Systems review', q: 'Any headaches?', ex: ['any headaches', 'headache'], def: 'No.' },
   { id: 'ros.dizzy', cat: 'Systems review', q: 'Any dizziness or blackouts?', ex: ['any dizziness', 'have you fainted', 'light headed', 'blackouts', 'collapse'], def: 'No.' },
+  { id: 'ros.snoring', cat: 'Systems review', q: 'Do you snore, stop breathing at night or feel sleepy in the day?', ex: ['do you snore', 'sleep apnoea', 'stop breathing at night', 'sleepy during the day', 'do you use cpap'], def: 'No.' },
   { id: 'ros.joints', cat: 'Systems review', q: 'Any joint pains or rashes?', ex: ['any joint pains', 'any rashes', 'skin rash', 'painful joints'], def: 'No.' },
 
   /* ------------------------------------- Lump ------------------------------------- */
@@ -352,9 +363,13 @@ export const INTENTS: Intent[] = [
   { id: 'scr.heaviness', cat: 'Scrotal & groin', q: 'Any dragging or heavy sensation?', ex: ['any dragging sensation', 'feels heavy', 'dragging feeling'], def: 'No.', exams: ['scrotal'] },
 
   /* ---------------------------------- Anorectal ---------------------------------- */
-  { id: 'ano.pain', cat: 'Anorectal', q: 'Is it painful when you open your bowels?', ex: ['is it painful to open your bowels', 'pain when you poo', 'pain on defecation', 'like passing glass'], def: 'No.' , hidden: true },
+  { id: 'ano.pain', cat: 'Anorectal', q: 'Is it painful when you open your bowels?', ex: ['is it painful to open your bowels', 'pain when you poo', 'pain on defecation', 'like passing glass'], def: 'No.', exams: ['perianal', 'abdominal'] },
   { id: 'ano.blood_type', cat: 'Anorectal', q: 'Is the blood on the paper, in the pan, or mixed in with the stool?', ex: ['is the blood on the paper', 'is the blood mixed in', 'bright red or dark blood', 'blood in the pan'], def: 'I haven’t seen any blood.' },
-  { id: 'ano.lump', cat: 'Anorectal', q: 'Any lumps around your bottom?', ex: ['any lumps around your bottom', 'lump at the back passage', 'piles', 'haemorrhoids'], def: 'No.', hidden: true },
+  { id: 'ano.lump', cat: 'Anorectal', q: 'Any lumps around your bottom?', ex: ['any lumps around your bottom', 'lump at the back passage', 'piles', 'haemorrhoids'], def: 'No.', exams: ['perianal', 'abdominal'] },
+  { id: 'ano.discharge', cat: 'Anorectal', q: 'Any discharge or pus from around the back passage?', ex: ['any discharge from your bottom', 'pus from the back passage', 'discharge around the anus', 'does it weep or leak', 'wet bottom'], def: 'No.', exams: ['perianal'] },
+  { id: 'ano.itch', cat: 'Anorectal', q: 'Is it itchy around your bottom?', ex: ['itchy bottom', 'is it itchy around the anus', 'pruritus ani', 'itching back passage'], def: 'No.', exams: ['perianal'] },
+  { id: 'ano.prolapse', cat: 'Anorectal', q: 'Does anything come down when you open your bowels?', ex: ['does anything come down', 'does anything prolapse', 'do you have to push anything back', 'something comes out when you strain'], def: 'No.', exams: ['perianal'] },
+  { id: 'ano.continence', cat: 'Anorectal', q: 'Any problem controlling your bowels or wind?', ex: ['any incontinence', 'can you control your bowels', 'any accidents', 'leakage of stool', 'can you hold in wind'], def: 'No, that’s fine.', exams: ['perianal'] },
 
   /* ------------------------------ Past medical history ------------------------------ */
   {
@@ -438,6 +453,8 @@ export const INTENTS: Intent[] = [
   { id: 'sh.mobility', cat: 'Social history', q: 'How are you managing at home — any help with daily activities?', ex: ['how is your mobility', 'do you need help at home', 'can you manage your daily activities', 'do you use a walking aid', 'carers'], def: (x) => x.c.history.social?.mobility ?? 'I’m fully independent.' },
   { id: 'sh.travel', cat: 'Social history', q: 'Any recent travel abroad?', ex: ['any recent travel', 'been abroad recently', 'foreign travel', 'holiday recently'], def: (x) => x.c.history.social?.travel ?? 'No.' },
   { id: 'sh.diet', cat: 'Social history', q: 'What is your diet like?', ex: ['what is your diet like', 'do you eat much fibre', 'what do you normally eat', 'fatty food'], def: (x) => x.c.history.social?.diet ?? 'Pretty normal, I think.' },
+  { id: 'sh.animals', cat: 'Social history', q: 'Any contact with dogs, sheep or farm animals?', ex: ['do you have any pets', 'contact with dogs', 'do you work with sheep', 'farm animals', 'do you keep animals', 'grew up on a farm'], def: 'No, no pets.' },
+  { id: 'sh.weight', cat: 'Social history', q: 'What have you tried to lose weight?', ex: ['what have you tried to lose weight', 'have you tried dieting', 'weight loss attempts', 'slimming world', 'weight management programme', 'how long have you struggled with your weight'], def: 'I’ve never really needed to.' },
   { id: 'pre.last_meal', cat: 'Social history', q: 'When did you last eat or drink anything?', ex: ['when did you last eat', 'when did you last have anything to eat or drink', 'last meal', 'when did you last drink'], def: 'I had a bit of toast this morning.' },
 
   /* ---------------------------------------- ICE ---------------------------------------- */
