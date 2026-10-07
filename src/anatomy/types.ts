@@ -16,6 +16,8 @@ export type ScarId =
   | 'pfannenstiel'
   | 'lap-chole'
   | 'lap-appendix'
+  | 'lap-bariatric'
+  | 'lap-colorectal'
   | 'rooftop'
   | 'mercedes'
   | 'right-paramedian'

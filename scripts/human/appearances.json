@@ -215,6 +215,94 @@
    "bag": false
   }
  },
+ "case:upper-gi-bleed": {
+  "sex": "female",
+  "age": 74,
+  "skinTone": 1,
+  "habitus": "average",
+  "hair": "short",
+  "hairColor": "white",
+  "eyeColor": "blue",
+  "glasses": true,
+  "pallor": 0.75,
+  "sweaty": true,
+  "lines": {
+   "cannula": "right-forearm",
+   "drip": true,
+   "oxygen": "nasal"
+  }
+ },
+ "case:oesophageal-cancer": {
+  "sex": "male",
+  "age": 66,
+  "skinTone": 1,
+  "habitus": "thin",
+  "cachexia": true,
+  "hair": "receding",
+  "hairColor": "grey",
+  "eyeColor": "blue",
+  "facialHair": "moustache",
+  "pallor": 0.45,
+  "scars": [
+   "right-inguinal"
+  ]
+ },
+ "case:internal-hernia": {
+  "sex": "female",
+  "age": 38,
+  "skinTone": 2,
+  "habitus": "overweight",
+  "hair": "long",
+  "hairColor": "brown",
+  "eyeColor": "green",
+  "sweaty": true,
+  "pallor": 0.2,
+  "striae": true,
+  "scars": [
+   "lap-bariatric"
+  ],
+  "lines": {
+   "cannula": "left-hand"
+  }
+ },
+ "case:anastomotic-leak": {
+  "sex": "male",
+  "age": 66,
+  "skinTone": 3,
+  "habitus": "overweight",
+  "hair": "receding",
+  "hairColor": "grey",
+  "eyeColor": "hazel",
+  "facialHair": "stubble",
+  "flushed": 0.45,
+  "sweaty": true,
+  "dehydrated": true,
+  "distension": 1,
+  "distensionType": "gas",
+  "scars": [
+   "lap-colorectal"
+  ],
+  "lines": {
+   "cannula": "left-forearm",
+   "drip": true,
+   "drain": "left"
+  }
+ },
+ "case:perianal-abscess": {
+  "sex": "male",
+  "age": 41,
+  "skinTone": 4,
+  "habitus": "obese",
+  "hair": "crop",
+  "hairColor": "black",
+  "eyeColor": "brown",
+  "facialHair": "beard",
+  "flushed": 0.3,
+  "sweaty": true,
+  "lines": {
+   "cannula": "right-hand"
+  }
+ },
  "case:inguinal-hernia": {
   "sex": "male",
   "age": 38,

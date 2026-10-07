@@ -160,7 +160,7 @@ export const INTENTS: Intent[] = [
     id: 'pain.exacerbating',
     cat: 'Pain (SOCRATES)',
     q: 'Does anything make the pain worse?',
-    ex: ['does anything make it worse', 'what makes the pain worse', 'is it worse when you move', 'is it worse with coughing', 'is it worse after eating', 'does movement aggravate it', 'did the bumps in the car make it worse'],
+    ex: ['does anything make it worse', 'what makes the pain worse', 'is it worse when you move', 'is it worse with coughing', 'is it worse after eating', 'does movement aggravate it', 'did the bumps in the car make it worse', 'is it painful to sit down'],
     def: 'Not really, nothing in particular.',
   },
   {
@@ -217,6 +217,11 @@ export const INTENTS: Intent[] = [
     def: 'No, my weight’s been steady.',
   },
   { id: 'gi.dysphagia', cat: 'Gastrointestinal', q: 'Any difficulty swallowing?', ex: ['any difficulty swallowing', 'does food get stuck', 'trouble swallowing', 'any problems swallowing'], def: (x) => no('gi.dysphagia' + x.c.id) },
+  { id: 'gi.dysphagia_type', cat: 'Gastrointestinal', q: 'Is it solids, liquids or both that are hard to swallow?', ex: ['is it solids or liquids', 'can you swallow liquids', 'is it worse with solid food', 'can you swallow drinks ok', 'solids and liquids'], def: 'I haven’t had any trouble swallowing.' },
+  { id: 'gi.dysphagia_course', cat: 'Gastrointestinal', q: 'Is the swallowing getting steadily worse, or does it come and go?', ex: ['has your swallowing got progressively worse', 'is the swallowing steadily worsening', 'does the swallowing difficulty come and go', 'is the swallowing problem constant or intermittent', 'is it harder to swallow than when it started'], def: 'I haven’t had any trouble swallowing.' },
+  { id: 'gi.dysphagia_level', cat: 'Gastrointestinal', q: 'Where does the food feel as if it sticks?', ex: ['where does the food stick', 'where does the food get stuck', 'can you point to where it sticks', 'does it stick in your throat or chest'], def: 'I haven’t had any trouble swallowing.' },
+  { id: 'gi.odynophagia', cat: 'Gastrointestinal', q: 'Is it painful to swallow?', ex: ['is it painful to swallow', 'does it hurt when you swallow', 'pain on swallowing', 'odynophagia'], def: (x) => no('gi.odynophagia' + x.c.id) },
+  { id: 'gi.regurgitation', cat: 'Gastrointestinal', q: 'Does food ever come back up undigested, or make you cough or choke?', ex: ['does food come back up', 'do you regurgitate food', 'bringing food back up undigested', 'regurgitation', 'do you cough or choke when eating'], def: (x) => no('gi.regurgitation' + x.c.id) },
   { id: 'gi.reflux', cat: 'Gastrointestinal', q: 'Do you get indigestion or heartburn?', ex: ['any indigestion', 'do you get heartburn', 'acid reflux', 'burning in your chest after food', 'dyspepsia'], def: 'Only very occasionally, after a big meal.' },
   {
     id: 'gi.bowels_last',
@@ -296,8 +301,10 @@ export const INTENTS: Intent[] = [
   { id: 'ros.palpitations', cat: 'Systems review', q: 'Any palpitations or a racing heart?', ex: ['any palpitations', 'heart racing', 'irregular heartbeat', 'heart fluttering'], def: 'No.' },
   { id: 'ros.ankles', cat: 'Systems review', q: 'Any swelling of your ankles?', ex: ['any ankle swelling', 'swollen legs', 'swollen feet'], def: 'No.' },
   { id: 'ros.headache', cat: 'Systems review', q: 'Any headaches?', ex: ['any headaches', 'headache'], def: 'No.' },
-  { id: 'ros.dizzy', cat: 'Systems review', q: 'Any dizziness or blackouts?', ex: ['any dizziness', 'have you fainted', 'light headed', 'blackouts', 'collapse'], def: 'No.' },
+  { id: 'ros.dizzy', cat: 'Systems review', q: 'Any dizziness or blackouts?', ex: ['any dizziness', 'have you felt dizzy', 'have you fainted', 'light headed', 'blackouts', 'collapse'], def: 'No.' },
   { id: 'ros.joints', cat: 'Systems review', q: 'Any joint pains or rashes?', ex: ['any joint pains', 'any rashes', 'skin rash', 'painful joints'], def: 'No.' },
+  { id: 'ros.calf', cat: 'Systems review', q: 'Any pain or swelling in your calves?', ex: ['any swelling in your calves', 'is your calf swollen', 'tenderness or swelling in your calf', 'red swollen leg'], def: 'No.' },
+  { id: 'ros.wound', cat: 'Systems review', q: 'Any pain, redness or discharge from your wound?', ex: ['how is your wound', 'any problems with the wound', 'is the wound red', 'is the wound leaking', 'any discharge from the scar'], def: 'I don’t have a wound.', exams: ['abdominal'] },
 
   /* ------------------------------------- Lump ------------------------------------- */
   { id: 'lump.when', cat: 'Lump', q: 'When did you first notice the lump?', ex: ['when did you notice the lump', 'how long has the lump been there', 'when did the swelling appear', 'when did you first see it'], def: 'A few months ago.', exams: ['lump', 'groin', 'thyroid', 'breast', 'scrotal'] },
@@ -352,9 +359,12 @@ export const INTENTS: Intent[] = [
   { id: 'scr.heaviness', cat: 'Scrotal & groin', q: 'Any dragging or heavy sensation?', ex: ['any dragging sensation', 'feels heavy', 'dragging feeling'], def: 'No.', exams: ['scrotal'] },
 
   /* ---------------------------------- Anorectal ---------------------------------- */
-  { id: 'ano.pain', cat: 'Anorectal', q: 'Is it painful when you open your bowels?', ex: ['is it painful to open your bowels', 'pain when you poo', 'pain on defecation', 'like passing glass'], def: 'No.' , hidden: true },
+  { id: 'ano.pain', cat: 'Anorectal', q: 'Is it painful when you open your bowels?', ex: ['is it painful to open your bowels', 'pain when you poo', 'pain on defecation', 'like passing glass'], def: 'No.' },
   { id: 'ano.blood_type', cat: 'Anorectal', q: 'Is the blood on the paper, in the pan, or mixed in with the stool?', ex: ['is the blood on the paper', 'is the blood mixed in', 'bright red or dark blood', 'blood in the pan'], def: 'I haven’t seen any blood.' },
-  { id: 'ano.lump', cat: 'Anorectal', q: 'Any lumps around your bottom?', ex: ['any lumps around your bottom', 'lump at the back passage', 'piles', 'haemorrhoids'], def: 'No.', hidden: true },
+  { id: 'ano.lump', cat: 'Anorectal', q: 'Any lumps around your bottom?', ex: ['any lumps around your bottom', 'lump at the back passage', 'piles', 'haemorrhoids'], def: 'No.' },
+  { id: 'ano.discharge', cat: 'Anorectal', q: 'Any discharge of pus or mucus from around your bottom?', ex: ['any discharge from your bottom', 'pus from your back passage', 'any leakage around the anus', 'is anything weeping from the area'], def: (x) => no('ano.discharge' + x.c.id) },
+  { id: 'ano.itch', cat: 'Anorectal', q: 'Any itching around your bottom?', ex: ['any itching around your bottom', 'itchy bottom', 'pruritus ani', 'itchy back passage'], def: (x) => no('ano.itch' + x.c.id) },
+  { id: 'ano.continence', cat: 'Anorectal', q: 'Any problems controlling your bowels or wind?', ex: ['any problems controlling your bowels', 'any incontinence', 'any leakage of stool', 'can you hold your wind'], def: 'No, never.' },
 
   /* ------------------------------ Past medical history ------------------------------ */
   {
@@ -368,7 +378,7 @@ export const INTENTS: Intent[] = [
     id: 'pmh.surgery',
     cat: 'Past medical history',
     q: 'Have you had any operations before?',
-    ex: ['have you had any operations', 'any previous surgery', 'ever been operated on', 'any surgery on your tummy', 'have you had your appendix out', 'previous operations'],
+    ex: ['have you had any operations', 'any previous surgery', 'ever been operated on', 'any surgery on your tummy', 'have you had your appendix out', 'previous operations', 'have you had weight loss surgery', 'gastric bypass or band'],
     def: (x) => x.c.history.psh ?? 'No, never.',
   },
   { id: 'pmh.anaesthetic', cat: 'Past medical history', q: 'Any problems with anaesthetics in you or your family?', ex: ['any problems with anaesthetic', 'reaction to general anaesthetic', 'family problems with anaesthesia'], def: 'Not that I know of.' },

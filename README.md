@@ -8,11 +8,11 @@ The patients are lifelike 3D people you can turn, zoom and examine by touch. It 
 
 ## What's inside
 
-### 29 patients on the ward
+### 34 patients on the ward
 
 | Examination | Cases |
 | --- | --- |
-| Abdomen | Appendicitis, acute cholecystitis, small-bowel obstruction from a femoral hernia, perforated duodenal ulcer, acute pancreatitis, diverticulitis, ascending cholangitis, ruptured AAA, mesenteric ischaemia, pancreatic cancer, caecal cancer, chronic liver disease (OSCE), ileostomy (OSCE) |
+| Abdomen | Appendicitis, acute cholecystitis, small-bowel obstruction from a femoral hernia, perforated duodenal ulcer, acute pancreatitis, diverticulitis, ascending cholangitis, ruptured AAA, mesenteric ischaemia, pancreatic cancer, caecal cancer, chronic liver disease (OSCE), ileostomy (OSCE), upper GI bleed on an anticoagulant, oesophageal cancer (dysphagia and heartburn), internal hernia after a gastric bypass (bariatric surgery), anastomotic leak on the ward (pre- and post-operative care), perianal abscess |
 | Groin | Indirect inguinal hernia, irreducible femoral hernia, direct inguinal hernia |
 | Lump | Lipoma, epidermoid cyst |
 | Thyroid & neck | Graves' disease, multinodular goitre, thyroglossal cyst |
@@ -58,7 +58,7 @@ The scrotal examination keeps its illustrated close-up. The 3D patients need Web
 - **Drills.** Put the steps in order, one chunk at a time, one section at a time, or the whole routine.
 - **Signs atlas.** 26 signs, with what each one means and how to elicit it. 18 of them can be shown on a 3D patient you can turn round, with buttons to make the patient cough, swallow, stick out their tongue or raise their arms. The rest are illustrated.
 - **Scar atlas.** The classic abdominal incisions on a 3D torso, with an explore mode and a quiz.
-- **Viva flashcards.** 120 examiner questions, served weakest first.
+- **Viva flashcards.** 150 examiner questions, served weakest first.
 
 ### OSCE mode
 
@@ -73,7 +73,7 @@ The progress page charts your recent scores, your average in each marking domain
 
 ## Sources
 
-The examination routines follow the sequences taught in **Macleod's Clinical Examination (14th edition)**, supplemented by current UK guidance. That guidance includes NICE (NG12 suspected cancer, CG188 gallstones, NG104 pancreatitis, NG147 diverticular disease, NG156 abdominal aortic aneurysm, CG147 peripheral arterial disease, CG168 varicose veins, NG145 thyroid disease, NG101 breast cancer), British Thyroid Association guidance, the HerniaSurge international guidelines, European Association of Urology guidance on the acute scrotum and testicular cancer, and the European Society for Vascular Surgery / Global Vascular Guidelines on CLTI.
+The examination routines follow the sequences taught in **Macleod's Clinical Examination (14th edition)**, supplemented by current UK guidance. That guidance includes NICE (NG12 suspected cancer, CG141 upper GI bleeding, NG51 sepsis, CG188 gallstones, NG104 pancreatitis, NG147 diverticular disease, NG156 abdominal aortic aneurysm, CG147 peripheral arterial disease, CG168 varicose veins, NG145 thyroid disease, NG101 breast cancer), British Thyroid Association guidance, the HerniaSurge international guidelines, Centre for Perioperative Care and ERAS Society guidance, BOMSS guidance after bariatric surgery, European Association of Urology guidance on the acute scrotum and testicular cancer, and the European Society for Vascular Surgery / Global Vascular Guidelines on CLTI.
 
 No textbook text or figures are reproduced. The repository deliberately ignores `*.pdf` so that a copy of the book can never be committed by accident.
 

@@ -66,6 +66,18 @@ export const SCAR_INFO: Record<ScarId, ScarInfo> = {
     operation: 'Laparoscopic appendicectomy',
     note: 'Umbilical, suprapubic and left iliac fossa ports.',
   },
+  'lap-bariatric': {
+    id: 'lap-bariatric',
+    name: 'Upper abdominal laparoscopic port-site scars (×5)',
+    operation: 'Laparoscopic bariatric surgery (gastric bypass or sleeve gastrectomy)',
+    note: 'Camera port above and left of the umbilicus, a subxiphoid liver-retractor port and working ports in both upper quadrants.',
+  },
+  'lap-colorectal': {
+    id: 'lap-colorectal',
+    name: 'Laparoscopic port-site scars (×4) with a low transverse extraction wound',
+    operation: 'Laparoscopic colorectal resection (e.g. anterior resection, sigmoid colectomy)',
+    note: 'Umbilical camera port, two right-sided working ports and a left-sided port; the specimen comes out through a short Pfannenstiel-type incision.',
+  },
   rooftop: {
     id: 'rooftop',
     name: 'Rooftop (chevron / bilateral subcostal) incision',
@@ -175,6 +187,22 @@ export function scarGeometry(id: ScarId, lm: Landmarks): Stroke[] {
         port([0, 368], 4),
         port([Math.abs(mcb[0]), mcb[1] + 4], 4, -0.3),
       ]
+    case 'lap-bariatric':
+      return [
+        port([7, u[1] - 26], 5, -0.1),
+        port([-2, 252], 4),
+        port([lm.mclR, 288], 4, 0.3),
+        port([lm.mclL, 290], 5, -0.3),
+        port([lm.costalTipL[0] - 8, 310], 4, -0.4),
+      ]
+    case 'lap-colorectal':
+      return [
+        { d: smoothPath([[-4.5, u[1] + 8.5], [0, u[1] + 10], [4.5, u[1] + 8.5]]), kind: 'port' },
+        port([lm.mclR, u[1] - 8], 4, 0.3),
+        port([lm.mclR - 4, lm.transtubercularY - 6], 5, -0.3),
+        port([lm.mclL + 4, lm.transtubercularY - 6], 4, 0.3),
+        { d: smoothPath([[-17, 374], [0, 378.5], [17, 374]]), kind: 'long' },
+      ]
     case 'rooftop': {
       const r = lm.costalMarginR.slice(1).map(([x, y]) => [x * 1.02, y + 12] as Pt)
       const l = r.map(([x, y]) => [-x, y] as Pt)
@@ -230,6 +258,10 @@ export function scarAnchor(id: ScarId, lm: Landmarks): Pt {
       return [0, u[1] - 9]
     case 'lap-appendix':
       return [0, u[1] + 9]
+    case 'lap-bariatric':
+      return [7, u[1] - 26]
+    case 'lap-colorectal':
+      return [0, 377]
     case 'rooftop':
     case 'mercedes':
       return [0, 256]

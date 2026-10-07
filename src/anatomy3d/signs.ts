@@ -381,6 +381,26 @@ export function scarPaths(id: ScarId, A: Anatomy): THREE.Vector3[][] {
       ]
     case 'lap-appendix':
       return [line(v3(-0.06, N.y - 0.18, z), v3(0.06, N.y - 0.2, z), 1), line(v3(-0.04, P.y + 0.35, z), v3(0.04, P.y + 0.35, z), 1), line(asisL.clone().lerp(N, 0.45), asisL.clone().lerp(N, 0.45).add(v3(0.06, -0.02, 0)), 1)]
+    case 'lap-bariatric': {
+      const cam = X.clone().lerp(N, 0.62)
+      return [
+        line(v3(0.12, cam.y, z), v3(0.26, cam.y - 0.02, z), 1),
+        line(v3(-0.05, X.y - 0.22, z), v3(0.05, X.y - 0.22, z), 1),
+        line(v3(-A.mcl - 0.03, X.y - 0.8, z), v3(-A.mcl + 0.03, X.y - 0.82, z), 1),
+        line(v3(A.mcl - 0.05, X.y - 0.82, z), v3(A.mcl + 0.05, X.y - 0.84, z), 1),
+        line(v3(A.mcl + 0.48, X.y - 1.1, z), v3(A.mcl + 0.54, X.y - 1.13, z), 1),
+      ]
+    }
+    case 'lap-colorectal': {
+      const low = A.transtubercularY + 0.12 // lower flanks, just above the shorts
+      return [
+        line(v3(-0.06, N.y - 0.18, z), v3(0.06, N.y - 0.2, z), 1),
+        line(v3(-A.mcl - 0.03, N.y + 0.25, z), v3(-A.mcl + 0.03, N.y + 0.23, z), 1),
+        line(v3(-A.mcl - 0.16, low, z), v3(-A.mcl - 0.07, low + 0.03, z), 1),
+        line(v3(A.mcl + 0.06, low + 0.02, z), v3(A.mcl + 0.12, low, z), 1),
+        curve([v3(-0.3, P.y + 0.3, z), v3(0, P.y + 0.23, z), v3(0.3, P.y + 0.3, z)], 8),
+      ]
+    }
     case 'rooftop':
       return [subcostal(-1), subcostal(1), line(v3(-0.25, X.y - 0.3, z), v3(0.25, X.y - 0.3, z), 2)]
     case 'mercedes':

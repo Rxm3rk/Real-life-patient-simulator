@@ -150,6 +150,14 @@ export const INVESTIGATIONS: InvDef[] = [
     normal: () => ({ values: [v('AFP', '3', 'kU/L', '< 10'), v('β-hCG', '< 2', 'IU/L', '< 5'), v('LDH', '168', 'U/L', '135–225')], interpretation: 'Normal markers.' }),
   },
   { id: 'bhcg-serum', name: 'Serum β-hCG', cat: 'Bloods', tat: 60, sex: 'female', normal: () => ({ values: [v('β-hCG', '< 2', 'IU/L', '< 5 (non-pregnant)')], interpretation: 'Not pregnant.' }) },
+  {
+    id: 'haematinics',
+    name: 'Haematinics (ferritin, B₁₂, folate)',
+    short: 'Haematinics',
+    cat: 'Bloods',
+    tat: 1440,
+    normal: () => ({ values: [v('Ferritin', '86', 'µg/L', '30–300'), v('Vitamin B₁₂', '384', 'ng/L', '197–771'), v('Folate', '7.9', 'µg/L', '> 3.9')], interpretation: 'Normal iron stores, B₁₂ and folate.' }),
+  },
 
   /* Imaging */
   { id: 'cxr-erect', name: 'Erect chest X-ray', short: 'Erect CXR', cat: 'Imaging', tat: 30, normal: () => ({ report: 'Clear lung fields. No free gas under the diaphragm. Normal cardiac silhouette.', interpretation: 'No pneumoperitoneum.', image: 'cxr-normal' }) },
@@ -169,14 +177,20 @@ export const INVESTIGATIONS: InvDef[] = [
   { id: 'ct-kub', name: 'CT KUB (non-contrast)', short: 'CT KUB', cat: 'Imaging', tat: 120, normal: () => ({ report: 'No urinary tract calculi. No hydronephrosis.', interpretation: 'Normal CT KUB.' }) },
   { id: 'ct-cap', name: 'CT chest, abdomen & pelvis (staging)', short: 'CT CAP', cat: 'Imaging', tat: 1440, normal: () => ({ report: 'No evidence of metastatic disease.', interpretation: 'Normal staging CT.' }) },
   { id: 'mrcp', name: 'MRCP', cat: 'Imaging', tat: 1440, normal: () => ({ report: 'Normal-calibre biliary tree. No filling defect in the common bile duct.', interpretation: 'Normal MRCP.' }) },
+  { id: 'ctpa', name: 'CT pulmonary angiogram', short: 'CTPA', cat: 'Imaging', tat: 120, normal: () => ({ report: 'No pulmonary embolus. Lungs clear.', interpretation: 'No PE.' }) },
+  { id: 'pet-ct', name: 'PET-CT (staging)', short: 'PET-CT', cat: 'Imaging', tat: 10080, normal: () => ({ report: 'No FDG-avid disease.', interpretation: 'No evidence of metastatic disease.' }) },
+  { id: 'barium-swallow', name: 'Barium swallow', cat: 'Imaging', tat: 1440, normal: () => ({ report: 'Normal swallow. No stricture, pouch, hiatus hernia or dysmotility.', interpretation: 'Normal barium swallow.' }) },
+  { id: 'mri-pelvis', name: 'MRI pelvis (fistula protocol)', short: 'MRI pelvis', cat: 'Imaging', tat: 4320, normal: () => ({ report: 'No perianal fistula or collection. Sphincters intact.', interpretation: 'Normal.' }) },
 
   /* Endoscopy & tissue */
   { id: 'ogd', name: 'Upper GI endoscopy (OGD)', short: 'OGD', cat: 'Endoscopy & tissue', tat: 1440, normal: () => ({ report: 'Normal oesophagus, stomach and duodenum.', interpretation: 'Normal OGD.' }) },
+  { id: 'eus', name: 'Endoscopic ultrasound (EUS)', short: 'EUS', cat: 'Endoscopy & tissue', tat: 10080, normal: () => ({ report: 'Normal wall layers. No lymphadenopathy.', interpretation: 'Normal EUS.' }) },
   { id: 'colonoscopy', name: 'Colonoscopy', cat: 'Endoscopy & tissue', tat: 2880, normal: () => ({ report: 'Complete colonoscopy to the caecum. Normal mucosa.', interpretation: 'Normal colonoscopy.' }) },
   { id: 'flexi', name: 'Flexible sigmoidoscopy', short: 'Flexi sig', cat: 'Endoscopy & tissue', tat: 1440, normal: () => ({ report: 'Normal to the splenic flexure.', interpretation: 'Normal.' }) },
   { id: 'ercp', name: 'ERCP', cat: 'Endoscopy & tissue', tat: 1440, normal: () => ({ report: 'Normal cholangiogram.', interpretation: 'Normal.' }) },
   { id: 'fna', name: 'Fine-needle aspiration (cytology)', short: 'FNA', cat: 'Endoscopy & tissue', tat: 4320, normal: () => ({ report: 'Benign cytology.', interpretation: 'Benign.' }) },
   { id: 'core', name: 'Image-guided core biopsy', short: 'Core biopsy', cat: 'Endoscopy & tissue', tat: 4320, normal: () => ({ report: 'Benign tissue.', interpretation: 'Benign (B2).' }) },
+  { id: 'pus-mcs', name: 'Pus swab (microscopy, culture & sensitivity)', short: 'Pus swab', cat: 'Endoscopy & tissue', tat: 2880, normal: () => ({ report: 'No organisms seen. No growth at 48 hours.', interpretation: 'No growth.' }) },
 ]
 
 export const INV_BY_ID: Record<string, InvDef> = Object.fromEntries(INVESTIGATIONS.map((i) => [i.id, i]))

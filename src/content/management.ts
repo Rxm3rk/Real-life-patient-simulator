@@ -41,6 +41,9 @@ export const MANAGEMENT: MgmtDef[] = [
   { id: 'vitamin-k', label: 'IV vitamin K (correct coagulopathy)', group: 'Medication' },
   { id: 'diuretics', label: 'Spironolactone ± furosemide with dietary salt restriction', group: 'Medication' },
   { id: 'transfusion', label: 'Red cell transfusion', group: 'Resuscitation & supportive' },
+  { id: 'stop-anticoag', label: 'Withhold anticoagulants and antiplatelets; reverse anticoagulation if bleeding is major', group: 'Medication' },
+  { id: 'tranexamic-acid', label: 'IV tranexamic acid', group: 'Medication' },
+  { id: 'h-pylori', label: 'Test for and eradicate Helicobacter pylori', group: 'Medication' },
 
   // Escalation
   { id: 'senior', label: 'Inform the surgical registrar / consultant', group: 'Escalation & referral' },
@@ -54,6 +57,7 @@ export const MANAGEMENT: MgmtDef[] = [
   { id: '2ww', label: 'Urgent suspected-cancer (2-week-wait) pathway', group: 'Escalation & referral' },
   { id: 'consent', label: 'Explain, gain written consent and mark for surgery', group: 'Escalation & referral' },
   { id: 'breaking-news', label: 'Communicate the diagnosis sensitively and involve family', group: 'Escalation & referral' },
+  { id: 'bariatric-team', label: 'Discuss with the bariatric surgical team', group: 'Escalation & referral' },
 
   // Procedures
   { id: 'lap-appendicectomy', label: 'Laparoscopic appendicectomy', group: 'Procedures & operations' },
@@ -88,6 +92,11 @@ export const MANAGEMENT: MgmtDef[] = [
   { id: 'right-hemicolectomy', label: 'Right hemicolectomy (after staging and MDT)', group: 'Procedures & operations' },
   { id: 'ascitic-tap', label: 'Diagnostic ascitic tap (cell count, albumin/SAAG, culture)', group: 'Procedures & operations' },
   { id: 'varices-screen', label: 'OGD to screen for oesophageal varices', group: 'Procedures & operations' },
+  { id: 'ogd-urgent', label: 'Urgent OGD with endoscopic haemostasis (within 24 h; immediately after resuscitation if unstable)', group: 'Procedures & operations' },
+  { id: 'lap-internal-hernia', label: 'Urgent laparoscopy: reduce the internal hernia and close the mesenteric defects', group: 'Procedures & operations' },
+  { id: 'oesophagectomy', label: 'Neoadjuvant chemotherapy (or chemoradiotherapy) then oesophagectomy, if staging and fitness allow', group: 'Procedures & operations' },
+  { id: 'oesophageal-stent', label: 'Self-expanding metal stent to palliate dysphagia', group: 'Procedures & operations' },
+  { id: 'return-theatre', label: 'Return to theatre: washout and defunctioning stoma or takedown of the anastomosis', group: 'Procedures & operations' },
   { id: 'hcc-surveillance', label: 'HCC surveillance: 6-monthly ultrasound ± AFP', group: 'Conservative & follow-up' },
   { id: 'stoma-nurse', label: 'Stoma nurse specialist review and patient education', group: 'Conservative & follow-up' },
 

@@ -40,6 +40,15 @@ describe('history matcher', () => {
     ['Have you had a temperature?', 'sys.fever'],
     ['Do you get pain in your calves when you walk?', 'vas.claudication'],
     ['Does the lump go away when you lie down?', 'lump.reduce'],
+    ['Is it solids or liquids?', 'gi.dysphagia_type'],
+    ['Where does the food get stuck?', 'gi.dysphagia_level'],
+    ['Does it hurt to swallow?', 'gi.odynophagia'],
+    ['Does food come back up?', 'gi.regurgitation'],
+    ['Is it painful when you open your bowels?', 'ano.pain'],
+    ['Any lumps around your bottom?', 'ano.lump'],
+    ['Is your calf swollen?', 'ros.calf'],
+    ['How is your wound?', 'ros.wound'],
+    ['Have you had weight loss surgery?', 'pmh.surgery'],
   ])('%s → %s', (q, id) => {
     expect(one(q)).toContain(id)
   })
