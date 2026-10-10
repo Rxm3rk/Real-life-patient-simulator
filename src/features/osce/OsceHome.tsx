@@ -1,4 +1,4 @@
-import { ArrowRight, ClipboardCheck, Link2, Play, Shuffle, Timer, Trash2, Trophy, Users, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ClipboardCheck, Link2, Play, Shuffle, Timer, Trash2, Trophy, Users, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Page, PageHeader } from '../../components/layout/AppShell'
@@ -96,6 +96,9 @@ export default function OsceHome() {
 
   return (
     <Page wide>
+      <Link to="/ward" className="mb-4 inline-flex h-9 items-center gap-1.5 text-[13.5px] font-medium text-muted hover:text-ink">
+        <ArrowLeft size={15} /> Patients
+      </Link>
       <PageHeader
         eyebrow="Exam conditions"
         title="OSCE"

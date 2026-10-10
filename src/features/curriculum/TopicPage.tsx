@@ -1,11 +1,13 @@
-import { ArrowLeft, BookOpen, ChevronRight, Eye, EyeOff, Lightbulb, Search, Star, Stethoscope } from 'lucide-react'
+import { ArrowLeft, BookOpen, ChevronRight, Eye, EyeOff, Lightbulb, Printer, Search, Sparkles, Star } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Page } from '../../components/layout/AppShell'
 import { PatientAvatar } from '../../components/PatientAvatar'
 import { Rich } from '../../components/Rich'
 import { CASE_META } from '../../content/cases'
 import { sessionOf, TOPIC_BY_ID, type Bullet, type Section, type TopicId } from '../../content/curriculum'
+import { topicCardIds } from '../../content/quiz'
 import { Link, navigate, useLocation } from '../../lib/router'
+import { deckStats, isDue, isKnown } from '../../lib/srs'
 import { useCaseDefs } from '../../lib/useCases'
 import { cn } from '../../lib/utils'
 import { useStudy } from '../../store/study'
@@ -43,7 +45,7 @@ export default function TopicPage({ id, caseId }: { id: string; caseId?: string 
 
   return (
     <Page>
-      <Link to="/" className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted hover:text-ink">
+      <Link to="/" className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-muted hover:text-ink print:hidden">
         <ArrowLeft size={15} /> Today
       </Link>
       <header>
@@ -52,24 +54,12 @@ export default function TopicPage({ id, caseId }: { id: string; caseId?: string 
         </div>
         <h1 className="mt-1.5 text-[28px] leading-tight font-semibold tracking-[-0.025em] text-ink sm:text-[34px]">{topic.title}</h1>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-muted">{topic.blurb}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link to={`/ask?t=${topic.id}`} className="inline-flex h-10 items-center gap-2 rounded-xl bg-surface-1 px-4 text-[13.5px] font-medium text-ink ring-1 ring-line hover:ring-accent/50">
-            <Search size={15} /> Search this topic
-          </Link>
-          <a href={`#/topic/${topic.id}?s=qa`} className="inline-flex h-10 items-center gap-2 rounded-xl bg-surface-1 px-4 text-[13.5px] font-medium text-ink ring-1 ring-line hover:ring-accent/50">
-            <Lightbulb size={15} /> {topic.qa.length} questions
-          </a>
-          {cases.length > 0 && (
-            <a href={`#/topic/${topic.id}?s=cases`} className="inline-flex h-10 items-center gap-2 rounded-xl bg-surface-1 px-4 text-[13.5px] font-medium text-ink ring-1 ring-line hover:ring-accent/50">
-              <Stethoscope size={15} /> {cases.length} cases
-            </a>
-          )}
-        </div>
+        <TopicActions topicId={topic.id} />
       </header>
 
       <JumpBar items={nav} />
 
-      <section id="sec-key" className="mt-5 scroll-mt-32 rounded-2xl bg-accent-soft/40 p-5 ring-1 ring-accent/25">
+      <section id="sec-key" className="mt-5 scroll-mt-32 rounded-2xl bg-accent-soft/40 p-5 ring-1 ring-accent/25 print:break-inside-avoid">
         <h2 className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.1em] text-accent uppercase">
           <Lightbulb size={15} /> Key points
         </h2>
@@ -104,6 +94,28 @@ export default function TopicPage({ id, caseId }: { id: string; caseId?: string 
   )
 }
 
+/** Quiz this topic, search it, or print it as notes. */
+function TopicActions({ topicId }: { topicId: TopicId }) {
+  const cards = useStudy((s) => s.cards)
+  const st = deckStats(topicCardIds(topicId), cards)
+  return (
+    <div className="mt-4 flex flex-wrap gap-2 print:hidden">
+      <Link to={`/quiz?deck=topic:${topicId}`} className="inline-flex h-10 items-center gap-2 rounded-xl bg-accent px-4 text-[13.5px] font-semibold text-accent-fg shadow-(--shadow-soft) hover:bg-accent-strong">
+        <Sparkles size={15} /> Quiz me
+        <span className="rounded-md bg-white/20 px-1.5 py-0.5 font-mono text-[11.5px] tabular">
+          {st.known}/{st.total}
+        </span>
+      </Link>
+      <Link to={`/ask?t=${topicId}`} className="inline-flex h-10 items-center gap-2 rounded-xl bg-surface-1 px-4 text-[13.5px] font-medium text-ink ring-1 ring-line hover:ring-accent/50">
+        <Search size={15} /> Search this topic
+      </Link>
+      <button onClick={() => window.print()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-surface-1 px-4 text-[13.5px] font-medium text-ink ring-1 ring-line hover:ring-accent/50">
+        <Printer size={15} /> Print notes
+      </button>
+    </div>
+  )
+}
+
 /** Sticky section chips; the one you're reading lights up and stays in view. */
 function JumpBar({ items }: { items: { id: string; label: string }[] }) {
   const [active, setActive] = useState(items[0]?.id)
@@ -132,7 +144,7 @@ function JumpBar({ items }: { items: { id: string; label: string }[] }) {
   }, [active])
 
   return (
-    <nav className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-20 -mx-4 mt-5 border-b border-line bg-bg px-4 py-2 sm:-mx-6 sm:px-6 lg:top-0 lg:-mx-10 lg:px-10" aria-label="Sections">
+    <nav className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-20 -mx-4 mt-5 border-b border-line bg-bg px-4 py-2 sm:-mx-6 sm:px-6 lg:top-0 lg:-mx-10 lg:px-10 print:hidden" aria-label="Sections">
       <div ref={bar} className="relative flex gap-1.5 overflow-x-auto no-scrollbar">
         {items.map((n) => (
           <button
@@ -155,7 +167,7 @@ function JumpBar({ items }: { items: { id: string; label: string }[] }) {
 
 function SectionCard({ s }: { s: Section }) {
   return (
-    <section id={`sec-${s.id}`} className="scroll-mt-32 rounded-2xl bg-surface-1 p-5 ring-1 ring-line">
+    <section id={`sec-${s.id}`} className="scroll-mt-32 rounded-2xl bg-surface-1 p-5 ring-1 ring-line print:break-inside-avoid print:p-0 print:ring-0">
       <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-ink">{s.title}</h2>
       {s.intro && <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{s.intro}</p>}
       {s.items && <Points items={s.items} steps={s.kind === 'steps'} />}
@@ -252,7 +264,7 @@ function Table({ head, rows }: { head: string[]; rows: string[][] }) {
 function CasesBlock({ topicId, ids }: { topicId: TopicId; ids: string[] }) {
   const defs = useCaseDefs(ids)
   return (
-    <section id="sec-cases" className="mt-8 scroll-mt-32">
+    <section id="sec-cases" className="mt-8 scroll-mt-32 print:hidden">
       <h2 className="text-[19px] font-semibold tracking-[-0.015em] text-ink">Cases</h2>
       <p className="mt-1 text-[13.5px] text-muted">Open a case card for the one-page summary, or see the patient and examine them yourself.</p>
       <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -287,7 +299,7 @@ function CasesBlock({ topicId, ids }: { topicId: TopicId; ids: string[] }) {
 
 function Questions({ topicId }: { topicId: TopicId }) {
   const topic = TOPIC_BY_ID[topicId]
-  const { hideAnswers, setHideAnswers, starred, toggleStar } = useStudy()
+  const { hideAnswers, setHideAnswers, starred, toggleStar, cards } = useStudy()
   const [shown, setShown] = useState<Set<number>>(new Set())
   const [onlyStarred, setOnlyStarred] = useState(false)
   const list = topic.qa.map((qa, i) => ({ qa, i, id: `${topicId}:qa:${i}` })).filter((x) => !onlyStarred || starred.includes(x.id))
@@ -296,9 +308,14 @@ function Questions({ topicId }: { topicId: TopicId }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-[19px] font-semibold tracking-[-0.015em] text-ink">Questions the doctors ask</h2>
-          <p className="mt-1 text-[13.5px] text-muted">Hide the answers to test yourself; star the ones to revise.</p>
+          <p className="mt-1 text-[13.5px] text-muted print:hidden">
+            Quiz yourself and the app remembers which ones you know: <Dot tone="success" /> known · <Dot tone="warning" /> due again.
+          </p>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5 print:hidden">
+          <Link to={`/quiz?deck=topic:${topicId}`} className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-accent px-3 text-[13px] font-semibold text-accent-fg">
+            <Sparkles size={14} /> Quiz me
+          </Link>
           <button
             onClick={() => setOnlyStarred((v) => !v)}
             aria-pressed={onlyStarred}
@@ -323,11 +340,16 @@ function Questions({ topicId }: { topicId: TopicId }) {
         {list.map(({ qa, i, id }) => {
           const reveal = !hideAnswers || shown.has(i)
           const isStar = starred.includes(id)
+          const c = cards[id]
+          const state = isDue(c) ? 'due' : isKnown(c) ? 'known' : null
           return (
-            <article key={i} className="rounded-2xl bg-surface-1 p-4 ring-1 ring-line">
+            <article key={i} className="rounded-2xl bg-surface-1 p-4 ring-1 ring-line print:break-inside-avoid print:p-0 print:py-1.5 print:ring-0">
               <div className="flex items-start gap-3">
-                <h3 className="flex-1 text-[14.5px] leading-snug font-semibold text-ink">{qa.q}</h3>
-                <button onClick={() => toggleStar(id)} aria-label={isStar ? 'Unstar' : 'Star'} aria-pressed={isStar} className="-mt-1 -mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-faint hover:text-warning">
+                <h3 className="flex-1 text-[14.5px] leading-snug font-semibold text-ink">
+                  {state && <Dot tone={state === 'due' ? 'warning' : 'success'} className="mr-2 -mt-0.5 align-middle" label={state === 'due' ? 'Due for review' : 'You know this one'} />}
+                  {qa.q}
+                </h3>
+                <button onClick={() => toggleStar(id)} aria-label={isStar ? 'Unstar' : 'Star'} aria-pressed={isStar} className="-mt-1 -mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-faint hover:text-warning print:hidden">
                   <Star size={16} className={cn(isStar && 'fill-warning text-warning')} />
                 </button>
               </div>
@@ -336,14 +358,31 @@ function Questions({ topicId }: { topicId: TopicId }) {
                   <Rich text={qa.a} />
                 </p>
               ) : (
-                <button onClick={() => setShown((s) => new Set(s).add(i))} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg bg-surface-2 px-3 text-[12.5px] font-medium text-ink ring-1 ring-line">
-                  <Eye size={13} /> Show answer
-                </button>
+                <>
+                  <button onClick={() => setShown((st) => new Set(st).add(i))} className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg bg-surface-2 px-3 text-[12.5px] font-medium text-ink ring-1 ring-line print:hidden">
+                    <Eye size={13} /> Show answer
+                  </button>
+                  {/* on paper the answers are always there */}
+                  <p className="mt-1.5 hidden text-[14px] leading-relaxed text-muted print:block">
+                    <Rich text={qa.a} />
+                  </p>
+                </>
               )}
             </article>
           )
         })}
       </div>
     </section>
+  )
+}
+
+function Dot({ tone, className, label }: { tone: 'success' | 'warning'; className?: string; label?: string }) {
+  return (
+    <span
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      title={label}
+      className={cn('inline-block h-2 w-2 rounded-full', tone === 'success' ? 'bg-success' : 'bg-warning', className)}
+    />
   )
 }

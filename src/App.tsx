@@ -13,6 +13,7 @@ const CaseBriefing = lazy(() => import('./features/briefing/CaseBriefing'))
 const SimScreen = lazy(() => import('./features/sim/SimScreen'))
 const Debrief = lazy(() => import('./features/debrief/Debrief'))
 const Learn = lazy(() => import('./features/learn/Learn'))
+const Quiz = lazy(() => import('./features/quiz/Quiz'))
 const Osce = lazy(() => import('./features/osce/Osce'))
 const Progress = lazy(() => import('./features/progress/Progress'))
 const Settings = lazy(() => import('./features/settings/Settings'))
@@ -39,6 +40,7 @@ const routes: RouteDef[] = [
   { pattern: '/learn', render: () => <Learn /> },
   { pattern: '/learn/:section', render: (p) => <Learn section={p.section} /> },
   { pattern: '/learn/:section/:item', render: (p) => <Learn section={p.section} item={p.item} /> },
+  { pattern: '/quiz', render: () => <Quiz /> },
   { pattern: '/osce', render: () => <Osce /> },
   { pattern: '/osce/:section', render: (p) => <Osce section={p.section} /> },
   { pattern: '/osce/:section/:item', render: (p) => <Osce section={p.section} item={p.item} key={p.item} /> },

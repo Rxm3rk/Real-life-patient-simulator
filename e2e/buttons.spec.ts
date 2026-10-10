@@ -8,7 +8,7 @@ async function examine(page: Page, caseId: string) {
   await page.goto('/#/')
   await page.evaluate(() => localStorage.clear())
   await page.goto(`/#/case/${caseId}`)
-  await page.getByRole('button', { name: /Practice/ }).last().click()
+  await page.getByRole('radio', { name: /Practice/ }).click()
   await page.getByRole('button', { name: /See the patient|Enter the station/ }).last().click()
   await page.getByRole('button', { name: /^Examine$/ }).first().click()
   return errors

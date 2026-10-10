@@ -39,7 +39,7 @@ test('a topic guide jumps to sections and opens a case card', async ({ page }) =
 
 test('perianal station: inspect, then defer a painful DRE', async ({ page }) => {
   await fresh(page, '/case/anal-fissure')
-  await page.getByRole('button', { name: /Practice/ }).last().click()
+  await page.getByRole('radio', { name: /Practice/ }).click()
   await page.getByRole('button', { name: /See the patient/ }).last().click()
   await page.getByRole('button', { name: /^Examine$/ }).first().click()
   for (const b of [/^Hand hygiene/, /^Consent/, /^Chaperone/, /^Position/, /^Expose/, /^Gloves & light/, /^Part & inspect/])

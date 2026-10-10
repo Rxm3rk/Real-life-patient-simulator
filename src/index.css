@@ -438,3 +438,33 @@ input[type='search']::-webkit-search-decoration {
   appearance: none;
   display: none;
 }
+
+/* Printing a topic guide gives clean notes: light colours, no app chrome,
+   cards that don't split across pages. */
+@media print {
+  :root,
+  :root[data-theme='dark'],
+  :root:not([data-theme='light']) {
+    color-scheme: light;
+    --bg: #ffffff;
+    --bg-elevated: #ffffff;
+    --surface-1: #ffffff;
+    --surface-2: #f3f6fa;
+    --surface-3: #e8edf4;
+    --border: rgb(15 23 42 / 0.12);
+    --border-strong: rgb(15 23 42 / 0.2);
+    --text: #0b1324;
+    --text-muted: #2f3b4f;
+    --text-faint: #5b6779;
+    --accent: #0a7a70;
+    --accent-soft: rgb(12 143 132 / 0.08);
+    --accent-fg: #ffffff;
+  }
+  body {
+    background: #fff;
+    font-size: 11pt;
+  }
+  @page {
+    margin: 14mm 12mm;
+  }
+}

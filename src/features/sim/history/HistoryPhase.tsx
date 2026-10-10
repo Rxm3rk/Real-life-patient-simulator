@@ -358,7 +358,7 @@ function Coverage({ c, asked, mode, onAsk }: { c: CaseDef; asked: string[]; mode
         </ul>
       ) : (
         <p className="mt-4 flex gap-2 text-[12.5px] leading-snug text-muted">
-          <Lightbulb size={15} className="mt-0.5 shrink-0 text-violet" /> Practice mode shows only your coverage. Switch to Learn mode to see the checklist.
+          <Lightbulb size={15} className="mt-0.5 shrink-0 text-violet" /> Practice shows only your coverage. Choose Guided next time to see the full checklist.
         </p>
       )}
     </div>

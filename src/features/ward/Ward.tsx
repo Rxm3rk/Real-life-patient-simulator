@@ -1,4 +1,4 @@
-import { ChevronRight, Search, Shuffle } from 'lucide-react'
+import { ChevronRight, ClipboardCheck, Search, Shuffle, Timer } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Page, PageHeader } from '../../components/layout/AppShell'
 import { Button } from '../../components/ui/Button'
@@ -82,15 +82,38 @@ export default function Ward() {
   return (
     <Page wide>
       <PageHeader
-        eyebrow="Surgical admissions"
-        title="The ward"
-        subtitle="Patients grouped by your clinical sessions. The diagnosis stays hidden until you’ve worked it out."
+        eyebrow="The ward"
+        title="Patients"
+        subtitle={`${CASES.length} patients, grouped by your sessions. Take the history, examine, investigate and decide — the diagnosis stays hidden until you’ve worked it out.`}
         actions={
           <Button variant="secondary" onClick={random} leading={<Shuffle size={16} />}>
             Random patient
           </Button>
         }
       />
+
+      <div className="mb-6 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <Link to="/osce" className="group flex items-center gap-3 rounded-2xl bg-surface-1 p-4 ring-1 ring-line transition hover:ring-accent/40">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
+            <Timer size={19} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[14.5px] font-semibold text-ink">OSCE circuit</div>
+            <div className="text-[12.5px] text-muted">3–8 timed stations with reading time and a bell</div>
+          </div>
+          <ChevronRight size={17} className="shrink-0 text-faint transition group-hover:translate-x-0.5" />
+        </Link>
+        <Link to="/osce/examiner" className="group flex items-center gap-3 rounded-2xl bg-surface-1 p-4 ring-1 ring-line transition hover:ring-violet/40">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet/12 text-violet">
+            <ClipboardCheck size={19} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[14.5px] font-semibold text-ink">Peer examiner</div>
+            <div className="text-[12.5px] text-muted">Mark a friend’s examination on a real OSCE checklist</div>
+          </div>
+          <ChevronRight size={17} className="shrink-0 text-faint transition group-hover:translate-x-0.5" />
+        </Link>
+      </div>
 
       <div className="mb-5 flex flex-col gap-3">
         <div className="flex h-11 items-center gap-2 rounded-xl bg-surface-1 px-3 ring-1 ring-line focus-within:ring-accent/60">

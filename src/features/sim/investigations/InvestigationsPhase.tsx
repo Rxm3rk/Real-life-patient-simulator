@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../../../components/ui/Button'
 import { Badge, Segmented } from '../../../components/ui/primitives'
 import { formatTat, INV_BY_ID, INVESTIGATIONS, resultFor, type InvCategory } from '../../../content/investigations'
-import type { CaseDef, InvestigationResult } from '../../../engine/types'
+import type { CaseDef, InvestigationResult, Mode } from '../../../engine/types'
 import { useMediaQuery } from '../../../lib/hooks'
 import { cn } from '../../../lib/utils'
 import { useEncounter } from '../../../store/encounter'
@@ -91,7 +91,7 @@ export default function InvestigationsPhase({ c, onNext }: { c: CaseDef; onNext?
       <AnimatePresence initial={false}>
         {[...s.ordered].reverse().map((id) => (
           <motion.div key={id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}>
-            <ResultCard id={id} c={c} pending={fresh.has(id)} learn={s.mode === 'learn'} />
+            <ResultCard id={id} c={c} pending={fresh.has(id)} mode={s.mode} />
           </motion.div>
         ))}
       </AnimatePresence>
@@ -142,7 +142,9 @@ export default function InvestigationsPhase({ c, onNext }: { c: CaseDef; onNext?
   )
 }
 
-function ResultCard({ id, c, pending, learn }: { id: string; c: CaseDef; pending: boolean; learn: boolean }) {
+function ResultCard({ id, c, pending, mode }: { id: string; c: CaseDef; pending: boolean; mode: Mode }) {
+  const useHint = useEncounter((st) => st.useHint)
+  const [explained, setExplained] = useState(false)
   const def = INV_BY_ID[id]
   const r: InvestigationResult = resultFor(id, c)
   const abnormal = r.abnormal ?? !!r.values?.some((v) => v.flag)
@@ -197,11 +199,23 @@ function ResultCard({ id, c, pending, learn }: { id: string; c: CaseDef; pending
             </table>
           )}
           {r.report && <p className="text-[13.5px] leading-relaxed text-ink">{r.report}</p>}
-          {learn && r.interpretation && (
+          {r.interpretation && (mode === 'learn' || explained) && (
             <p className="mt-3 flex gap-1.5 rounded-xl bg-violet/8 px-3 py-2 text-[12.5px] leading-snug text-violet">
               <Sparkles size={13} className="mt-0.5 shrink-0" />
               {r.interpretation}
             </p>
+          )}
+          {/* Practice: the meaning is there if you're stuck; OSCE: raw results only */}
+          {r.interpretation && mode === 'practice' && !explained && (
+            <button
+              onClick={() => {
+                setExplained(true)
+                useHint()
+              }}
+              className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-violet/8 px-3 text-[12.5px] font-medium text-violet hover:bg-violet/15"
+            >
+              <Sparkles size={13} /> What does this mean?
+            </button>
           )}
         </div>
       )}

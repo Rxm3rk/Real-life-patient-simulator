@@ -29,7 +29,7 @@ async function tap(page: Page, name: RegExp) {
 
 test('examine the abdomen on the 3D patient', async ({ page }) => {
   const errors = await fresh3d(page, '/case/appendicitis')
-  await tap(page, /Practice/)
+  await page.getByRole('radio', { name: /Practice/ }).click()
   await tap(page, /See the patient/)
   await page.getByRole('button', { name: /^Examine$/ }).first().click()
   const stage = page.getByRole('img', { name: /Drag to look around/ })

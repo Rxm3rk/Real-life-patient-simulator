@@ -5,7 +5,7 @@ const Routine = lazy(() => import('./Routine'))
 const Drill = lazy(() => import('./Drill'))
 const SignsAtlas = lazy(() => import('./SignsAtlas'))
 const ScarAtlas = lazy(() => import('./ScarAtlas'))
-const VivaCards = lazy(() => import('./VivaCards'))
+const Quiz = lazy(() => import('../quiz/Quiz'))
 
 export default function Learn({ section, item }: { section?: string; item?: string }) {
   switch (section) {
@@ -18,7 +18,8 @@ export default function Learn({ section, item }: { section?: string; item?: stri
     case 'scars':
       return <ScarAtlas />
     case 'viva':
-      return <VivaCards />
+      // the viva flashcards are now a deck in the quiz
+      return <Quiz deck="viva" />
     default:
       return <LearnHome />
   }
