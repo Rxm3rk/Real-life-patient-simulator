@@ -1,22 +1,25 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, Clock, Lightbulb, MessagesSquare, RotateCcw, Share2, Sparkles, Stethoscope, Timer, Trophy, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, ChevronRight, Clock, Compass, Lightbulb, MessagesSquare, RotateCcw, Share2, Sparkles, Stethoscope, Timer, Trophy, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { uiTick } from '../../audio/engine'
 import { Button } from '../../components/ui/Button'
 import { Badge, ProgressBar, ProgressRing } from '../../components/ui/primitives'
 import { CASES, loadCase } from '../../content/cases'
+import { topicsForCase } from '../../content/curriculum'
 import { DIAG_BY_ID } from '../../content/diagnoses'
 import { abdoFindings } from '../../engine/abdo'
 import { protocolFor } from '../../engine/protocols'
 import { computeResult, type Domain, type Grade } from '../../engine/scoring'
 import type { CaseDef } from '../../engine/types'
 import { caseLink } from '../../lib/deeplink'
-import { navigate } from '../../lib/router'
+import { Link, navigate } from '../../lib/router'
 import { shareLink } from '../../lib/share'
+import { MODES } from '../../lib/modes'
 import { cn, formatDuration } from '../../lib/utils'
 import { useEncounter } from '../../store/encounter'
 import { useOsce } from '../../store/osce'
 import { useProgress } from '../../store/progress'
+import { nextSteps, type NextStep } from './nextSteps'
 
 const GRADE_TONE: Record<Grade, { color: string; bg: string; text: string }> = {
   Excellent: { color: 'var(--success)', bg: 'bg-success/12', text: 'text-success' },
@@ -28,6 +31,7 @@ const GRADE_TONE: Record<Grade, { color: string; bg: string; text: string }> = {
 
 export default function Debrief({ attemptId }: { attemptId: string }) {
   const rec = useProgress((st) => st.attempts.find((a) => a.attemptId === attemptId))
+  const attempts = useProgress((st) => st.attempts)
   const start = useEncounter((st) => st.start)
   const [c, setC] = useState<CaseDef | null>(null)
 
@@ -67,7 +71,12 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
   const tone = GRADE_TONE[result.grade]
   const s = rec.state
   const correctDx = s.diagnosis && [c.diagnosis.correct, ...(c.diagnosis.accept ?? [])].includes(s.diagnosis)
-  const nextCase = CASES[(CASES.findIndex((x) => x.id === c.id) + 1) % CASES.length]
+  // next: a patient from the same session you haven't seen yet, else the next one along
+  const seen = new Set(attempts.map((a) => a.caseId))
+  const siblings = (topicsForCase(c.id)[0]?.cases ?? []).filter((id) => id !== c.id && CASES.some((x) => x.id === id))
+  const nextId = siblings.find((id) => !seen.has(id)) ?? siblings[0] ?? CASES[(CASES.findIndex((x) => x.id === c.id) + 1) % CASES.length].id
+  const nextCase = CASES.find((x) => x.id === nextId)
+  const steps = nextSteps(c, result, s)
 
   const retry = () => {
     start(c.id, s.mode, s.components, s.timeLimit)
@@ -86,7 +95,7 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
       <button onClick={() => navigate(stationIdx >= 0 ? '/osce/run' : '/ward')} className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-ink">
-        <ArrowLeft size={16} /> {stationIdx >= 0 ? 'OSCE circuit' : 'Ward'}
+        <ArrowLeft size={16} /> {stationIdx >= 0 ? 'OSCE circuit' : 'Patients'}
       </button>
 
       {circuit && stationIdx >= 0 && stationIdx === circuit.index && (
@@ -131,7 +140,7 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
               <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold', tone.bg, tone.text)}>
                 <Trophy size={14} /> {result.grade}
               </span>
-              <Badge>{s.mode.toUpperCase()}</Badge>
+              <Badge>{MODES[s.mode].label}</Badge>
               <span className="inline-flex items-center gap-1 text-[12.5px] text-muted">
                 <Clock size={13} /> {formatDuration(result.durationSec)}
               </span>
@@ -178,6 +187,8 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
           </ul>
         </section>
       )}
+
+      {steps.length > 0 && <NextSteps steps={steps} />}
 
       {/* Domains */}
       <section className="mt-6">
@@ -269,6 +280,30 @@ export default function Debrief({ attemptId }: { attemptId: string }) {
       {s.chat.length > 0 && <Transcript s={s} />}
       <div className="h-10" />
     </div>
+  )
+}
+
+function NextSteps({ steps }: { steps: NextStep[] }) {
+  return (
+    <section className="mt-5 rounded-3xl bg-surface-1 p-5 ring-1 ring-line sm:p-6">
+      <h2 className="flex items-center gap-2 text-[16px] font-semibold text-ink">
+        <Compass size={17} className="text-accent" /> What to work on next
+      </h2>
+      <ol className="mt-2 divide-y divide-line">
+        {steps.map((st, i) => (
+          <li key={st.id} className="flex items-start gap-3 py-3">
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] font-bold text-accent">{i + 1}</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[14.5px] leading-snug font-semibold text-ink">{st.title}</div>
+              {st.detail && <p className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-muted">{st.detail}</p>}
+            </div>
+            <Link to={st.to} className="inline-flex h-9 shrink-0 items-center gap-0.5 rounded-xl bg-surface-2 pr-2 pl-3 text-[13px] font-medium text-ink ring-1 ring-line transition hover:ring-accent/50">
+              {st.cta} <ChevronRight size={15} />
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }
 

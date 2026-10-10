@@ -5,10 +5,11 @@ import { unlockAudio } from '../../audio/engine'
 import { PatientAvatar } from '../../components/PatientAvatar'
 import { Button } from '../../components/ui/Button'
 import { Sheet } from '../../components/ui/Sheet'
-import { toast } from '../../components/ui/Toast'
+import { toast, useToasts } from '../../components/ui/Toast'
 import type { CaseDef, Phase } from '../../engine/types'
 import { useTicker } from '../../lib/hooks'
 import { navigate } from '../../lib/router'
+import { MODES } from '../../lib/modes'
 import { cn, formatClock } from '../../lib/utils'
 import { ensureCaseLoaded, useEncounter } from '../../store/encounter'
 
@@ -44,6 +45,9 @@ export default function SimScreen() {
       alive = false
     }
   }, [s?.caseId])
+
+  // the examination's tips belong to the station: don't carry them out of it
+  useEffect(() => () => useToasts.setState((st) => ({ toasts: st.toasts.filter((t) => t.tone !== 'tip') })), [])
 
   useEffect(() => {
     const unlock = () => unlockAudio()
@@ -155,16 +159,16 @@ export default function SimScreen() {
               {remaining !== undefined ? (overtime ? `+${formatClock(-remaining)}` : formatClock(remaining)) : formatClock(elapsed)}
             </div>
             <span className="hidden rounded-lg bg-surface-2 px-2 py-1 text-[11px] font-semibold tracking-wide text-muted uppercase ring-1 ring-line sm:inline">
-              {s.mode}
+              {MODES[s.mode].label}
             </span>
-            <Button variant="primary" size="sm" onClick={() => setConfirmFinish(true)} leading={<Trophy size={15} />}>
-              <span className="hidden sm:inline">Finish</span>
+            <Button variant="primary" size="sm" onClick={() => setConfirmFinish(true)} leading={<Trophy size={15} />} aria-label="Finish and get feedback">
+              Finish
             </Button>
           </div>
         </div>
 
-        {/* Phase stepper (mobile) */}
-        <nav className="flex gap-1 overflow-x-auto px-2 pb-2 no-scrollbar md:hidden" aria-label="Station phases">
+        {/* Phase stepper (mobile): every phase in view, no sideways scrolling */}
+        <nav className="grid gap-1 px-2 pb-2 md:hidden" style={{ gridTemplateColumns: `repeat(${phases.length}, minmax(0, 1fr))` }} aria-label="Station phases">
           {phases.map((p) => {
             const M = PHASE_META[p]
             const on = s.phase === p
@@ -172,13 +176,14 @@ export default function SimScreen() {
               <button
                 key={p}
                 onClick={() => setPhase(p)}
+                aria-current={on ? 'step' : undefined}
                 className={cn(
-                  'flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-medium ring-1 transition',
+                  'flex h-9 min-w-0 items-center justify-center gap-1 rounded-xl px-1 text-[12px] font-medium ring-1 transition',
                   on ? 'bg-accent text-accent-fg ring-accent' : 'bg-surface-1 text-muted ring-line',
                 )}
               >
-                <M.icon size={14} />
-                {M.label}
+                <M.icon size={14} className="shrink-0 max-[429px]:hidden" />
+                <span className="truncate">{M.label}</span>
               </button>
             )
           })}

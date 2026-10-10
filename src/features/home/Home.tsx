@@ -1,18 +1,21 @@
-import { ArrowRight, BookOpenText, ChevronRight, Lightbulb, Play, Search, Stethoscope, Timer, X } from 'lucide-react'
+import { ArrowRight, BookOpenText, CalendarCheck, ChevronRight, Play, Search, Sparkles, Stethoscope, Timer, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { Page } from '../../components/layout/AppShell'
 import { PatientAvatar } from '../../components/PatientAvatar'
 import { Rich } from '../../components/Rich'
+import { ProgressBar } from '../../components/ui/primitives'
 import { CASE_META, CASES } from '../../content/cases'
-import { DAYS, SCHEDULE, sessionsOn, TOPIC_BY_ID, type Session, type Topic } from '../../content/curriculum'
+import { DAYS, sessionsOn, TOPIC_BY_ID, type Session } from '../../content/curriculum'
+import { dueCount, topicCardIds } from '../../content/quiz'
+import { useClaude } from '../../lib/claude'
 import { Link, navigate } from '../../lib/router'
+import { deckStats } from '../../lib/srs'
 import { useCaseDefs } from '../../lib/useCases'
-import { cn, hashString } from '../../lib/utils'
+import { cn, hashString, plural } from '../../lib/utils'
 import { useEncounter } from '../../store/encounter'
 import { useProgress } from '../../store/progress'
 import { useSettings } from '../../store/settings'
 import { useStudy } from '../../store/study'
-import { useClaude } from '../../lib/claude'
 import { Result } from '../ask/Ask'
 import { ClaudeAnswer } from '../ask/ClaudeAnswer'
 import { search } from '../ask/search'
@@ -23,9 +26,12 @@ function greeting() {
   return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
 }
 
+/** Cases on the ward for a topic. */
+const topicCases = (id: Session['topic']) => TOPIC_BY_ID[id].cases.filter((c) => CASE_META[c])
+
 /**
- * Today: the clinical-session day you're on, its two topics and their cases,
- * and a search bar that answers as you type.
+ * Today: the session day you're on, its two topics with how far you've got,
+ * anything due for review, and a search bar that answers as you type.
  */
 export default function Home() {
   const name = useSettings((s) => s.studentName)
@@ -39,12 +45,15 @@ export default function Home() {
 
   return (
     <Page wide>
-      <header className="flex flex-col gap-1">
-        <div className="text-[12px] font-semibold tracking-[0.16em] text-accent uppercase">
-          {greeting()}
-          {name ? `, ${name}` : ''}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="text-[12px] font-semibold tracking-[0.16em] text-accent uppercase">
+            {greeting()}
+            {name ? `, ${name}` : ''}
+          </div>
+          <h1 className="mt-1 text-[28px] leading-tight font-semibold tracking-[-0.03em] text-ink sm:text-[34px]">General surgery · Day {day}</h1>
         </div>
-        <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] text-ink sm:text-[34px]">General surgery · Day {day}</h1>
+        <DayPicker day={day} setDay={setDay} />
       </header>
 
       <QuickSearch
@@ -61,7 +70,7 @@ export default function Home() {
           {activeMeta && (
             <button
               onClick={() => navigate('/sim')}
-              className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-accent px-4 py-3 text-left text-accent-fg shadow-(--shadow-soft)"
+              className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-accent px-4 py-3 text-left text-accent-fg shadow-(--shadow-soft)"
             >
               <Play size={18} className="shrink-0" />
               <span className="min-w-0 flex-1 truncate text-[14.5px] font-semibold">
@@ -71,7 +80,8 @@ export default function Home() {
             </button>
           )}
 
-          <DayPicker day={day} setDay={setDay} />
+          <ReviewDue />
+          <Welcome />
 
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
             {sessions.map((s, i) => (
@@ -79,9 +89,9 @@ export default function Home() {
             ))}
           </div>
 
-          <AllTopics day={day} />
+          <Practise />
 
-          <Practice />
+          <Schedule day={day} setDay={setDay} />
         </>
       )}
 
@@ -152,7 +162,7 @@ function InlineResults({ q, askClaude }: { q: string; askClaude: number }) {
       )}
       {hits.length > 0 && (
         <Link to={`/ask?q=${encodeURIComponent(q.trim())}`} className="flex h-11 items-center justify-center gap-1 rounded-xl text-[13.5px] font-medium text-accent hover:bg-accent-soft/40">
-          More results and filters in Ask <ChevronRight size={15} />
+          More results and filters <ChevronRight size={15} />
         </Link>
       )}
     </div>
@@ -161,33 +171,105 @@ function InlineResults({ q, askClaude }: { q: string; askClaude: number }) {
 
 function DayPicker({ day, setDay }: { day: number; setDay: (d: number) => void }) {
   return (
-    <div className="mt-5 flex items-center gap-3">
-      <span className="hidden text-[12.5px] font-medium text-muted sm:inline">Session day</span>
-      <div role="radiogroup" aria-label="Session day" className="grid w-full grid-cols-6 gap-1 rounded-2xl bg-surface-2/70 p-1 ring-1 ring-line sm:w-96">
-        {DAYS.map((d) => (
-          <button
-            key={d}
-            role="radio"
-            aria-checked={d === day}
-            onClick={() => setDay(d)}
-            className={cn(
-              'h-10 rounded-xl text-[14px] font-semibold tabular-nums transition-colors',
-              d === day ? 'bg-surface-1 text-ink shadow-(--shadow-soft) ring-1 ring-line' : 'text-muted hover:text-ink',
-            )}
-          >
-            <span className="sr-only">Day </span>
-            {d}
-          </button>
-        ))}
-      </div>
+    <div role="radiogroup" aria-label="Session day" className="grid w-full shrink-0 grid-cols-6 gap-1 rounded-2xl bg-surface-2/70 p-1 ring-1 ring-line sm:w-80">
+      {DAYS.map((d) => (
+        <button
+          key={d}
+          role="radio"
+          aria-checked={d === day}
+          onClick={() => setDay(d)}
+          className={cn(
+            'h-10 rounded-xl text-[14px] font-semibold tabular-nums transition-colors',
+            d === day ? 'bg-surface-1 text-ink shadow-(--shadow-soft) ring-1 ring-line' : 'text-muted hover:text-ink',
+          )}
+        >
+          <span className="sr-only">Day </span>
+          {d}
+        </button>
+      ))}
     </div>
+  )
+}
+
+/** First visit: what the app is for, in three steps. Dismissed for good with one tap. */
+function Welcome() {
+  const onboarded = useSettings((s) => s.onboarded)
+  const set = useSettings((s) => s.set)
+  if (onboarded) return null
+  const steps = [
+    { icon: BookOpenText, title: 'Before the session', body: 'Open the session guide, then press Quiz me.' },
+    { icon: Search, title: 'On the ward round', body: 'Type what the doctor asks into the search bar.' },
+    { icon: Stethoscope, title: 'After the session', body: 'See a patient. The debrief tells you what to work on next.' },
+  ]
+  return (
+    <section className="mt-3 rounded-3xl bg-surface-1 p-4 ring-1 ring-accent/30 sm:p-5" aria-labelledby="welcome-title">
+      <div className="flex items-start justify-between gap-3">
+        <h2 id="welcome-title" className="text-[15px] font-semibold text-ink">
+          New here? Bedside in three steps
+        </h2>
+        <button
+          onClick={() => set({ onboarded: true })}
+          aria-label="Dismiss"
+          className="-mt-1 -mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full text-faint hover:bg-surface-2 hover:text-ink"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <ol className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {steps.map((st, i) => (
+          <li key={st.title} className="flex gap-3 rounded-2xl bg-surface-2/60 p-3">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent">
+              <st.icon size={16} />
+            </span>
+            <div className="min-w-0">
+              <div className="text-[13.5px] font-semibold text-ink">
+                {i + 1}. {st.title}
+              </div>
+              <p className="mt-0.5 text-[12.5px] leading-snug text-muted">{st.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <button onClick={() => set({ onboarded: true })} className="mt-3 text-[13px] font-medium text-accent hover:underline">
+        Got it
+      </button>
+    </section>
+  )
+}
+
+/** Shown only when something is due: the questions you're about to forget. */
+function ReviewDue() {
+  const cards = useStudy((s) => s.cards)
+  const due = dueCount(cards)
+  if (!due) return null
+  return (
+    <Link
+      to="/quiz?deck=due"
+      className="group mt-3 flex items-center gap-3 rounded-2xl bg-warning/10 px-4 py-3 ring-1 ring-warning/30 transition hover:ring-warning/60"
+    >
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-warning/15 text-warning">
+        <CalendarCheck size={18} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[14.5px] font-semibold text-ink">{plural(due, 'question')} due for review</div>
+        <div className="text-[12.5px] text-muted">About {Math.max(1, Math.round(due * 0.3))} min — catch them before you forget.</div>
+      </div>
+      <span className="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl bg-ink px-3.5 text-[13px] font-semibold text-bg">
+        Review <ArrowRight size={14} />
+      </span>
+    </Link>
   )
 }
 
 function SessionCard({ s, n }: { s: Session; n: number }) {
   const t = TOPIC_BY_ID[s.topic]
-  const cases = t.cases.filter((c) => CASE_META[c])
+  const cases = topicCases(t.id)
   const defs = useCaseDefs(cases)
+  const cards = useStudy((st) => st.cards)
+  const attempts = useProgress((st) => st.attempts)
+  const qs = deckStats(topicCardIds(t.id), cards)
+  const seen = cases.filter((id) => attempts.some((a) => a.caseId === id)).length
+
   return (
     <article className="flex flex-col rounded-3xl bg-surface-1 p-5 ring-1 ring-line sm:p-6">
       <div className="flex items-center gap-2 text-[11.5px] font-semibold tracking-[0.12em] text-faint uppercase">
@@ -210,7 +292,7 @@ function SessionCard({ s, n }: { s: Session; n: number }) {
 
       {cases.length > 0 && (
         <div className="mt-4">
-          <div className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">Cases</div>
+          <div className="mb-2 text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">Patients</div>
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 no-scrollbar">
             {cases.map((id) => (
               <Link
@@ -231,80 +313,55 @@ function SessionCard({ s, n }: { s: Session; n: number }) {
         </div>
       )}
 
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-[12px] text-muted">
+          <span>
+            <b className="font-semibold text-ink tabular">{qs.known}</b> of {qs.total} questions known
+          </span>
+          {cases.length > 0 && (
+            <span>
+              <b className="font-semibold text-ink tabular">{seen}</b> of {cases.length} patients seen
+            </span>
+          )}
+        </div>
+        <ProgressBar value={qs.total ? qs.known / qs.total : 0} height={5} className="mt-1.5" tone={qs.known === qs.total ? 'success' : 'accent'} />
+      </div>
+
       <div className="mt-auto flex flex-wrap gap-2 pt-5">
         <Link to={`/topic/${t.id}`} className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-ink px-4 text-[13.5px] font-semibold text-bg sm:flex-none">
           Open guide <ArrowRight size={15} />
         </Link>
-        <Link to={`/topic/${t.id}?s=qa`} className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-surface-2 px-4 text-[13.5px] font-medium text-ink ring-1 ring-line sm:flex-none">
-          <Lightbulb size={15} /> {t.qa.length} questions
+        <Link
+          to={`/quiz?deck=topic:${t.id}`}
+          className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-surface-2 px-4 text-[13.5px] font-medium text-ink ring-1 ring-line hover:ring-accent/50 sm:flex-none"
+        >
+          <Sparkles size={15} className="text-accent" /> Quiz me{qs.due ? ` · ${qs.due} due` : ''}
         </Link>
       </div>
     </article>
   )
 }
 
-function AllTopics({ day }: { day: number }) {
-  return (
-    <section className="mt-8">
-      <h2 className="text-[18px] font-semibold text-ink">All twelve sessions</h2>
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {SCHEDULE.map((s) => {
-          const t: Topic = TOPIC_BY_ID[s.topic]
-          return (
-            <Link
-              key={s.topic}
-              to={`/topic/${t.id}`}
-              className={cn(
-                'flex items-center gap-3 rounded-2xl p-3 ring-1 transition hover:ring-accent/40',
-                s.day === day ? 'bg-accent-soft/40 ring-accent/30' : 'bg-surface-1 ring-line',
-              )}
-            >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-center ring-1 ring-line">
-                <span className="text-[10px] leading-none font-semibold text-faint uppercase">Day</span>
-                <span className="-mt-1 text-[15px] leading-none font-bold text-ink">{s.day}</span>
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[14px] font-semibold text-ink">{t.title}</div>
-                <div className="truncate text-[12px] text-muted">
-                  {s.slot === 'am' ? 'Session 1' : 'Session 2'} · {t.cases.filter((c) => CASE_META[c]).length} cases · {t.qa.length} Qs
-                </div>
-              </div>
-              <ChevronRight size={16} className="shrink-0 text-faint" />
-            </Link>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-function Practice() {
+function Practise() {
   const attempts = useProgress((s) => s.attempts)
   const day = useStudy((s) => s.day)
-  // a patient from today's topics, stable for the day
+  // a patient from today's topics you haven't seen, stable for the day
   const next = useMemo(() => {
-    const ids = sessionsOn(day).flatMap((s) => TOPIC_BY_ID[s.topic].cases.filter((c) => CASE_META[c]))
+    const ids = sessionsOn(day).flatMap((s) => topicCases(s.topic))
     const seen = new Set(attempts.map((a) => a.caseId))
     const pool = ids.filter((id) => !seen.has(id))
     const list = pool.length ? pool : ids.length ? ids : CASES.map((c) => c.id)
     return list[hashString(new Date().toDateString()) % list.length]
   }, [attempts, day])
-  const n = attempts.length
-  const avg = n ? Math.round((attempts.reduce((a, x) => a + x.pct, 0) / n) * 100) : null
 
   const tiles = [
-    { to: `/case/${next}`, icon: Stethoscope, title: 'See a patient', body: `${CASE_META[next]?.presenting ?? 'A new patient'} — history, examination, plan.` },
-    { to: '/osce', icon: Timer, title: 'OSCE circuit', body: 'Timed stations with an examiner’s mark sheet.' },
-    { to: '/learn', icon: BookOpenText, title: 'Examination routines', body: 'Macleod’s sequences, step by step.' },
+    { to: `/case/${next}`, icon: Stethoscope, title: 'See a patient', body: `${CASE_META[next]?.presenting ?? 'A new patient'} — take the history, examine, decide.` },
+    { to: '/osce', icon: Timer, title: 'OSCE circuit', body: 'Timed stations with reading time and a bell.' },
+    { to: '/learn', icon: BookOpenText, title: 'Examination routines', body: 'Macleod’s sequences, step by step, then drill them.' },
   ]
   return (
     <section className="mt-8">
-      <div className="flex items-end justify-between">
-        <h2 className="text-[18px] font-semibold text-ink">Practise</h2>
-        <Link to="/progress" className="text-[13px] font-medium text-accent hover:underline">
-          {n ? `${n} station${n === 1 ? '' : 's'} · avg ${avg}%` : 'Progress'}
-        </Link>
-      </div>
+      <h2 className="text-[18px] font-semibold text-ink">Practise</h2>
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {tiles.map((t) => (
           <Link key={t.title} to={t.to} className="flex items-start gap-3 rounded-2xl bg-surface-1 p-4 ring-1 ring-line transition hover:ring-accent/40">
@@ -316,6 +373,55 @@ function Practice() {
               <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{t.body}</p>
             </div>
           </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/** The six days at a glance, like the timetable on the noticeboard. Tap a day to switch to it. */
+function Schedule({ day, setDay }: { day: number; setDay: (d: number) => void }) {
+  const cards = useStudy((s) => s.cards)
+  return (
+    <section className="mt-8">
+      <h2 className="text-[18px] font-semibold text-ink">Your schedule</h2>
+      <div className="mt-3 overflow-hidden rounded-3xl bg-surface-1 ring-1 ring-line">
+        <div className="hidden grid-cols-[88px_1fr_1fr] border-b border-line bg-surface-2/50 px-2 py-2 text-[11px] font-semibold tracking-[0.1em] text-faint uppercase sm:grid">
+          <span className="px-2">Day</span>
+          <span className="px-3">8:30–10:30</span>
+          <span className="px-3">11:00–1:00</span>
+        </div>
+        {DAYS.map((d) => (
+          <div key={d} className={cn('grid grid-cols-[64px_1fr] border-b border-line last:border-0 sm:grid-cols-[88px_1fr_1fr]', d === day && 'bg-accent-soft/40')}>
+            <button
+              onClick={() => {
+                setDay(d)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+              aria-label={`Show day ${d}`}
+              aria-pressed={d === day}
+              className="row-span-2 flex flex-col items-center justify-center gap-0.5 border-r border-line py-2 transition hover:bg-surface-2/60 sm:row-span-1"
+            >
+              <span className="text-[10px] font-semibold tracking-wider text-faint uppercase">Day</span>
+              <span className={cn('text-[18px] leading-none font-bold tabular', d === day ? 'text-accent' : 'text-ink')}>{d}</span>
+            </button>
+            {sessionsOn(d).map((s) => {
+              const t = TOPIC_BY_ID[s.topic]
+              const st = deckStats(topicCardIds(t.id), cards)
+              return (
+                <Link key={s.topic} to={`/topic/${t.id}`} className="group flex min-w-0 items-center gap-2 px-3 py-2.5 transition hover:bg-surface-2/60 sm:border-l sm:border-line sm:first-of-type:border-l-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[14px] font-semibold text-ink group-hover:text-accent">{t.title}</div>
+                    <div className="text-[11.5px] text-muted tabular">
+                      <span className="sm:hidden">{s.slot === 'am' ? '8:30' : '11:00'} · </span>
+                      {st.known}/{st.total} questions known
+                    </div>
+                  </div>
+                  <ChevronRight size={15} className="shrink-0 text-faint" />
+                </Link>
+              )
+            })}
+          </div>
         ))}
       </div>
     </section>

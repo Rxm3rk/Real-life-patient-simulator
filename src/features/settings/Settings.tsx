@@ -10,6 +10,7 @@ import { EMBEDDED } from '../../lib/env'
 import { use3dPatients, webgl2Supported, webglTier } from '../../lib/webgl'
 import { useProgress } from '../../store/progress'
 import { useSettings, type ThemePref } from '../../store/settings'
+import { useStudy } from '../../store/study'
 
 export default function Settings() {
   const st = useSettings()
@@ -19,7 +20,10 @@ export default function Settings() {
   const [pasteOpen, setPasteOpen] = useState(false)
   const [pasted, setPasted] = useState('')
 
-  const payload = () => JSON.stringify({ app: 'bedside', version: 1, exportedAt: new Date().toISOString(), progress: useProgress.getState() })
+  const payload = () => {
+    const { cards, starred } = useStudy.getState()
+    return JSON.stringify({ app: 'bedside', version: 1, exportedAt: new Date().toISOString(), progress: useProgress.getState(), study: { cards, starred } })
+  }
 
   const exportData = () => {
     const blob = new Blob([payload()], { type: 'application/json' })
@@ -48,7 +52,13 @@ export default function Settings() {
       const ids = new Set(cur.attempts.map((a) => a.attemptId))
       const merged = [...cur.attempts, ...json.progress.attempts.filter((a: { attemptId: string }) => !ids.has(a.attemptId))].sort((a, b) => b.at - a.at)
       useProgress.setState({ attempts: merged.slice(0, 60), drills: { ...json.progress.drills, ...cur.drills } })
-      toast({ tone: 'success', title: 'Progress imported', body: `${merged.length} attempts on this device.` })
+      // quiz memory: keep whichever review of each question is the more recent
+      const st = useStudy.getState()
+      const cards = { ...st.cards }
+      for (const [id, c] of Object.entries((json.study?.cards ?? {}) as typeof cards)) if (!cards[id] || c.last > cards[id].last) cards[id] = c
+      const starred = [...new Set([...st.starred, ...((json.study?.starred ?? []) as string[])])]
+      useStudy.setState({ cards, starred })
+      toast({ tone: 'success', title: 'Progress imported', body: `${merged.length} attempts and ${Object.keys(cards).length} quiz questions on this device.` })
       return true
     } catch {
       toast({ tone: 'danger', title: 'Could not import that', body: 'Use progress exported or copied from Bedside.' })
@@ -141,7 +151,7 @@ export default function Settings() {
               options={['5', '8', '10', '12'].map((m) => ({ value: m, label: `${m}m` }))}
             />
           </Row>
-          <Row label="Abdominal regions in Practice mode" hint="Overlay the nine regions while you palpate (always on in Learn mode).">
+          <Row label="Abdominal regions in Practice" hint="Overlay the nine regions while you palpate (always on in Guided).">
             <Switch checked={st.showRegions} onChange={(showRegions) => set({ showRegions })} label="Show regions" />
           </Row>
           <Row
@@ -183,7 +193,7 @@ export default function Settings() {
               </Row>
             </>
           ) : (
-            <Row label="Export progress" hint="Download your attempts to move them to another device.">
+            <Row label="Export progress" hint="Download your attempts and quiz memory to move them to another device.">
               <Button size="sm" onClick={exportData} leading={<Download size={15} />}>
                 Export
               </Button>

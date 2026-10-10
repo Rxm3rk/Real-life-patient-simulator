@@ -16,13 +16,13 @@ test('today shows the session day and navigation', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Bariatric surgery' }).first()).toBeVisible()
   await page.getByRole('radio', { name: /Day 4/ }).click()
   await expect(page.getByRole('heading', { name: 'Gastrointestinal bleeding' }).first()).toBeVisible()
-  await page.getByRole('link', { name: /Ward/ }).first().click()
+  await page.getByRole('link', { name: /Patients/ }).first().click()
   await expect(page).toHaveURL(/#\/ward/)
 })
 
 test('take a history and examine the abdomen', async ({ page }) => {
   await fresh(page, '/case/appendicitis')
-  await tap(page, /Practice/)
+  await page.getByRole('radio', { name: /Practice/ }).click()
   await tap(page, /See the patient/)
   const box = page.getByLabel('Ask the patient')
   await box.fill('What brought you in today?')
@@ -36,7 +36,7 @@ test('take a history and examine the abdomen', async ({ page }) => {
 
 test('groin station: stand, inspect and find the hernia', async ({ page }) => {
   await fresh(page, '/case/inguinal-hernia')
-  await tap(page, /Practice/)
+  await page.getByRole('radio', { name: /Practice/ }).click()
   await tap(page, /See the patient/)
   await page.getByRole('button', { name: /^Examine$/ }).first().click()
   for (const b of [/^Hand hygiene/, /^Consent/, /^Chaperone/, /^Expose/, /^Stand up/, /^Inspect$/]) await tap(page, b)
@@ -45,7 +45,7 @@ test('groin station: stand, inspect and find the hernia', async ({ page }) => {
 
 test('the examination opens on the light illustrated patient, and recovers from a 3D crash', async ({ page }) => {
   await fresh(page, '/case/appendicitis')
-  await tap(page, /Practice/)
+  await page.getByRole('radio', { name: /Practice/ }).click()
   await tap(page, /See the patient/)
   await page.getByRole('button', { name: /^Examine$/ }).first().click()
   await expect(page.getByRole('button', { name: /^Hand hygiene/ }).last()).toBeVisible()
@@ -63,7 +63,7 @@ test('the examination opens on the light illustrated patient, and recovers from 
 
 test('learn hub and signs atlas', async ({ page }) => {
   await fresh(page, '/learn')
-  await expect(page.getByRole('heading', { name: /Learn the routines/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Study, then test yourself/ })).toBeVisible()
   await page.goto('/#/learn/signs/clubbing')
   await expect(page.getByRole('dialog').getByText('Causes & associations')).toBeVisible()
 })
@@ -99,7 +99,7 @@ test('theme follows the system until the user picks one', async ({ page }) => {
 
 test('no page scrolls sideways', async ({ page }) => {
   await fresh(page, '/')
-  for (const route of ['/', '/ask?q=charcot', '/topic/complicated-hernia', '/topic/perianal/case/anal-fissure', '/ward', '/osce', '/learn', '/learn/routine/abdominal', '/learn/signs', '/progress', '/settings', '/case/appendicitis']) {
+  for (const route of ['/', '/ask?q=charcot', '/topic/complicated-hernia', '/topic/perianal/case/anal-fissure', '/ward', '/osce', '/learn', '/learn/routine/abdominal', '/learn/signs', '/quiz', '/quiz?deck=topic:acute-abdomen', '/progress', '/settings', '/case/appendicitis']) {
     await page.goto(`/#${route}`)
     await page.waitForTimeout(300)
     const [client, scroll] = await page.evaluate(() => [document.documentElement.clientWidth, document.documentElement.scrollWidth])

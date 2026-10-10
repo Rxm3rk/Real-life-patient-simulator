@@ -72,7 +72,7 @@ export default function Ask() {
   return (
     <Page>
       <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 -mx-4 bg-bg px-4 pt-1 pb-3 sm:-mx-6 sm:px-6 lg:top-0 lg:-mx-10 lg:px-10 lg:pt-4">
-        <h1 className="mb-3 hidden text-[26px] font-semibold tracking-[-0.025em] text-ink lg:block">Ask</h1>
+        <h1 className="mb-3 hidden text-[26px] font-semibold tracking-[-0.025em] text-ink lg:block">Search</h1>
         <div className="relative">
           <Search size={19} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-faint" />
           <input
@@ -94,7 +94,7 @@ export default function Ask() {
             autoComplete="off"
             spellCheck={false}
             aria-label="Search questions, topics and cases"
-            placeholder={claude ? 'Ask anything — Enter asks Claude' : 'Ask anything — e.g. causes of dysphagia'}
+            placeholder={claude ? 'What did the doctor ask? Enter asks Claude' : 'What did the doctor ask?'}
             className="h-14 w-full rounded-2xl bg-surface-1 pr-12 pl-12 text-[16px] text-ink shadow-(--shadow-soft) ring-1 ring-line outline-none placeholder:text-faint focus:ring-2 focus:ring-accent"
           />
           {q && (
